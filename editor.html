@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Editor Markdown</title>
+        <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="styles-editor.css" />
+        <link rel="stylesheet" href="cdn/prism/prism-dark-svc.css" />
+        <link rel="stylesheet" href="cdn/monaco/editor.main.min.css" />
+        <script src="cdn/prism/prism-core.min.js"></script>
+        <script src="cdn/prism/prism-autoloader.min.js"></script>
+        <script src="cdn/marked/marked.umd.js"></script>
+        <script src="cdn/monaco/loader.min.js"></script>
+        <script src="script-all-pages.js"></script>
+        <script type="importmap">
+            {
+                "imports": {
+                    "preact": "./cdn/preact/preact.mjs",
+                    "preact/hooks": "./cdn/preact/hooks.mjs",
+                    "htm/preact": "./cdn/preact/htm-preact.mjs"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="app"></div>
+
+        <script type="module">
+            import { render } from "preact";
+            import { useState, useEffect, useRef } from "preact/hooks";
+            import { html } from "htm/preact";
+            import {
+                renderMarkdown,
+                showCopySuccess,
+                manageEscapeIframe,
+                manageClickFloatButton,
+            } from "./markdownProcessor.js";
+
+            // Configurar Monaco Editor
+            require.config({
+                paths: {
+                    vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs",
+                },
+            });
+
+            // Manejador para la tecla Escape
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    manageEscapeIframe();
+                }
+            });
+
+            document.addEventListener("click", function (e) {
+                manageClickFloatButton(e);
+
+                // Para el botón de copiar principal
+                if (e.target.closest(".copy-button")) {
+                    const button = e.target.closest(".copy-button");
+                    const originalHTML = button.innerHTML;
+
+                    if (window.handleCopy) {
+                        window
+                            .handleCopy()
+                            .then(() => {
+                                showCopySuccess(button, originalHTML);
+                            })
+                            .catch((err) => {
+                                console.error("Error al copiar:", err);
+                            });
+                    }
+                }
+            });
+
+            function MarkdownEditor() {
+                const [markdown, setMarkdown] = useState(`# Mi Primera Entrada
+
+Esto es un ejemplo de **entrada del blog** con *texto en cursiva*.
+
+Hola este es un parrafo
+#t este es un texto
+<span>hola a todos</span>
+
+## Lista de características
+
+- Soporte para **negrita** y *cursiva*
+- Listas numeradas y con viñetas
+- \`código en línea\`
+- Enlaces: [Ejemplo new](https://example.com)
+
+### Bloque de código
+
+\`\`\`javascript
+function hola() {
+    console.log("¡Hola mundo!");
+}
+\`\`\`
+
+### Tabla de ejemplo
+
+| Columna 1 | Columna 2 | Columna 3 |
+|-----------|-----------|-----------|
+| Celda A   | Celda B   | Celda C   |
+| Celda D   | Celda E   | Celda F   |
+
+### Iframe embebido
+
+:::iframe
+https://example.com
+:::
+
+> Esto es una cita en bloque
+
+¡Utiliza este editor para crear tus entradas!`);
+
+                const [preview, setPreview] = useState("");
+                const [showPreview, setShowPreview] = useState(false);
+                const [previewPosition, setPreviewPosition] = useState("right"); // 'right' o 'bottom'
+                const editorRef = useRef(null);
+                const containerRef = useRef(null);
+
+                useEffect(() => {
+                    let finalHtml = renderMarkdown(markdown);
+                    setPreview(finalHtml);
+                }, [markdown]);
+
+                useEffect(() => {
+                    if (showPreview) {
+                        setTimeout(() => {
+                            if (window.Prism) {
+                                window.Prism.highlightAll();
+                            }
+                        }, 100);
+                    }
+                }, [showPreview, preview]);
+
+                useEffect(() => {
+                    if (!editorRef.current) {
+                        require.config({
+                            paths: {
+                                vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs",
+                            },
+                        });
+
+                        require(["vs/editor/editor.main"], () => {
+                            editorRef.current = monaco.editor.create(
+                                containerRef.current,
+                                {
+                                    value: markdown,
+                                    language: "markdown",
+                                    theme: "vs-dark",
+                                    minimap: { enabled: true },
+                                    fontSize: 16,
+                                    lineNumbers: "on",
+                                    roundedSelection: false,
+                                    scrollBeyondLastLine: false,
+                                    wordWrap: "on",
+                                    acceptSuggestionOnEnter: "off",
+                                    automaticLayout: true,
+                                    smoothScrolling: true,
+                                }
+                            );
+
+                            editorRef.current.onDidChangeModelContent(() => {
+                                setMarkdown(editorRef.current.getValue());
+                            });
+                        });
+                    }
+                }, []);
+
+                const insertText = (
+                    beforeText,
+                    afterText = "",
+                    insertAtStart = false
+                ) => {
+                    if (!editorRef.current) return;
+
+                    const editor = editorRef.current;
+                    const selection = editor.getSelection();
+                    const selectedText = editor
+                        .getModel()
+                        .getValueInRange(selection);
+
+                    // Si no hay texto seleccionado y insertAtStart es true
+                    if (selection.isEmpty() && insertAtStart) {
+                        const lineNumber = selection.startLineNumber;
+                        const lineContent = editor
+                            .getModel()
+                            .getLineContent(lineNumber);
+
+                        // Detectar si ya hay un encabezado al inicio
+                        const headerRegex = /^(#{1,6}\s|#t\s)/;
+                        const match = lineContent.match(headerRegex);
+
+                        const lineStart = {
+                            startLineNumber: lineNumber,
+                            startColumn: 1,
+                            endLineNumber: lineNumber,
+                            endColumn: lineContent.length + 1,
+                        };
+
+                        let newText;
+                        if (match) {
+                            // Si ya hay un encabezado, reemplazarlo
+                            newText =
+                                beforeText +
+                                lineContent.substring(match[0].length) +
+                                afterText;
+                        } else {
+                            // Si no hay encabezado, añadir uno nuevo
+                            newText = beforeText + lineContent + afterText;
+                        }
+
+                        // Realiza la edición al inicio de la línea
+                        editor.executeEdits("", [
+                            {
+                                range: lineStart,
+                                text: newText,
+                            },
+                        ]);
+                    } else {
+                        // Comportamiento normal cuando hay texto seleccionado
+                        const newText = beforeText + selectedText + afterText;
+
+                        // Realiza la edición
+                        editor.executeEdits("", [
+                            {
+                                range: selection,
+                                text: newText,
+                            },
+                        ]);
+                    }
+                    // Calcula dónde quedará el cursor: justo después de beforeText + selectedText
+                    let lines = (beforeText + selectedText).split("\n");
+                    let newLineNumber =
+                        selection.startLineNumber + (lines.length - 1);
+                    let newColumn;
+
+                    if (lines.length === 1) {
+                        // Todo en la misma línea
+                        newColumn = selection.startColumn + lines[0].length;
+                    } else {
+                        // Última línea del bloque
+                        newColumn = lines[lines.length - 1].length + 1;
+                    }
+
+                    // Posiciona el cursor
+                    editor.setSelection({
+                        startLineNumber: newLineNumber,
+                        startColumn: newColumn,
+                        endLineNumber: newLineNumber,
+                        endColumn: newColumn,
+                    });
+
+                    // Centra la línea del cursor en la pantalla con animación suave
+                                        // Centra la línea del cursor en la pantalla
+                    editor.revealLineInCenter(newLineNumber, monaco.editor.ScrollType.Smooth);
+                    
+                    editor.focus();
+                };
+
+                const handleSave = () => {
+                    const blob = new Blob([markdown], {
+                        type: "text/markdown",
+                    });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "entrada.md";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                const handleCopy = async () => {
+                    try {
+                        await navigator.clipboard.writeText(markdown);
+                        return Promise.resolve();
+                    } catch (err) {
+                        console.error("Error copying to clipboard:", err);
+                        return Promise.reject(err);
+                    }
+                };
+
+                // Hacer la función handleCopy accesible globalmente
+                window.handleCopy = handleCopy;
+
+                const handleExport = () => {
+                    const blob = new Blob([preview], { type: "text/html" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "entrada.html";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+
+                const insertIframe = () => {
+                    const url = prompt("Ingresa la URL del iframe:");
+                    if (url) {
+                        insertText(`\n:::iframe height="27em"\n${url}\n:::\n`);
+                    }
+                };
+
+                return html`
+                    <div class="app">
+                        <header class="header">
+                            <h1><a href="./index.html">S4mu31 Code</a></h1>
+                            <nav class="nav">
+                                <a href="./index.html">Inicio</a>
+                                <a href="./editor.html" class="active"
+                                    >Editor</a
+                                >
+                            </nav>
+                        </header>
+
+                        <main class="main-container">
+                            <div class="editor-container">
+                                <div
+                                    style="display: flex; gap: var(--spacing-sm); padding: var(--spacing-sm); background-color: var(--bg-secondary); border-bottom: none; border-radius: var(--border-radius) var(--border-radius) 0 0; align-items: center;justify-content: space-between;"
+                                >
+                                    <div class="editor-menu">
+                                        <button
+                                            class="menu-trigger"
+                                            onClick=${(e) => {
+                                                const menu =
+                                                    e.currentTarget
+                                                        .nextElementSibling;
+                                                const isVisible =
+                                                    menu.style.display ===
+                                                    "block";
+                                                menu.style.display = isVisible
+                                                    ? "none"
+                                                    : "block";
+
+                                                if (!isVisible) {
+                                                    const closeMenu = (
+                                                        event
+                                                    ) => {
+                                                        if (
+                                                            !menu.contains(
+                                                                event.target
+                                                            ) &&
+                                                            !e.target.contains(
+                                                                event.target
+                                                            )
+                                                        ) {
+                                                            menu.style.display =
+                                                                "none";
+                                                            document.removeEventListener(
+                                                                "click",
+                                                                closeMenu
+                                                            );
+                                                        }
+                                                    };
+                                                    // Usar setTimeout para evitar que el evento click actual cierre inmediatamente el menú
+                                                    setTimeout(
+                                                        () =>
+                                                            document.addEventListener(
+                                                                "click",
+                                                                closeMenu
+                                                            ),
+                                                        0
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            <svg
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 16 16"
+                                                fill="none"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                            >
+                                                <path
+                                                    d="M2 4h12M2 8h12M2 12h12"
+                                                    stroke="currentColor"
+                                                    stroke-width="2"
+                                                    stroke-linecap="round"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            class="menu-content"
+                                            style="display: none;"
+                                        >
+                                            <button onClick=${handleSave}>
+                                                <svg
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        d="M13 13H3a2 2 0 01-2-2V3a2 2 0 012-2h8l4 4v6a2 2 0 01-2 2z"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                </svg>
+                                                Guardar (.md)
+                                            </button>
+                                            <button onClick=${handleExport}>
+                                                <svg
+                                                    width="16"
+                                                    height="16"
+                                                    viewBox="0 0 16 16"
+                                                    fill="none"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                >
+                                                    <path
+                                                        d="M14 10v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2M8 2v8M5 5l3-3 3 3"
+                                                        stroke="currentColor"
+                                                        stroke-width="2"
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                    />
+                                                </svg>
+                                                Exportar HTML
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="editor-toolbar">
+                                        <button
+                                            onClick=${() =>
+                                                insertText("**", "**")}
+                                            title="Negrita"
+                                        >
+                                            <strong>B</strong>
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText("*", "*")}
+                                            title="Cursiva"
+                                        >
+                                            <em>C</em>
+                                        </button>
+                                        <button
+                                            class="editor-menu"
+                                            onClick=${(e) => {
+                                                if (
+                                                    e.target === e.currentTarget
+                                                ) {
+                                                    const menu =
+                                                        e.currentTarget.querySelector(
+                                                            ".menu-content"
+                                                        );
+                                                    const isVisible =
+                                                        menu.style.display ===
+                                                        "block";
+                                                    menu.style.display =
+                                                        isVisible
+                                                            ? "none"
+                                                            : "block";
+
+                                                    if (!isVisible) {
+                                                        const closeMenu = (
+                                                            event
+                                                        ) => {
+                                                            if (
+                                                                !menu.contains(
+                                                                    event.target
+                                                                ) &&
+                                                                !e.target.contains(
+                                                                    event.target
+                                                                )
+                                                            ) {
+                                                                menu.style.display =
+                                                                    "none";
+                                                                document.removeEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                );
+                                                            }
+                                                        };
+                                                        setTimeout(
+                                                            () =>
+                                                                document.addEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                ),
+                                                            0
+                                                        );
+                                                    }
+                                                }
+                                            }}
+                                            title="Código"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m8 18l-6-6l6-6l1.425 1.425l-4.6 4.6L9.4 16.6zm8 0l-1.425-1.425l4.6-4.6L14.6 7.4L16 6l6 6z"/></svg>
+                                            <div
+                                                class="menu-content"
+                                                style="display: none;"
+                                            >
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("`", "`");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Código en línea
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "\n```\n",
+                                                            "\n```\n"
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Bloque de código
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "\n```python\n",
+                                                            "\n```\n"
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Bloque Python
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "\n```markdown\n",
+                                                            "\n```\n"
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Bloque Markdown
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "\n```javascript\n",
+                                                            "\n```\n"
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Bloque JavaScript
+                                                </button>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText("[", " new](url)")}
+                                            title="Enlace"
+                                        >
+                                            🔗
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText("![alt](", ")")}
+                                            title="Imagen"
+                                        >
+                                            🖼️
+                                        </button>
+                                        <button
+                                            onClick=${insertIframe}
+                                            title="Iframe"
+                                        >
+                                            📺
+                                        </button>
+                                        <div class="toolbar-separator"></div>
+                                        <button
+                                            class="editor-menu"
+                                            onClick=${(e) => {
+                                                // Solo actuar si el click fue directamente en el botón principal (no en los hijos)
+                                                if (
+                                                    e.target === e.currentTarget
+                                                ) {
+                                                    const menu =
+                                                        e.currentTarget.querySelector(
+                                                            ".menu-content"
+                                                        );
+                                                    const isVisible =
+                                                        menu.style.display ===
+                                                        "block";
+                                                    menu.style.display =
+                                                        isVisible
+                                                            ? "none"
+                                                            : "block";
+
+                                                    if (!isVisible) {
+                                                        const closeMenu = (
+                                                            event
+                                                        ) => {
+                                                            if (
+                                                                !menu.contains(
+                                                                    event.target
+                                                                ) &&
+                                                                !e.target.contains(
+                                                                    event.target
+                                                                )
+                                                            ) {
+                                                                menu.style.display =
+                                                                    "none";
+                                                                document.removeEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                );
+                                                            }
+                                                        };
+                                                        setTimeout(
+                                                            () =>
+                                                                document.addEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                ),
+                                                            0
+                                                        );
+                                                    }
+                                                }
+                                            }}
+                                            title="Encabezado"
+                                        >
+                                            H
+                                            <div
+                                                class="menu-content"
+                                                style="display: none;"
+                                            >
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "# ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H1 - Título Principal
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "## ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H2 - Subtítulo
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "### ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H3 - Encabezado 3
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "#### ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H4 - Encabezado 4
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "##### ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H5 - Encabezado 5
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "###### ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    H6 - Encabezado 6
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText(
+                                                            "#t ",
+                                                            "",
+                                                            true
+                                                        );
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Text - Texto Normal
+                                                </button>
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText("- ", "")}
+                                            title="Lista"
+                                        >
+                                            📋
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText("> ", "")}
+                                            title="Cita"
+                                        >
+                                            💬
+                                        </button>
+                                        <div class="toolbar-separator"></div>
+                                        <button
+                                            onClick=${() =>
+                                                setShowPreview(!showPreview)}
+                                            class=${showPreview ? "active" : ""}
+                                            title="Mostrar/Ocultar vista previa"
+                                        >
+                                            👁️
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                setPreviewPosition(
+                                                    previewPosition === "right"
+                                                        ? "bottom"
+                                                        : "right"
+                                                )}
+                                            class=${showPreview
+                                                ? ""
+                                                : "disabled"}
+                                            title="Cambiar posición de vista previa"
+                                            disabled=${!showPreview}
+                                        >
+                                            🔄
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick=${handleCopy}
+                                        class="copy-button"
+                                        style="display: contents;"
+                                    >
+                                        <svg
+                                            width="16"
+                                            height="16"
+                                            viewBox="0 0 16 16"
+                                            fill="none"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            style="min-width: 16px; min-height: 16px;"
+                                        >
+                                            <path
+                                                d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                            />
+                                            <path
+                                                d="M3 11V3a2 2 0 012-2h6"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                            />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <div
+                                    class="editor-content ${previewPosition} ${!showPreview
+                                        ? "preview-hidden"
+                                        : ""}"
+                                >
+                                    <div
+                                        ref=${containerRef}
+                                        class="monaco-editor-container"
+                                        style="display: ${showPreview &&
+                                        previewPosition == "bottom"
+                                            ? "none"
+                                            : "flex"};"
+                                        value=${markdown}
+                                    />
+                                    <div
+                                        class="markdown-preview entry-content"
+                                        dangerouslySetInnerHTML=${{
+                                            __html: preview,
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </main>
+
+                        <footer class="footer">
+                            <p>© 2025 S4mu31 Code.</p>
+                        </footer>
+                    </div>
+                `;
+            }
+
+            render(html`<${MarkdownEditor} />`, document.getElementById("app"));
+        </script>
+    </body>
+</html>

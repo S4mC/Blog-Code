@@ -1,0 +1,273 @@
+/* Estilos base para el layout */
+html,
+body {
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+#app,
+.app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.main-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-width: 100% !important;
+    padding: var(--spacing-xs);
+    overflow: hidden;
+}
+
+.monaco-editor-container {
+    height: 100%;
+    width: 100%;
+    border: none;
+}
+
+/* Fuerza el color del texto en el menú de autocompletado de Monaco */
+
+.markdown-preview {
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--spacing-md);
+    background-color: var(--bg-color);
+}
+
+/* Estilos para el scrollbar de la vista previa */
+.markdown-preview::-webkit-scrollbar {
+    width: 6px;
+}
+
+.markdown-preview::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.markdown-preview::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 3px;
+}
+
+.markdown-preview::-webkit-scrollbar-thumb:hover {
+    background-color: var(--primary-color);
+}
+
+.editor-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+    justify-content: center;
+}
+
+.editor-actions button {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.editor-actions button:hover {
+    background-color: var(--bg-secondary);
+}
+
+.editor-actions button.primary {
+    background-color: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.editor-actions button.primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.monaco-editor {
+    height: 100%;
+    color: var(--text-color);
+}
+
+.editor-container {
+    max-width: 100% !important;
+    margin: 0 auto;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.editor-toolbar {
+    display: flex;
+    gap: var(--spacing-sm);
+    border-bottom: none;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+@media (max-width: 560px) {
+    .editor-toolbar {
+        display: flex;
+        gap: 0;
+        border-bottom: none;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+}
+
+.editor-toolbar button {
+    min-width: var(--spacing-lg);
+    min-height: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.2s;
+}
+
+.editor-toolbar button:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.editor-toolbar button.active {
+    background-color: var(--bg-hover);
+    color: white;
+    border-color: var(--secondary-color);
+}
+
+.editor-toolbar button.disabled,
+.editor-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.toolbar-separator {
+    width: 1px;
+    background-color: var(--border-color);
+    margin: 0 var(--spacing-sm);
+}
+
+.editor-content {
+    flex: 1;
+    border: 1px solid var(--border-color);
+    display: flex;
+    gap: var(--spacing-md);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.editor-content.right {
+    flex-direction: row;
+}
+
+.editor-content.bottom {
+    flex-direction: column;
+}
+
+.editor-content.preview-hidden .markdown-preview {
+    display: none;
+}
+
+.editor-content.preview-hidden .monaco-editor-container {
+    flex: 1;
+}
+
+.editor-content:not(.preview-hidden) .monaco-editor-container,
+.editor-content:not(.preview-hidden) .markdown-preview {
+    flex: 1;
+    min-width: 0;
+}
+
+.editor-menu {
+    position: relative;
+}
+.menu-trigger {
+    display: contents;
+    background: none;
+    border: none;
+    padding: 4px 5px;
+    cursor: pointer;
+    color: var(--text-color);
+}
+.menu-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    min-width: 200px;
+}
+.menu-content button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    color: var(--text-color);
+    cursor: pointer;
+    text-align: left;
+}
+.menu-content button:hover {
+    background-color: var(--bg-secondary);
+}
+.editor-toolbar .editor-menu {
+    position: relative;
+}
+.editor-toolbar .menu-content {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    min-width: 180px;
+}
+.editor-toolbar .menu-content button {
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 0;
+}
+.copy-button {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--text-color);
+}
+.copy-button:hover {
+    color: var(--primary-color);
+}
+.editor-content {
+    display: flex;
+    gap: 1rem;
+}
+.editor-content.right {
+    flex-direction: row;
+}
+.editor-content.bottom {
+    flex-direction: column;
+}
+.monaco-editor-container,
+.markdown-preview {
+    flex: 1;
+    min-height: 500px;
+}
+

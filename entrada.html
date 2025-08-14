@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Entrada del Blog</title>
+        <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
+        <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="cdn/prism/prism-dark-svc.css" />
+        <script src="cdn/prism/prism-core.min.js"></script>
+        <script src="cdn/prism/prism-autoloader.min.js"></script>
+        <script src="cdn/marked/marked.umd.js"></script>
+        <script src="script-all-pages.js"></script>
+        <script type="importmap">
+            {
+                "imports": {
+                    "preact": "./cdn/preact/preact.mjs",
+                    "preact/hooks": "./cdn/preact/hooks.mjs",
+                    "htm/preact": "./cdn/preact/htm-preact.mjs"
+                }
+            }
+        </script>
+    </head>
+    <body>
+        <div id="app"></div>
+
+        <script type="module">
+            import { render } from "preact";
+            import { useState, useEffect, useRef } from "preact/hooks";
+            import { html } from "htm/preact";
+            import {
+                renderMarkdown,
+                showCopySuccess,
+                manageEscapeIframe,
+                manageClickFloatButton,
+            } from "./markdownProcessor.js";
+
+            // Manejador para la tecla Escape
+            document.addEventListener("keydown", function (e) {
+                if (e.key === "Escape") {
+                    manageEscapeIframe();
+                }
+            });
+
+            document.addEventListener("click", function (e) {
+                manageClickFloatButton(e);
+            });
+
+            function BlogEntry() {
+                const [content, setContent] = useState("");
+                const [title, setTitle] = useState("");
+                const [loading, setLoading] = useState(true);
+                const [error, setError] = useState(null);
+
+                useEffect(() => {
+                    const urlParams = new URLSearchParams(
+                        window.location.search
+                    );
+                    const entryPath = urlParams.get("path");
+
+                    if (!entryPath) {
+                        setError("No se especificó la ruta de la entrada");
+                        setLoading(false);
+                        return;
+                    }
+
+                    // Cargar el archivo Markdown
+                    fetch(entryPath)
+                        .then((response) => {
+                            if (!response.ok) {
+                                throw new Error(
+                                    `Error ${response.status}: ${response.statusText}`
+                                );
+                            }
+                            return response.text();
+                        })
+                        .then((markdownContent) => {
+                            let finalHtml = renderMarkdown(markdownContent);
+
+                            setContent(finalHtml);
+
+                            // Extraer título del primer h1
+                            const titleMatch =
+                                markdownContent.match(/^#\s+(.+)$/m);
+                            if (titleMatch) {
+                                setTitle(titleMatch[1]);
+                                document.title = titleMatch[1] + " - S4mu31 Code";
+                            }
+
+                            setLoading(false);
+
+                            // Aplicar coloreo de sintaxis después de renderizar
+                            setTimeout(() => {
+                                if (window.Prism) {
+                                    window.Prism.highlightAll();
+                                }
+                            }, 100);
+                        })
+                        .catch((err) => {
+                            console.error("Error loading entry:", err);
+                            setError(err.message);
+                            setLoading(false);
+                        });
+                }, []);
+
+                if (loading) {
+                    return html`
+                        <div class="app">
+                            <header class="header">
+                                <h1><a href="./index.html">S4mu31 Code</a></h1>
+                                <nav class="nav">
+                                    <a href="./index.html">Inicio</a>
+                                    <a href="./editor.html">Editor</a>
+                                </nav>
+                            </header>
+                            <main class="main-container">
+                                <div class="loading">Cargando entrada...</div>
+                            </main>
+                        </div>
+                    `;
+                }
+
+                if (error) {
+                    return html`
+                        <div class="app">
+                            <header class="header">
+                                <h1><a href="./index.html">S4mu31 Code</a></h1>
+                                <nav class="nav">
+                                    <a href="./index.html">Inicio</a>
+                                    <a href="./editor.html">Editor</a>
+                                </nav>
+                            </header>
+                            <main class="main-container">
+                                <div class="error">
+                                    <h2>Error al cargar la entrada</h2>
+                                    <p>${error}</p>
+                                    <a href="./index.html"
+                                        >← Volver al inicio</a
+                                    >
+                                </div>
+                            </main>
+                        </div>
+                    `;
+                }
+
+                return html`
+                    <div class="app">
+                        <header class="header">
+                            <h1><a href="./index.html">S4mu31 Code</a></h1>
+                            <nav class="nav">
+                                <a href="./index.html">Inicio</a>
+                                <a href="./editor.html">Editor</a>
+                            </nav>
+                        </header>
+
+                        <main class="main-container">
+                            <article class="blog-entry">
+                                <div class="entry-navigation">
+                                    <a href="./index.html"
+                                        >← Volver al inicio</a
+                                    >
+                                </div>
+
+                                <div
+                                    class="entry-content"
+                                    dangerouslySetInnerHTML=${{
+                                        __html: content,
+                                    }}
+                                />
+                            </article>
+                        </main>
+
+                        <footer class="footer">
+                            <p>© 2025 S4mu31 Code.</p>
+                        </footer>
+                    </div>
+                `;
+            }
+
+            render(html`<${BlogEntry} />`, document.getElementById("app"));
+        </script>
+    </body>
+</html>
