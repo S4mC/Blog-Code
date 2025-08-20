@@ -13,8 +13,8 @@
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
-        <script src="cdn/monaco/loader.min.js"></script>
-        <script src="script-all-pages.js"></script>
+        <script src="cdn/monaco/vs/loader.js"></script>
+        <!-- <script src="script-all-pages.js"></script> -->
         <script type="importmap">
             {
                 "imports": {
@@ -32,19 +32,27 @@
             import { render } from "preact";
             import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
+            import { Header } from "./components/Header.js";
             import {
+                manageClickFloatButton,
                 renderMarkdown,
                 showCopySuccess,
                 manageEscapeIframe,
-                manageClickFloatButton,
             } from "./markdownProcessor.js";
 
             // Configurar Monaco Editor
             require.config({
                 paths: {
-                    vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs",
+                    vs: "./cdn/monaco/vs",
                 },
             });
+            
+            // Configurar los lenguajes que queremos cargar
+            window.MonacoEnvironment = {
+                getLanguages: function() {
+                    return ['markdown'];
+                }
+            };
 
             // Manejador para la tecla Escape
             document.addEventListener("keydown", function (e) {
@@ -75,6 +83,10 @@
             });
 
             function MarkdownEditor() {
+                const handleNavigateToEntry = (entry) => {
+                    window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                };
+
                 const [markdown, setMarkdown] = useState(`# Mi Primera Entrada
 
 Esto es un ejemplo de **entrada del blog** con *texto en cursiva*.
@@ -138,11 +150,7 @@ https://example.com
 
                 useEffect(() => {
                     if (!editorRef.current) {
-                        require.config({
-                            paths: {
-                                vs: "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs",
-                            },
-                        });
+                        // La configuración ya está hecha arriba
 
                         require(["vs/editor/editor.main"], () => {
                             editorRef.current = monaco.editor.create(
@@ -309,15 +317,12 @@ https://example.com
 
                 return html`
                     <div class="app">
-                        <header class="header">
-                            <h1><a href="./index.html">S4mu31 Code</a></h1>
-                            <nav class="nav">
-                                <a href="./index.html">Inicio</a>
-                                <a href="./editor.html" class="active"
-                                    >Editor</a
-                                >
-                            </nav>
-                        </header>
+                        <${Header} 
+                            showSearch=${true} 
+                            onNavigateToEntry=${(entry) => {
+                                window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                            }} 
+                        />
 
                         <main class="main-container">
                             <div class="editor-container">
@@ -819,7 +824,7 @@ https://example.com
                         </main>
 
                         <footer class="footer">
-                            <p>© 2025 S4mu31 Code.</p>
+                            <p>© 2025 Blog Code.</p>
                         </footer>
                     </div>
                 `;

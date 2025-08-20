@@ -11,7 +11,7 @@
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
-        <script src="script-all-pages.js"></script>
+        <!-- <script src="script-all-pages.js"></script> -->
         <script type="importmap">
             {
                 "imports": {
@@ -29,6 +29,7 @@
             import { render } from "preact";
             import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
+            import { Header } from "./components/Header.js";
             import {
                 renderMarkdown,
                 showCopySuccess,
@@ -52,6 +53,10 @@
                 const [title, setTitle] = useState("");
                 const [loading, setLoading] = useState(true);
                 const [error, setError] = useState(null);
+
+                const handleNavigateToEntry = (entry) => {
+                    window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                };
 
                 useEffect(() => {
                     const urlParams = new URLSearchParams(
@@ -85,7 +90,7 @@
                                 markdownContent.match(/^#\s+(.+)$/m);
                             if (titleMatch) {
                                 setTitle(titleMatch[1]);
-                                document.title = titleMatch[1] + " - S4mu31 Code";
+                                document.title = titleMatch[1] + " - Blog Code";
                             }
 
                             setLoading(false);
@@ -104,75 +109,34 @@
                         });
                 }, []);
 
-                if (loading) {
-                    return html`
-                        <div class="app">
-                            <header class="header">
-                                <h1><a href="./index.html">S4mu31 Code</a></h1>
-                                <nav class="nav">
-                                    <a href="./index.html">Inicio</a>
-                                    <a href="./editor.html">Editor</a>
-                                </nav>
-                            </header>
-                            <main class="main-container">
+                return html`
+                    <div class="app">
+                        <${Header} showSearch=${true} onNavigateToEntry=${handleNavigateToEntry} />
+                        <main class="main-container">
+                            ${loading ? html`
                                 <div class="loading">Cargando entrada...</div>
-                            </main>
-                        </div>
-                    `;
-                }
-
-                if (error) {
-                    return html`
-                        <div class="app">
-                            <header class="header">
-                                <h1><a href="./index.html">S4mu31 Code</a></h1>
-                                <nav class="nav">
-                                    <a href="./index.html">Inicio</a>
-                                    <a href="./editor.html">Editor</a>
-                                </nav>
-                            </header>
-                            <main class="main-container">
+                            ` : error ? html`
                                 <div class="error">
                                     <h2>Error al cargar la entrada</h2>
                                     <p>${error}</p>
-                                    <a href="./index.html"
-                                        >← Volver al inicio</a
-                                    >
+                                    <a href="./index.html">← Volver al inicio</a>
                                 </div>
-                            </main>
-                        </div>
-                    `;
-                }
-
-                return html`
-                    <div class="app">
-                        <header class="header">
-                            <h1><a href="./index.html">S4mu31 Code</a></h1>
-                            <nav class="nav">
-                                <a href="./index.html">Inicio</a>
-                                <a href="./editor.html">Editor</a>
-                            </nav>
-                        </header>
-
-                        <main class="main-container">
-                            <article class="blog-entry">
-                                <div class="entry-navigation">
-                                    <a href="./index.html"
-                                        >← Volver al inicio</a
-                                    >
-                                </div>
-
-                                <div
-                                    class="entry-content"
-                                    dangerouslySetInnerHTML=${{
-                                        __html: content,
-                                    }}
-                                />
-                            </article>
+                            ` : html`
+                                <article class="blog-entry">
+                                    <div class="entry-navigation">
+                                        <a href="./index.html">← Volver al inicio</a>
+                                    </div>
+                                    <div
+                                        class="entry-content"
+                                        dangerouslySetInnerHTML=${{
+                                            __html: content,
+                                        }}
+                                    />
+                                </article>
+                            `}
                         </main>
-
                         <footer class="footer">
-                            <p>© 2025 S4mu31 Code.</p>
+                            <p>© 2025 Blog Code.</p>
                         </footer>
                     </div>
                 `;
