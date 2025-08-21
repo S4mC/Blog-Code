@@ -233,16 +233,19 @@ export function Header({ showSearch = true, onNavigateToEntry }) {
 
     return html`
         <header class="header">
-            <h1>
-                <a href="./index.html">
-                    <div style="display: flex; align-items: center;">
-                        <img
-                            src="./Icon.png"
-                            style="width: 34px; height: 30px; margin-right: 8px;"
-                        /><span id="header-title">Blog Code</span>
-                    </div>
-                </a>
-            </h1>
+            <div style="display: inline-flex;align-items: center;">
+                <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+                <h1>
+                    <a href="./index.html">
+                        <div style="display: flex; align-items: center;">
+                            <img
+                                src="./Icon.png"
+                                style="width: 34px; height: 30px; margin-right: 8px;"
+                            /><span id="header-title">Blog Code</span>
+                        </div>
+                    </a>
+                </h1>
+            </div>
             ${searchBar}
             <nav class="nav">
                 <a href="./index.html">Inicio</a>

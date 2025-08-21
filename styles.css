@@ -160,6 +160,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    position: sticky;
     top: 0px;
     z-index: 100;
 }
@@ -693,14 +694,266 @@ body {
     color: var(--text-secondary);
 }
 
-@media (max-width: 400px) {
+/* CSS específico para el componente sidebar */
+.sidebar-component * {
+    box-sizing: border-box;
+}
+
+.sidebar-component {
+    position: fixed;
+    display: grid;
+    grid-template-rows: max-content;
+    left: -350px;
+    top: 0;
+    max-width: 350px;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-color);
+    color: white;
+    overflow-y: auto;
+    box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
+    transition: left 0.3s ease;
+    z-index: 1000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar-component.open {
+    left: 0;
+}
+
+
+.sidebar-toggle {
+    margin-right: 14px;
+    background: #293237;
+    color: #b9b9b9;
+    border: none;
+    padding: 1px 5px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 18px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 47;
+}
+
+.sidebar-component .section-title:hover {
+    border-bottom: 2px solid #d9d9d9;
+}
+
+.sidebar-toggle:hover {
+    background: #374349;
+    transform: scale(1.05);
+}
+
+.sidebar-component .sidebar-header {
+    padding: 20px;
+    background: rgba(0,0,0,0.1);
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+}
+
+.sidebar-component .sidebar-header svg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    color: #6f6b6b;
+    cursor: pointer;
+}
+
+.sidebar-component .search-container {
+    position: relative;
+}
+
+.sidebar-component .search-input {
+    width: 100%;
+    padding: 8px 12px 8px 12px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    background-color: #293237;
+    color: var(--text-color);
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.sidebar-component .search-controls {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.sidebar-component .search-controls.active {
+    display: flex;
+    justify-content: center;
+}
+
+.sidebar-component .nav-button {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-component .nav-button:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.sidebar-component .nav-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.sidebar-component .search-counter {
+    color: rgba(255,255,255,0.8);
+    font-size: 12px;
+}
+
+.sidebar-component .sidebar-content {
+    padding: 20px;
+    height: 100%;
+    overflow: auto;
+    scrollbar-color: #7f7f7f #2c2c2c;
+    scrollbar-width: thin;
+}
+
+.sidebar-component .section {
+    margin-bottom: 15px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.sidebar-component .section.hidden {
+    display: none;
+}
+
+.sidebar-component .section-header {
+    padding: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.sidebar-component .section-header:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.sidebar-component .section-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.sidebar-component .collapse-icon {
+    font-size: 12px;
+    transition: transform 0.3s ease;
+}
+
+.sidebar-component .section.expanded .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.sidebar-component .section-items {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.sidebar-component .section.expanded .section-items {
+    max-height: 500px;
+}
+
+.sidebar-component .section-item {
+    padding: 12px 20px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.sidebar-component .section-item:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.sidebar-component .highlight {
+    background: #ffeb3b;
+    color: #333;
+    padding: 0px 2px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.sidebar-component .current-highlight {
+    background: #ff5722;
+    color: #000000;
+    border-radius: 4px;
+    padding: 0px 2px;
+    font-weight: bold;
+    animation: pulse 1s ease-in-out;
+}
+
+.sidebar-component .no-results {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255,255,255,0.7);
+    font-style: italic;
+}
+
+.sidebar-component .clear-button {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    font-size: 16px;
+    display: none;
+}
+
+.sidebar-component .clear-button.visible {
+    display: block;
+}
+
+/* Overlay para cerrar al hacer click fuera */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.3);
+    z-index: 999;
+    display: none;
+}
+
+.sidebar-overlay.active {
+    display: block;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+/* Delete header */
+@media (max-width: 440px) {
     #header-title {
         display: none;
     }
 }
 
 /* Search bar */
-@media (max-width: 650px) {
+@media (max-width: 710px) {
     .header {
         padding: 0 var(--spacing-sm);
     }

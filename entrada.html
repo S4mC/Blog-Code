@@ -35,6 +35,7 @@
                 showCopySuccess,
                 manageEscapeIframe,
                 manageClickFloatButton,
+                SidebarSearch,
             } from "./markdownProcessor.js";
 
             // Manejador para la tecla Escape
@@ -81,7 +82,7 @@
                             return response.text();
                         })
                         .then((markdownContent) => {
-                            let finalHtml = renderMarkdown(markdownContent);
+                            let [finalHtml, sidebarContent] = renderMarkdown(markdownContent);
 
                             setContent(finalHtml);
 
@@ -100,6 +101,7 @@
                                 if (window.Prism) {
                                     window.Prism.highlightAll();
                                 }
+                                window.sidebarSearch = new SidebarSearch(sidebarContent);
                             }, 100);
                         })
                         .catch((err) => {

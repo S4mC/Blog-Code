@@ -34,10 +34,11 @@
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
             import {
-                manageClickFloatButton,
                 renderMarkdown,
                 showCopySuccess,
                 manageEscapeIframe,
+                manageClickFloatButton,
+                SidebarSearch,
             } from "./markdownProcessor.js";
 
             // Configurar Monaco Editor
@@ -134,8 +135,11 @@ https://example.com
                 const containerRef = useRef(null);
 
                 useEffect(() => {
-                    let finalHtml = renderMarkdown(markdown);
+                    let [finalHtml, sidebarContent] = renderMarkdown(markdown);
                     setPreview(finalHtml);
+                    setTimeout(() => {
+                        window.sidebarSearch = new SidebarSearch(sidebarContent);
+                    }, 100);
                 }, [markdown]);
 
                 useEffect(() => {
