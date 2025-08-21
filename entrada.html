@@ -11,6 +11,7 @@
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
+        <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
         <!-- <script src="script-all-pages.js"></script> -->
         <script type="importmap">
             {
@@ -82,7 +83,7 @@
                             return response.text();
                         })
                         .then((markdownContent) => {
-                            let [finalHtml, sidebarContent] = renderMarkdown(markdownContent);
+                            let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent);
 
                             setContent(finalHtml);
 
@@ -102,6 +103,7 @@
                                     window.Prism.highlightAll();
                                 }
                                 window.sidebarSearch = new SidebarSearch(sidebarContent);
+                                eval(finalJS);
                             }, 100);
                         })
                         .catch((err) => {

@@ -13,6 +13,7 @@
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
+        <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
         <script src="cdn/monaco/vs/loader.js"></script>
         <!-- <script src="script-all-pages.js"></script> -->
         <script type="importmap">
@@ -92,16 +93,18 @@
 
 Esto es un ejemplo de **entrada del blog** con *texto en cursiva*.
 
-Hola este es un parrafo
-#t este es un texto
-<span>hola a todos</span>
-
 ## Lista de características
 
 - Soporte para **negrita** y *cursiva*
 - Listas numeradas y con viñetas
 - \`código en línea\`
 - Enlaces: [Ejemplo new](https://example.com)
+
+### SVG Container
+
+\`\`\`svgcontainer style="height:15em;"
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 21q-.825 0-1.412-.587T1 19V5q0-.825.588-1.412T3 3h18q.825 0 1.413.588T23 5v14q0 .825-.587 1.413T21 21zm4-4h2V7H5v2h2zm4.5 0h2l1.75-3.175L17 17h2l-2.75-5L19 7h-2l-1.75 3.175L13.5 7h-2l2.75 5z"/></svg>
+\`\`\`
 
 ### Bloque de código
 
@@ -124,9 +127,10 @@ function hola() {
 https://example.com
 :::
 
-> Esto es una cita en bloque
+### Cita en bloque
 
-¡Utiliza este editor para crear tus entradas!`);
+> Esto es una cita
+> en bloque`);
 
                 const [preview, setPreview] = useState("");
                 const [showPreview, setShowPreview] = useState(false);
@@ -135,12 +139,15 @@ https://example.com
                 const containerRef = useRef(null);
 
                 useEffect(() => {
-                    let [finalHtml, sidebarContent] = renderMarkdown(markdown);
-                    setPreview(finalHtml);
-                    setTimeout(() => {
-                        window.sidebarSearch = new SidebarSearch(sidebarContent);
-                    }, 100);
-                }, [markdown]);
+                    if (showPreview){
+                        let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
+                        setPreview(finalHtml);
+                        setTimeout(() => {
+                            window.sidebarSearch = new SidebarSearch(sidebarContent);
+                            eval(finalJS);
+                        }, 100);
+                    }
+                }, [showPreview, markdown]);
 
                 useEffect(() => {
                     if (showPreview) {
@@ -750,6 +757,13 @@ https://example.com
                                             title="Cita"
                                         >
                                             💬
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText('\n```svgcontainer style="height:15em;"\n', "\n```\n")}
+                                            title="SVG Container"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 22 18" style="pointer-events: none;"><path fill="currentColor" d="M8.5 16.5h2q.425 0 .713-.288t.287-.712v-2q0-.425-.288-.712T10.5 12.5h-2q-.425 0-.712.288T7.5 13.5v2q0 .425.288.713t.712.287m0-5h2q.425 0 .713-.288t.287-.712v-2q0-.425-.288-.712T10.5 7.5h-2q-.425 0-.712.288T7.5 8.5v2q0 .425.288.713t.712.287m5 5h2q.425 0 .713-.288t.287-.712v-2q0-.425-.288-.712T15.5 12.5h-2q-.425 0-.712.288t-.288.712v2q0 .425.288.713t.712.287m0-5h2q.425 0 .713-.288t.287-.712v-2q0-.425-.288-.712T15.5 7.5h-2q-.425 0-.712.288T12.5 8.5v2q0 .425.288.713t.712.287M4 20q-.825 0-1.412-.587T2 18V6q0-.825.588-1.412T4 4h16q.825 0 1.413.588T22 6v12q0 .825-.587 1.413T20 20zm0-2h16V6H4zm0 0V6z"></path></svg>
                                         </button>
                                         <div class="toolbar-separator"></div>
                                         <button

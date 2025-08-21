@@ -419,7 +419,6 @@ body {
     border: none;
     width: 100%;
     height: 27em;
-    border: solid #4c4c4c 2px;
     border-radius: 9px;
 }
 
@@ -938,6 +937,19 @@ body {
 
 .sidebar-overlay.active {
     display: block;
+}
+
+.SVG-viewer {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background-color: #242424;
+    border-radius: 10px;
+}
+
+.SVG-viewer svg {
+    width: inherit;
+    height: 100% !important;
 }
 
 @keyframes pulse {
