@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Entrada del Blog</title>
-        <link rel="icon" type="image/png" sizes="32x32" href="Icon.ico">
+        <title>Blog Entry</title>
+        <link rel="icon" type="image/png" sizes="32x32" href="public/Icon.ico">
         <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
         <link rel="stylesheet" href="styles.css" />
         <link rel="stylesheet" href="cdn/prism/prism-dark-svc.css" />
@@ -12,7 +12,7 @@
         <script src="cdn/prism/prism-autoloader.min.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
         <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
-        <!-- <script src="script-all-pages.js"></script> -->
+        <!-- <script src="components/script-all-pages.js"></script> -->
         <script type="importmap">
             {
                 "imports": {
@@ -37,9 +37,9 @@
                 manageEscapeIframe,
                 manageClickFloatButton,
                 SidebarSearch,
-            } from "./markdownProcessor.js";
+            } from "./components/markdownProcessor.js";
 
-            // Manejador para la tecla Escape
+            // Handler for Escape key
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape") {
                     manageEscapeIframe();
@@ -57,7 +57,7 @@
                 const [error, setError] = useState(null);
 
                 const handleNavigateToEntry = (entry) => {
-                    window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                    window.location.href = `./post.html?path=${encodeURIComponent(entry.path)}`;
                 };
 
                 useEffect(() => {
@@ -67,12 +67,12 @@
                     const entryPath = urlParams.get("path");
 
                     if (!entryPath) {
-                        setError("No se especificó la ruta de la entrada");
+                        setError("Entry path not specified");
                         setLoading(false);
                         return;
                     }
 
-                    // Cargar el archivo Markdown
+                    // Load Markdown file
                     fetch(entryPath)
                         .then((response) => {
                             if (!response.ok) {
@@ -87,7 +87,7 @@
 
                             setContent(finalHtml);
 
-                            // Extraer título del primer h1
+                            // Extract title from first h1
                             const titleMatch =
                                 markdownContent.match(/^#\s+(.+)$/m);
                             if (titleMatch) {
@@ -97,7 +97,7 @@
 
                             setLoading(false);
 
-                            // Aplicar coloreo de sintaxis después de renderizar
+                            // Apply syntax highlighting after rendering
                             setTimeout(() => {
                                 if (window.Prism) {
                                     window.Prism.highlightAll();
@@ -118,17 +118,17 @@
                         <${Header} showSearch=${true} onNavigateToEntry=${handleNavigateToEntry} />
                         <main class="main-container">
                             ${loading ? html`
-                                <div class="loading">Cargando entrada...</div>
+                                <div class="loading">Loading entry...</div>
                             ` : error ? html`
                                 <div class="error">
-                                    <h2>Error al cargar la entrada</h2>
+                                    <h2>Error loading entry</h2>
                                     <p>${error}</p>
-                                    <a href="./index.html">← Volver al inicio</a>
+                                    <a href="./index.html">← Back to home</a>
                                 </div>
                             ` : html`
                                 <article class="blog-entry">
                                     <div class="entry-navigation">
-                                        <a href="./index.html">← Volver al inicio</a>
+                                        <a href="./index.html">← Back to home</a>
                                     </div>
                                     <div
                                         class="entry-content"

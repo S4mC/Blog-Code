@@ -36,7 +36,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
     useEffect(() => {
         if (!searchDataCache) {
             setIsLoading(true);
-            fetch("./buscador.json")
+            fetch("./search.json")
                 .then((res) => res.json())
                 .then((data) => {
                     searchDataCache = data.entries || [];
@@ -134,7 +134,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
                 <button
                     class="search-button"
                     onClick=${handleToggleExpand}
-                    aria-label="Abrir búsqueda"
+                    aria-label="Open search"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -166,7 +166,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
                     <button
                         class="close-search"
                         onClick=${handleToggleExpand}
-                        aria-label="Cerrar búsqueda"
+                        aria-label="Close search"
                     >
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
@@ -185,7 +185,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
                     ref=${inputRef}
                     type="text"
                     autocomplete="off"
-                    placeholder="Buscar entradas del blog..."
+                    placeholder="Search blog entries..."
                     value=${query}
                     onInput=${(e) => setQuery(e.target.value)}
                     onKeyDown=${handleKeyDown}
@@ -239,7 +239,7 @@ export function Header({ showSearch = true, onNavigateToEntry }) {
                     <a href="./index.html">
                         <div style="display: flex; align-items: center;">
                             <img
-                                src="./Icon.png"
+                                src="./public/Icon.png"
                                 style="width: 34px; height: 30px; margin-right: 8px;"
                             /><span id="header-title">Blog Code</span>
                         </div>
@@ -248,7 +248,7 @@ export function Header({ showSearch = true, onNavigateToEntry }) {
             </div>
             ${searchBar}
             <nav class="nav">
-                <a href="./index.html">Inicio</a>
+                <a href="./index.html">Home</a>
                 <a href="./editor.html">Editor</a>
             </nav>
         </header>

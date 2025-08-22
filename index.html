@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Blog Code</title>
-        <link rel="icon" type="image/png" sizes="32x32" href="Icon.ico">
+        <link rel="icon" type="image/png" sizes="32x32" href="public/Icon.ico">
         <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
         <link rel="stylesheet" href="styles.css" />
         <link rel="stylesheet" href="cdn/prism/prism-dark-svc.css" />
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
-        <!-- <script src="script-all-pages.js"></script> -->
+        <!-- <script src="components/script-all-pages.js"></script> -->
         <script type="importmap">
             {
                 "imports": {
@@ -66,7 +66,7 @@
                                 >
                                     <h3>
                                         <a
-                                            href=${`./entrada.html?path=${encodeURIComponent(
+                                            href=${`./post.html?path=${encodeURIComponent(
                                                 entry.path
                                             )}`}
                                         >
@@ -106,7 +106,7 @@
                 const [entries, setEntries] = useState([]);
 
                 useEffect(() => {
-                    fetch("./buscador.json")
+                    fetch("./search.json")
                         .then((res) => res.json())
                         .then((data) => setEntries(data.entries || []))
                         .catch((err) =>
@@ -115,7 +115,7 @@
                 }, []);
 
                 const handleNavigateToEntry = (entry) => {
-                    window.location.href = `./entrada.html?path=${encodeURIComponent(
+                    window.location.href = `./post.html?path=${encodeURIComponent(
                         entry.path
                     )}`;
                 };

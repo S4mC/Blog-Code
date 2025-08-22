@@ -212,8 +212,6 @@ body {
     font-size: 0.875rem;
 }
 
-/* Buscador */
-
 /* Lista del blog */
 .blog-list h2 {
     font-size: 1.75rem;
@@ -576,7 +574,7 @@ body {
     background: var(--bg-hover);
 }
 
-/* Estilos base del buscador para todas las vistas */
+/* Base finder styles for all views */
 .search-container {
     position: relative;
     flex: 1;

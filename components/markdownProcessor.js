@@ -68,7 +68,7 @@ function processMarkdownWithIframes(markdownContent) {
                                 <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>`;
                 processedLines.push(
-                    `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expandir"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
+                    `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
                 );
             } else {
                 processedLines.push(line);
@@ -473,12 +473,12 @@ export function renderMarkdown(markdownContent) {
             <div class="sidebar-header">
                 <svg id="sidebarToggle2" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16.5 16V8l-4 4zM5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm5-2h9V5h-9z"/></svg>
                 <div class="search-container">
-                    <input type="text" autocomplete="off" class="search-input" placeholder="Buscar..." id="searchInput">
+                    <input type="text" autocomplete="off" class="search-input" placeholder="Search..." id="searchInput">
                     <button class="clear-button" id="clearButton">×</button>
                 </div>
                 <div class="search-controls" id="searchControls">
-                    <button class="nav-button" id="prevBtn">◀ Anterior</button>
-                    <button class="nav-button" id="nextBtn">Siguiente ▶</button>
+                    <button class="nav-button" id="prevBtn">◀ Previous</button>
+                    <button class="nav-button" id="nextBtn">Next ▶</button>
                     <span class="search-counter" id="searchCounter">0/0</span>
                 </div>
             </div>
@@ -514,7 +514,7 @@ export function manageEscapeIframe() {
         expandedIframe.classList.remove("expanded");
         expandIcon.style.display = "block";
         contractIcon.style.display = "none";
-        button.title = "Expandir";
+        button.title = "Expand";
     }
 
     // También manejar el cierre de imágenes en pantalla completa
@@ -546,7 +546,7 @@ export function manageClickFloatButton(e) {
         } else {
             expandIcon.style.display = "block";
             contractIcon.style.display = "none";
-            button.title = "Expandir";
+            button.title = "Expand";
             document.body.style.overflow = "auto";
         }
     }
@@ -671,7 +671,7 @@ export class SidebarSearch {
         const content = document.getElementById('sidebarContent');
         
         if (this.data.length === 0) {
-            content.innerHTML = '<div class="no-results">No hay datos</div>';
+            content.innerHTML = '<div class="no-results">No data</div>';
             return;
         }
 
@@ -727,7 +727,6 @@ export class SidebarSearch {
         });
 
         // Click en secciones
-        // Click en secciones - MODIFICADO
         sidebar.addEventListener('click', (e) => {
             // Click en el título de la sección - toggle Y navegación al DOM
             if (e.target.closest('.section-title')) {

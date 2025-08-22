@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Editor Markdown</title>
-        <link rel="icon" type="image/png" sizes="32x32" href="Icon.ico">
+        <title>Markdown Editor</title>
+        <link rel="icon" type="image/png" sizes="32x32" href="public/Icon.ico">
         <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
         <link rel="stylesheet" href="styles.css" />
         <link rel="stylesheet" href="styles-editor.css" />
@@ -15,7 +15,7 @@
         <script src="cdn/marked/marked.umd.js"></script>
         <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
         <script src="cdn/monaco/vs/loader.js"></script>
-        <!-- <script src="script-all-pages.js"></script> -->
+        <!-- <script src="components/script-all-pages.js"></script> -->
         <script type="importmap">
             {
                 "imports": {
@@ -40,23 +40,23 @@
                 manageEscapeIframe,
                 manageClickFloatButton,
                 SidebarSearch,
-            } from "./markdownProcessor.js";
+            } from "./components/markdownProcessor.js";
 
-            // Configurar Monaco Editor
+            // Configure Monaco Editor
             require.config({
                 paths: {
                     vs: "./cdn/monaco/vs",
                 },
             });
             
-            // Configurar los lenguajes que queremos cargar
+            // Configure the languages we want to load
             window.MonacoEnvironment = {
                 getLanguages: function() {
                     return ['markdown'];
                 }
             };
 
-            // Manejador para la tecla Escape
+            // Handler for Escape key
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape") {
                     manageEscapeIframe();
@@ -66,7 +66,7 @@
             document.addEventListener("click", function (e) {
                 manageClickFloatButton(e);
 
-                // Para el botón de copiar principal
+                // For the main copy button
                 if (e.target.closest(".copy-button")) {
                     const button = e.target.closest(".copy-button");
                     const originalHTML = button.innerHTML;
@@ -78,7 +78,7 @@
                                 showCopySuccess(button, originalHTML);
                             })
                             .catch((err) => {
-                                console.error("Error al copiar:", err);
+                                console.error("Error copying:", err);
                             });
                     }
                 }
@@ -86,19 +86,19 @@
 
             function MarkdownEditor() {
                 const handleNavigateToEntry = (entry) => {
-                    window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                    window.location.href = `./post.html?path=${encodeURIComponent(entry.path)}`;
                 };
 
-                const [markdown, setMarkdown] = useState(`# Mi Primera Entrada
+                const [markdown, setMarkdown] = useState(`# My First Entry
 
-Esto es un ejemplo de **entrada del blog** con *texto en cursiva*.
+This is an example of a **blog entry** with *italic text*.
 
-## Lista de características
+## Feature List
 
-- Soporte para **negrita** y *cursiva*
-- Listas numeradas y con viñetas
-- \`código en línea\`
-- Enlaces: [Ejemplo new](https://example.com)
+- Support for **bold** and *italic*
+- Numbered and bullet lists
+- \`inline code\`
+- Links: [Example](https://example.com)
 
 ### SVG Container
 
@@ -106,31 +106,31 @@ Esto es un ejemplo de **entrada del blog** con *texto en cursiva*.
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 21q-.825 0-1.412-.587T1 19V5q0-.825.588-1.412T3 3h18q.825 0 1.413.588T23 5v14q0 .825-.587 1.413T21 21zm4-4h2V7H5v2h2zm4.5 0h2l1.75-3.175L17 17h2l-2.75-5L19 7h-2l-1.75 3.175L13.5 7h-2l2.75 5z"/></svg>
 \`\`\`
 
-### Bloque de código
+### Code Block
 
 \`\`\`javascript
-function hola() {
-    console.log("¡Hola mundo!");
+function hello() {
+    console.log("Hello world!");
 }
 \`\`\`
 
-### Tabla de ejemplo
+### Example Table
 
-| Columna 1 | Columna 2 | Columna 3 |
-|-----------|-----------|-----------|
-| Celda A   | Celda B   | Celda C   |
-| Celda D   | Celda E   | Celda F   |
+| Column 1 | Column 2 | Column 3 |
+|----------|----------|----------|
+| Cell A   | Cell B   | Cell C   |
+| Cell D   | Cell E   | Cell F   |
 
-### Iframe embebido
+### Embedded Iframe
 
 :::iframe
 https://example.com
 :::
 
-### Cita en bloque
+### Blockquote
 
-> Esto es una cita
-> en bloque`);
+> This is a
+> blockquote`);
 
                 const [preview, setPreview] = useState("");
                 const [showPreview, setShowPreview] = useState(false);
@@ -202,14 +202,14 @@ https://example.com
                         .getModel()
                         .getValueInRange(selection);
 
-                    // Si no hay texto seleccionado y insertAtStart es true
+                    // If no text is selected and insertAtStart is true
                     if (selection.isEmpty() && insertAtStart) {
                         const lineNumber = selection.startLineNumber;
                         const lineContent = editor
                             .getModel()
                             .getLineContent(lineNumber);
 
-                        // Detectar si ya hay un encabezado al inicio
+                        // Detect if there's already a header at the beginning
                         const headerRegex = /^(#{1,6}\s|#t\s)/;
                         const match = lineContent.match(headerRegex);
 
@@ -222,17 +222,17 @@ https://example.com
 
                         let newText;
                         if (match) {
-                            // Si ya hay un encabezado, reemplazarlo
+                            // If there's already a header, replace it
                             newText =
                                 beforeText +
                                 lineContent.substring(match[0].length) +
                                 afterText;
                         } else {
-                            // Si no hay encabezado, añadir uno nuevo
+                            // If there's no header, add a new one
                             newText = beforeText + lineContent + afterText;
                         }
 
-                        // Realiza la edición al inicio de la línea
+                        // Edit at the beginning of the line
                         editor.executeEdits("", [
                             {
                                 range: lineStart,
@@ -240,7 +240,7 @@ https://example.com
                             },
                         ]);
                     } else {
-                        // Comportamiento normal cuando hay texto seleccionado
+                        // Normal behavior when text is selected
                         const newText = beforeText + selectedText + afterText;
 
                         // Realiza la edición
@@ -251,17 +251,17 @@ https://example.com
                             },
                         ]);
                     }
-                    // Calcula dónde quedará el cursor: justo después de beforeText + selectedText
+                    // Calculate where the cursor will be: right after beforeText + selectedText
                     let lines = (beforeText + selectedText).split("\n");
                     let newLineNumber =
                         selection.startLineNumber + (lines.length - 1);
                     let newColumn;
 
                     if (lines.length === 1) {
-                        // Todo en la misma línea
+                        // Everything on the same line
                         newColumn = selection.startColumn + lines[0].length;
                     } else {
-                        // Última línea del bloque
+                        // Last line of the block
                         newColumn = lines[lines.length - 1].length + 1;
                     }
 
@@ -273,8 +273,8 @@ https://example.com
                         endColumn: newColumn,
                     });
 
-                    // Centra la línea del cursor en la pantalla con animación suave
-                                        // Centra la línea del cursor en la pantalla
+                    // Center the cursor line on the screen with smooth animation
+                                        // Center the cursor line on the screen
                     editor.revealLineInCenter(newLineNumber, monaco.editor.ScrollType.Smooth);
                     
                     editor.focus();
@@ -287,7 +287,7 @@ https://example.com
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = "entrada.md";
+                    a.download = "post.md";
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -304,7 +304,7 @@ https://example.com
                     }
                 };
 
-                // Hacer la función handleCopy accesible globalmente
+                // Make the handleCopy function globally accessible
                 window.handleCopy = handleCopy;
 
                 const handleExport = () => {
@@ -312,7 +312,7 @@ https://example.com
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = "entrada.html";
+                    a.download = "post.html";
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
@@ -320,7 +320,7 @@ https://example.com
                 };
 
                 const insertIframe = () => {
-                    const url = prompt("Ingresa la URL del iframe:");
+                    const url = prompt("Enter the iframe URL:");
                     if (url) {
                         insertText(`\n:::iframe height="27em"\n${url}\n:::\n`);
                     }
@@ -331,7 +331,7 @@ https://example.com
                         <${Header} 
                             showSearch=${true} 
                             onNavigateToEntry=${(entry) => {
-                                window.location.href = `./entrada.html?path=${encodeURIComponent(entry.path)}`;
+                                window.location.href = `./post.html?path=${encodeURIComponent(entry.path)}`;
                             }} 
                         />
 

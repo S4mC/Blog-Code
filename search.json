@@ -1,0 +1,25 @@
+{
+  "entries": [
+    {
+      "title": "Test Post",
+      "summary": "Learn how to embed external content using the special iframe syntax.",
+      "path": "./posts/test-posts.md",
+      "date": "2025-01-17",
+      "tags": ["iframes", "embedded", "tutorial"]
+    },
+    {
+      "title": "Markdown Guide",
+      "summary": "Everything you need to know about Markdown syntax for writing in the blog.",
+      "path": "./posts/markdown-guide.md",
+      "date": "2025-01-16",
+      "tags": ["markdown", "guide", "writing"]
+    },
+    {
+      "title": "How to Use Iframes",
+      "summary": "Learn how to embed external content using the special iframe syntax.",
+      "path": "./posts/how-to-use-iframes.md",
+      "date": "2025-01-17",
+      "tags": ["iframes", "embedded", "tutorial"]
+    }
+  ]
+}
