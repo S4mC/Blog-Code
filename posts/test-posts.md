@@ -15,5 +15,5 @@ function hola() {
 ```
 
 :::iframe
-/public/Prueba%20SVG%20List.html
+./public/Prueba%20SVG%20List.html
 :::
