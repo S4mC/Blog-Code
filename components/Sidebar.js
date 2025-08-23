@@ -87,6 +87,14 @@ function findDOMElement(result, data) {
                     return currentElement;
                 }
                 h3Count++;
+            } else {
+                let posibleh3s = currentElement.querySelectorAll('h3');
+                for (let h3 of posibleh3s){
+                    if (h3Count === itemIndex) {
+                        return h3;
+                    }
+                    h3Count++;
+                }
             }
             
             currentElement = currentElement.nextElementSibling;

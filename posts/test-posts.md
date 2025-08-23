@@ -17,3 +17,8 @@ function hola() {
 :::iframe
 ./public/Prueba%20SVG%20List.html
 :::
+
+:::details-open Collapsible Element
+### This item is open by default
+content
+:::

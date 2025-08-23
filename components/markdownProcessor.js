@@ -39,8 +39,24 @@ function processMarkdownWithIframes(markdownContent) {
             // Dentro de un bloque de código, guardar la línea sin procesar
             currentCodeBlock.lines.push(line);
         } else {
-            // Fuera de un bloque de código, procesar iframes
-            if (line.trim().startsWith(":::iframe")) {
+            if (line.trim().startsWith(":::details")) {
+                // Inicio de details
+                let nameSummary = line.trim().replace(":::details", "").trim();
+                processedLines.push(
+                    `REPLACE_SUMMARY_INIT_${nameSummary}_SUMMARY_INIT`
+                );
+                processedLines.push("");
+
+                i++; // Avanzar a la siguiente línea
+                while (i < lines.length && lines[i].trim() !== ":::") {
+                    processedLines.push(lines[i]);
+                    i++;
+                }
+                processedLines.push("");
+                processedLines.push(
+                    `REPLACE_SUMMARY_END`
+                );
+            } else if (line.trim().startsWith(":::iframe")) {
                 // Inicio de iframe
                 let attributes = "";
                 // Extraer todos los atributos de la línea
@@ -399,6 +415,28 @@ export function renderMarkdown(markdownContent) {
         finalHtml = finalHtml.replace(placeholder, codeHtml);
     }
 
+
+    finalHtml = finalHtml.replace(/REPLACE_SUMMARY_INIT_(.*?)_SUMMARY_INIT/g, (match, key) => {
+        if (key.startsWith("-open ")){
+            key = key.replace("-open ", "");
+            return `<details open>
+                    <summary>${key}</summary>
+                    <div class="content-wrapper-details">
+                        <div class="contentDetails">`;
+        }
+        // Not default open details
+        return `<details>
+                    <summary>${key}</summary>
+                    <div class="content-wrapper-details">
+                        <div class="contentDetails">`;
+    });
+
+    finalHtml = finalHtml.replace(/REPLACE_SUMMARY_END/g, `            
+                            </div>
+                        </div>
+                    </details>`
+    );
+
     if (numberSVGcontainer > 1){
         finalJS += `
         //Center SVG inside SVG-viewer
@@ -465,7 +503,60 @@ export function renderMarkdown(markdownContent) {
         });`;
     }
 
-    // Add the sidebar
+    // This code makes the summary work with animation
+    finalJS += `
+        // Remover listener anterior del documento si existe
+        if (window.detailsClickHandler) {
+            document.removeEventListener('click', window.detailsClickHandler);
+        }
+
+        // Crear el handler
+        window.detailsClickHandler = function(e) {
+            const details = e.target.closest('details');
+            if (!details) return;
+            
+            const summary = e.target.closest('summary');
+            if (!summary) return;
+            
+            const contentWrapper = details.querySelector('.content-wrapper-details');
+            if (!contentWrapper) return;
+            
+            e.preventDefault();
+            
+            if (details.open) {
+                // Cerrar con animación
+                contentWrapper.classList.add('animating');
+                contentWrapper.classList.remove('opening');
+                
+                setTimeout(() => {
+                    details.open = false;
+                    contentWrapper.classList.remove('animating');
+                }, 400);
+            } else {
+                // Abrir con animación
+                details.open = true;
+                contentWrapper.classList.add('animating');
+                
+                // Forzar reflow
+                contentWrapper.offsetHeight;
+                
+                contentWrapper.classList.add('opening');
+                
+                setTimeout(() => {
+                    contentWrapper.classList.remove('animating');
+                }, 400);
+            }
+        };
+
+        // Agregar un solo listener al documento
+        document.addEventListener('click', window.detailsClickHandler);
+        
+        // Inicializar estado de contenido ya abierto
+        document.querySelectorAll('details[open]').forEach(details => {
+            const contentWrapper = details.querySelector('.content-wrapper-details');
+            contentWrapper.classList.add('opening');
+        });
+    `
 
     // Reemplaza todas las coincidencias de <p></p>
     return [finalHtml.replace(/<p>\s*<\/p>/g, ""), sidebarContent, finalJS];
