@@ -7,6 +7,7 @@
         <link rel="icon" type="image/png" sizes="32x32" href="public/Icon.ico">
         <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
         <link rel="stylesheet" href="styles.css" />
+        <link rel="stylesheet" href="styles-post.css" />
         <link rel="stylesheet" href="cdn/prism/prism-dark-svc.css" />
         <script src="cdn/prism/prism-core.min.js"></script>
         <script src="cdn/prism/prism-autoloader.min.js"></script>
@@ -31,12 +32,12 @@
             import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
+            import { Sidebar, initSidebar } from "./components/Sidebar.js";
             import {
                 renderMarkdown,
                 showCopySuccess,
                 manageEscapeIframe,
                 manageClickFloatButton,
-                SidebarSearch,
             } from "./components/markdownProcessor.js";
 
             // Handler for Escape key
@@ -102,7 +103,7 @@
                                 if (window.Prism) {
                                     window.Prism.highlightAll();
                                 }
-                                window.sidebarSearch = new SidebarSearch(sidebarContent);
+                                initSidebar(sidebarContent);
                                 eval(finalJS);
                             }, 100);
                         })
@@ -116,7 +117,9 @@
                 return html`
                     <div class="app">
                         <${Header} showSearch=${true} onNavigateToEntry=${handleNavigateToEntry} />
+                        
                         <main class="main-container">
+                            <${Sidebar} />
                             ${loading ? html`
                                 <div class="loading">Loading entry...</div>
                             ` : error ? html`
@@ -147,6 +150,10 @@
             }
 
             render(html`<${BlogEntry} />`, document.getElementById("app"));
+
+            setTimeout(() => {
+                initSidebar([]);
+            }, 0);
         </script>
     </body>
 </html>

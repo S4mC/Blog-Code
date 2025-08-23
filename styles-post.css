@@ -1,0 +1,127 @@
+/* Media query for large screens (desktop type) */
+@media (min-width: 1024px) {
+    .sidebar-component {
+        display: grid; /* By default on big screens show sidebar */
+        width: 300px;
+        position: sticky; /* Sticky position para seguir el scroll */
+        top: 52px; /* Considerando el header */
+        height: calc(100vh - 52px); /* Altura completa menos el header */
+        align-self: start; /* Asegura que se adhiera a la parte superior */
+    }
+    
+    /* Añadir scrollbar al contenido cuando sea necesario */
+    .sidebar-component .sidebar-content {
+        max-height: calc(100vh - 120px); /* Altura ajustable según el header y otros elementos */
+        overflow-y: auto; /* Añade scrollbar vertical cuando el contenido excede la altura */
+        scrollbar-width: thin; /* Firefox */
+        scrollbar-color: var(--border-color) transparent; /* Firefox */
+    }
+    
+    /* Estilo de scrollbar para Chrome, Edge, Safari */
+    .sidebar-component .sidebar-content::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .sidebar-component .sidebar-content::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    .sidebar-component .sidebar-content::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 6px;
+    }
+
+    .main-container {
+        transition: margin-left 0.3s ease, width 0.3s ease;
+        width: 100%;
+        max-width: none;
+        display: grid !important;
+        margin: 0 0;
+        padding: 0 0;
+        grid-template-columns: auto 1fr;
+        align-items: start; /* Alinea los elementos desde el inicio */
+    }
+
+    /* If the sidebar is closed */
+    .sidebar-component:not(.open) {
+        left: -300px;
+        width: 0;
+        position: relative; /* Cambia a posición relativa cuando está cerrada */
+        top: 0;
+    }
+
+    .sidebar-component:not(.open) ~ .main-container {
+        margin-left: 0;
+        width: 100%;
+    }
+
+    /* Ensure blog-entry remains centered */
+    .blog-entry {
+        width: 100%;
+        padding: 0 15px;
+    }
+
+    .sidebar-overlay {
+        display: none !important;
+    }
+}
+
+/* Media query for medium-small screens */
+@media (max-width: 1024px) {
+    .sidebar-component {
+        /* By default on small screens do not show sidebar */
+        display: none;
+        height: calc(100vh - 51.6px); /* Altura completa menos el header */
+        position: fixed; /* Para móviles usamos fixed en vez de sticky */
+        top: 51.6px; /* Considerando el header */
+        left: 0;
+        z-index: 100; /* Asegurar que esté por encima del contenido */
+        width: 80%; /* Ancho para móviles */
+        max-width: 300px;
+        overflow: hidden; /* Para contener el sidebar-content con scrollbar */
+    }
+    
+    .sidebar-component.open {
+        display: grid;
+    }
+
+    /* If the sidebar is closed */
+    .sidebar-component:not(.open) {
+        left: -300px;
+        width: 0;
+    }
+    
+    /* Añadir scrollbar al contenido en dispositivos móviles */
+    .sidebar-component .sidebar-content {
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-color) transparent;
+    }
+    
+    /* Estilo de scrollbar para Chrome, Edge, Safari en móviles */
+    .sidebar-component .sidebar-content::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .sidebar-component .sidebar-content::-webkit-scrollbar-thumb {
+        background-color: var(--border-color);
+        border-radius: 4px;
+    }
+}
+
+/* Media query for small screens */
+@media (max-width: 768px) {
+    .sidebar-component {
+        height: calc(100vh - 38.7px); /* Altura completa menos el header */
+        top: 38.7px; /* Considerando el header */
+    }
+}
+
+/* Media query for super small screens */
+@media (max-width: 440px) {
+    .sidebar-component {
+        height: calc(100vh - 34.7px); /* Altura completa menos el header */
+        top: 34.7px; /* Considerando el header */
+    }
+}

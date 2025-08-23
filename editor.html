@@ -34,12 +34,12 @@
             import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
+            import { Sidebar, initSidebar } from "./components/Sidebar.js";
             import {
                 renderMarkdown,
                 showCopySuccess,
                 manageEscapeIframe,
                 manageClickFloatButton,
-                SidebarSearch,
             } from "./components/markdownProcessor.js";
 
             // Configure Monaco Editor
@@ -143,7 +143,8 @@ https://example.com
                         let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
                         setPreview(finalHtml);
                         setTimeout(() => {
-                            window.sidebarSearch = new SidebarSearch(sidebarContent);
+                            // Usar la función initSidebar que maneja de forma segura la inicialización/actualización
+                            initSidebar(sidebarContent);
                             eval(finalJS);
                         }, 100);
                     }
@@ -336,6 +337,7 @@ https://example.com
                         />
 
                         <main class="main-container">
+                            <${Sidebar} />
                             <div class="editor-container">
                                 <div
                                     style="display: flex; gap: var(--spacing-sm); padding: var(--spacing-sm); background-color: var(--bg-secondary); border-bottom: none; border-radius: var(--border-radius) var(--border-radius) 0 0; align-items: center;justify-content: space-between;"
@@ -849,6 +851,12 @@ https://example.com
             }
 
             render(html`<${MarkdownEditor} />`, document.getElementById("app"));
+            
+            // Inicializar la barra lateral después de renderizar
+            // Con un pequeño timeout para asegurar que el DOM está listo
+            setTimeout(() => {
+                initSidebar([]);
+            }, 0);
         </script>
     </body>
 </html>

@@ -54,6 +54,7 @@
             import { useState, useEffect } from "preact/hooks";
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
+            import { Sidebar } from "./components/Sidebar.js";
 
             function BlogList({ entries }) {
                 return html`
@@ -125,6 +126,7 @@
                         <${Header} showSearch=${true} onNavigateToEntry=${handleNavigateToEntry} />
 
                         <main class="main-container">
+                            <${Sidebar} />
                             <${BlogList} entries=${entries} />
                         </main>
 

@@ -1,5 +1,6 @@
 /* Variables CSS y Temas */
-:root,[data-theme="dark"] {
+:root,
+[data-theme="dark"] {
     /* Tema estilo dark */
     --primary-color: #a5c14f;
     --primary-dark: #bddc58;
@@ -51,8 +52,6 @@
     --border-color: #334155;
 }
 
-
-
 [data-theme="light-purple"] {
     /* Tema claro con acentos morados */
     --primary-color: #a78bfa;
@@ -90,8 +89,8 @@
     --header-height: 60px;
 
     /* Fuente personalizada Ubuntu */
-    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", 
-                   Roboto, Oxygen, Cantarell, "Helvetica Neue", sans-serif;
+    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Oxygen, Cantarell, "Helvetica Neue", sans-serif;
 }
 
 /* Transitions between pages */
@@ -197,10 +196,11 @@ body {
 
 .main-container {
     flex: 1;
-    padding: var(--spacing-xs) var(--spacing-2xl);
+    padding: var(--spacing-md) var(--spacing-2xl);
     max-width: 1200px;
     margin: 0 auto;
     width: 100%;
+    transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
 .footer {
@@ -281,6 +281,7 @@ body {
 .blog-entry {
     max-width: 800px;
     margin: 0 auto;
+    transition: margin 0.3s ease, max-width 0.3s ease;
 }
 
 .entry-navigation {
@@ -691,33 +692,33 @@ body {
     color: var(--text-secondary);
 }
 
-/* CSS específico para el componente sidebar */
+/* Specific CSS for the sidebar component */
 .sidebar-component * {
     box-sizing: border-box;
 }
 
 .sidebar-component {
+    display: none;
     position: fixed;
-    display: grid;
     grid-template-rows: max-content;
     left: -350px;
-    top: 0;
     max-width: 350px;
     width: 100%;
-    height: 100%;
+    height: calc(
+        100% - var(--header-height)
+    ); /* Ajustado para que no cubra el header */
     background: var(--bg-color);
     color: white;
     overflow-y: auto;
     box-shadow: 3px 0 15px rgba(0, 0, 0, 0.1);
-    transition: left 0.3s ease;
-    z-index: 1000;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: left 0.3s ease, width 0.3s ease;
+    z-index: 99; /* Reducido para estar debajo del header */
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .sidebar-component.open {
     left: 0;
 }
-
 
 .sidebar-toggle {
     margin-right: 14px;
@@ -744,8 +745,8 @@ body {
 
 .sidebar-component .sidebar-header {
     padding: 20px;
-    background: rgba(0,0,0,0.1);
-    border-bottom: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sidebar-component .sidebar-header svg {
@@ -786,7 +787,7 @@ body {
 }
 
 .sidebar-component .nav-button {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
     padding: 8px 12px;
@@ -797,7 +798,7 @@ body {
 }
 
 .sidebar-component .nav-button:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .sidebar-component .nav-button:disabled {
@@ -806,7 +807,7 @@ body {
 }
 
 .sidebar-component .search-counter {
-    color: rgba(255,255,255,0.8);
+    color: rgba(255, 255, 255, 0.8);
     font-size: 12px;
 }
 
@@ -820,7 +821,7 @@ body {
 
 .sidebar-component .section {
     margin-bottom: 15px;
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     overflow: hidden;
     transition: all 0.3s ease;
@@ -836,12 +837,12 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: rgba(255,255,255,0.05);
+    background: rgba(255, 255, 255, 0.05);
     transition: all 0.3s ease;
 }
 
 .sidebar-component .section-header:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-component .section-title {
@@ -870,14 +871,14 @@ body {
 
 .sidebar-component .section-item {
     padding: 12px 20px;
-    border-top: 1px solid rgba(255,255,255,0.1);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 14px;
 }
 
 .sidebar-component .section-item:hover {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-component .highlight {
@@ -900,7 +901,7 @@ body {
 .sidebar-component .no-results {
     text-align: center;
     padding: 40px 20px;
-    color: rgba(255,255,255,0.7);
+    color: rgba(255, 255, 255, 0.7);
     font-style: italic;
 }
 
@@ -924,18 +925,23 @@ body {
 /* Overlay para cerrar al hacer click fuera */
 .sidebar-overlay {
     position: fixed;
-    top: 0;
+    top: var(
+        --header-height
+    ); /* Ajustado para que comience debajo del header */
     left: 0;
     width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.3);
-    z-index: 999;
+    height: calc(
+        100% - var(--header-height)
+    ); /* Ajustado para que no cubra el header */
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 98; /* Por debajo de la sidebar */
     display: none;
 }
 
 .sidebar-overlay.active {
     display: block;
 }
+
 
 .SVG-viewer {
     width: 100%;
@@ -950,24 +956,19 @@ body {
     height: 100% !important;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-/* Delete header */
+/* Delete header tittle in small screens */
 @media (max-width: 440px) {
     #header-title {
         display: none;
     }
 }
 
-/* Search bar */
-@media (max-width: 710px) {
+@media (max-width: 768px) {
+    /* Search bar */
     .header {
         padding: 0 var(--spacing-sm);
     }
-
+    
     .search-container:not(.mobile-expanded) .search-bar {
         display: none;
     }
@@ -1022,9 +1023,8 @@ body {
     .search-container.mobile-expanded .search-input {
         flex: 1;
     }
-}
 
-@media (max-width: 768px) {
+    /* Container changes */
     .main-container {
         padding: var(--spacing-lg) var(--spacing-md);
     }
@@ -1053,5 +1053,21 @@ body {
 
     .entry-content h2 {
         font-size: 1.5rem;
+    }
+
+    /* Ensure that on small screens the sidebar takes up the full width */
+    .sidebar-component.open {
+        width: 100%;
+        max-width: 350px;
+    }
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
     }
 }
