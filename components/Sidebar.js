@@ -22,7 +22,7 @@ export function initSidebar(data) {
 }
 
 export function Sidebar() {
-    return html`
+    return html`        
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
         <div class="sidebar-component open" id="sidebar">
@@ -120,6 +120,7 @@ class SidebarClass {
         
         this.render();
         this.bindEvents();
+        this.setupScrollSpy();
         
         // Inicializar estado de la sidebar según el tamaño de pantalla
         if (window.innerWidth < 1024) {
@@ -365,6 +366,10 @@ class SidebarClass {
             return;
         }
 
+        // Desactivar temporalmente ScrollSpy durante la búsqueda
+        this.scrollSpyActive = false;
+        this.clearSidebarHighlights();
+        
         document.getElementById('clearButton').classList.add('visible');
         this.searchResults = [];
 
@@ -552,9 +557,172 @@ class SidebarClass {
         this.currentResultIndex = -1;
         this.render();
         this.updateSearchControls(false);
+        
+        // Reactivar ScrollSpy si estamos en pantalla grande
+        if (window.innerWidth >= 1024) {
+            this.scrollSpyActive = true;
+            setTimeout(() => {
+                this.highlightCurrentSection();
+            }, 100);
+        }
     }
 
     escapeRegex(string) {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+    
+    // Implementación del ScrollSpy
+    setupScrollSpy() {
+        this.scrollSpyActive = true;
+        // Usar throttle para evitar demasiadas actualizaciones durante el scroll
+        let ticking = false;
+        window.addEventListener('scroll', () => {
+            if (!ticking && this.scrollSpyActive) {
+                window.requestAnimationFrame(() => {
+                    this.highlightCurrentSection();
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        });
+        
+        // Activar también al redimensionar la ventana
+        window.addEventListener('resize', () => {
+            this.scrollSpyActive = true;
+            this.highlightCurrentSection();
+        });
+        
+        // Llamar una vez inicialmente para establecer el estado inicial
+        setTimeout(() => {
+            this.highlightCurrentSection();
+        }, 300);
+    }
+    
+    clearSidebarHighlights() {
+        document.querySelectorAll('.section-header.active').forEach(el => {
+            el.classList.remove('active');
+        });
+        document.querySelectorAll('.section-item.active').forEach(el => {
+            el.classList.remove('active');
+        });
+    }
+    
+    highlightCurrentSection() {
+        if (!this.scrollSpyActive || !this.data || this.data.length === 0) return;
+        
+        const entryContent = document.getElementsByClassName("entry-content")[0];
+        if (!entryContent) return;
+        
+        const headers = Array.from(entryContent.querySelectorAll('h2, h3'));
+        if (headers.length === 0) return;
+        
+        // Encontrar el encabezado actualmente visible
+        const scrollInit = window.innerHeight / 4;
+        const scrollEnd = document.documentElement.scrollHeight - document.documentElement.clientHeight - scrollInit;
+        const scrollY = window.scrollY;
+        const scrollPosition = scrollY + (window.innerHeight / 2); // Agregar offset para mejor detección
+
+        // Encontrar el header actualmente visible
+        let currentHeader = null;
+        for (let i = 0; i < headers.length; i++) {
+            if (scrollY <= scrollInit) {
+                // Si estamos en la parte superior de la página, resaltar el primer encabezado
+                currentHeader = headers[0];
+            }else if (scrollY >= scrollEnd) {
+                // Si estamos en la parte inferior de la página, resaltar el último encabezado
+                currentHeader = headers[headers.length - 1];
+            }else if (headers[i].offsetTop <= scrollPosition) {
+                currentHeader = headers[i];
+            } else {
+                break;
+            }
+        }
+        
+        if (!currentHeader) {
+            currentHeader = headers[0]; // Si no se encuentra, usar el primero
+        }
+        
+        // Limpiar highlights anteriores
+        this.clearSidebarHighlights();
+        
+        // Determinar tipo y posición del header
+        const isH2 = currentHeader.tagName === 'H2';
+        const h2Elements = entryContent.querySelectorAll("h2");
+        const h2Index = Array.from(h2Elements).indexOf(isH2 ? currentHeader : this.findParentH2(currentHeader));
+        
+        if (h2Index === -1) return;
+        
+        // Encontrar la sección correspondiente
+        const section = this.data[h2Index];
+        if (!section) return;
+        
+        // Encontrar y resaltar en sidebar
+        const sidebarSection = document.querySelector(`[data-section-id="${section.id}"]`);
+        if (sidebarSection) {
+            // Expandir la sección si no está expandida
+            if (!section.expanded) {
+                section.expanded = true;
+                sidebarSection.classList.add('expanded');
+            }
+            
+            // Resaltar la sección o el item
+            if (isH2) {
+                // Resaltar la sección
+                sidebarSection.querySelector('.section-header').classList.add('active');
+            } else {
+                // Es un h3, buscar el item correspondiente
+                const h3Elements = this.getH3ElementsInSection(currentHeader);
+                const h3Index = h3Elements.indexOf(currentHeader);
+                
+                if (h3Index !== -1 && section.items[h3Index]) {
+                    const itemId = section.items[h3Index].id;
+                    const itemElement = sidebarSection.querySelector(`[data-item-id="${itemId}"]`);
+                    if (itemElement) {
+                        itemElement.classList.add('active');
+                    }
+                }
+            }
+            
+            // Hacer scroll en la barra lateral
+            const sidebarContent = document.getElementById('sidebarContent');
+            if (sidebarContent) {
+                const elementToScroll = isH2 ? 
+                    sidebarSection : 
+                    sidebarSection.querySelector('.active') || sidebarSection;
+                
+                sidebarContent.scrollTo({
+                    top: elementToScroll.offsetTop - sidebarContent.clientHeight / 3,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }
+    
+    findParentH2(h3Element) {
+        let currentElement = h3Element.previousElementSibling;
+        while (currentElement) {
+            if (currentElement.tagName === 'H2') {
+                return currentElement;
+            }
+            currentElement = currentElement.previousElementSibling;
+        }
+        return null;
+    }
+    
+    getH3ElementsInSection(h3Element) {
+        const parentH2 = this.findParentH2(h3Element);
+        if (!parentH2) return [];
+        
+        const h3Elements = [];
+        let currentElement = parentH2.nextElementSibling;
+        
+        while (currentElement && currentElement.tagName !== 'H2') {
+            if (currentElement.tagName === 'H3') {
+                h3Elements.push(currentElement);
+            }
+            currentElement = currentElement.nextElementSibling;
+        }
+        
+        return h3Elements;
     }
 }

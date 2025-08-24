@@ -80,6 +80,11 @@
         max-width: 300px;
         overflow: hidden; /* Para contener el sidebar-content con scrollbar */
     }
+
+    .sidebar-overlay {
+        top: 51.6px; /* Ajustado para que comience debajo del header */
+        height: calc(100vh - 51.6px); /* Ajustado para que no cubra el header */
+    }
     
     .sidebar-component.open {
         display: grid;
@@ -112,7 +117,7 @@
 
 /* Media query for small screens */
 @media (max-width: 768px) {
-    .sidebar-component {
+    .sidebar-component, .sidebar-overlay {
         height: calc(100vh - 38.7px); /* Altura completa menos el header */
         top: 38.7px; /* Considerando el header */
     }
@@ -120,7 +125,7 @@
 
 /* Media query for super small screens */
 @media (max-width: 440px) {
-    .sidebar-component {
+    .sidebar-component, .sidebar-overlay {
         height: calc(100vh - 34.7px); /* Altura completa menos el header */
         top: 34.7px; /* Considerando el header */
     }

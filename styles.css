@@ -10,8 +10,8 @@
     --warning-color: #f59e0b;
     --error-color: #ef4444;
 
-    --bg-color: #18181b;
-    --bg-secondary: #27272a;
+    --bg-color: #040506;
+    --bg-secondary: #1F1F1F;
     --bg-hover: #3f3f46;
     --bg-tertiary: #52525b;
     --text-color: #fafafa;
@@ -925,14 +925,10 @@ body {
 /* Overlay para cerrar al hacer click fuera */
 .sidebar-overlay {
     position: fixed;
-    top: var(
-        --header-height
-    ); /* Ajustado para que comience debajo del header */
+    top: 52px; /* Ajustado para que comience debajo del header */
     left: 0;
     width: 100%;
-    height: calc(
-        100% - var(--header-height)
-    ); /* Ajustado para que no cubra el header */
+    height: calc(100vh - 52px); /* Ajustado para que no cubra el header */
     background: rgba(0, 0, 0, 0.3);
     z-index: 98; /* Por debajo de la sidebar */
     display: none;
@@ -1064,6 +1060,25 @@ details::after {
 /* Loading effect during animation */
 .content-wrapper-details.animating {
     pointer-events: none;
+}
+
+/* Estilos para el ScrollSpy */
+.sidebar-component .section-header.active .section-title,
+.sidebar-component .section-item.active {
+    font-weight: bold;
+}
+
+.sidebar-component .section-header.active,
+.sidebar-component .section-item.active {
+    background-color: rgb(93 92 116 / 42%);
+    transition: background-color 0.3s ease;
+    border-radius: 4px;
+}
+
+.sidebar-component .section-header.active,
+.sidebar-component .section-header.active .section-title,
+.sidebar-component .section-item.active {
+    color: #ffffff;
 }
 
 /* Delete header tittle in small screens */

@@ -81,7 +81,8 @@ console.log("Hello world!");
 
 ![Image description](https://blogger.googleusercontent.com/img/a/AVvXsEg84NFSz1z5LQWYAcnZ0We0MtCWnOY6mRDqRFT0Rz9h5DD-vTIGLNblqF_kXFHuyNljj1fmhvvndKDjmWKJRH4k5yzGzQXy4fTdzJHVRM0Aqz6ufceoZQP5eYcf2cgx2l_GOt2ovMo4G5H439PTse-REsywKwy2ZrS5-Yf_W0UnDxG7h-22rRBjF-ZQ0bw)
 
-```markdown ... image](https://via.placeholder.com/300x200)
+```markdown
+![image](https://via.placeholder.com/300x200)
 ```
 
 ## Tables
