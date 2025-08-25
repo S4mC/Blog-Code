@@ -239,7 +239,7 @@ export function Header({ showSearch = true, onNavigateToEntry }) {
                     <a href="./index.html">
                         <div style="display: flex; align-items: center;">
                             <img
-                                src="./public/Icon.png"
+                                src="./public/Icon.webp"
                                 style="width: 34px; height: 30px; margin-right: 8px;"
                             /><span id="header-title">Blog Code</span>
                         </div>
