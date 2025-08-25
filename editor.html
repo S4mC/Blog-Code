@@ -226,8 +226,8 @@ https://example.com
 
                             // Añadir el manejador para teclas
                             editorRef.current.addAction({
-                                id: 'extend-numbered-list',
-                                label: 'Extend Numbered List',
+                                id: 'extend-list',
+                                label: 'Extend List',
                                 keybindings: [monaco.KeyCode.Enter],
                                 precondition: null,
                                 keybindingContext: null,
@@ -244,13 +244,26 @@ https://example.com
                                     const model = editor.getModel();
                                     const lineContent = model.getLineContent(position.lineNumber);
                                     
+                                    // Verificar si se presionó Shift+Enter
+                                    const shiftKey = ed._standaloneKeybindingService._currentChord?.[0]?.shiftKey;
+                                    
                                     // Expresión regular para detectar líneas numeradas (ej: "1. ", "12. ")
                                     const numberedListRegex = /^(\d+)\.(\s+)(.*)$/;
-                                    const match = lineContent.match(numberedListRegex);
+                                    // Expresión regular para detectar listas con viñetas (ej: "- ")
+                                    const bulletListRegex = /^(-|\*)(\s+)(.*)$/;
                                     
-                                    if (match) {
+                                    const numberedMatch = lineContent.match(numberedListRegex);
+                                    const bulletMatch = lineContent.match(bulletListRegex);
+                                    
+                                    // Si se está presionando Shift, simplemente insertar un salto de línea sin continuar la lista
+                                    if (shiftKey) {
+                                        editor.trigger('keyboard', 'type', { text: '\n' });
+                                        return true;
+                                    }
+                                    
+                                    if (numberedMatch) {
                                         // Si la línea actual está vacía después del número (ej: "1. "), terminar la lista
-                                        if (match[3].trim() === '') {
+                                        if (numberedMatch[3].trim() === '') {
                                             // Eliminar la línea actual y añadir una línea en blanco
                                             const range = {
                                                 startLineNumber: position.lineNumber,
@@ -265,9 +278,9 @@ https://example.com
                                             return true; // Prevenir el comportamiento por defecto
                                         }
                                         
-                                        const currentNumber = parseInt(match[1], 10);
+                                        const currentNumber = parseInt(numberedMatch[1], 10);
                                         const nextNumber = currentNumber + 1;
-                                        const spacing = match[2]; // Conservar el mismo espaciado
+                                        const spacing = numberedMatch[2]; // Conservar el mismo espaciado
                                         
                                         // Insertar una nueva línea con el siguiente número
                                         const text = '\n' + nextNumber + '.' + spacing;
@@ -290,7 +303,48 @@ https://example.com
                                         return true; // Completado
                                     }
                                     
-                                    // Si no es una lista numerada, usar el comportamiento predeterminado de Enter
+                                    if (bulletMatch) {
+                                        // Si la línea actual está vacía después de la viñeta (ej: "- "), terminar la lista
+                                        if (bulletMatch[3].trim() === '') {
+                                            // Eliminar la línea actual y añadir una línea en blanco
+                                            const range = {
+                                                startLineNumber: position.lineNumber,
+                                                startColumn: 1,
+                                                endLineNumber: position.lineNumber,
+                                                endColumn: lineContent.length + 1
+                                            };
+                                            editor.executeEdits('', [{
+                                                range: range,
+                                                text: ''
+                                            }]);
+                                            return true; // Prevenir el comportamiento por defecto
+                                        }
+                                        
+                                        const bulletChar = bulletMatch[1]; // "-" o "*"
+                                        const spacing = bulletMatch[2];    // Conservar el mismo espaciado
+                                        
+                                        // Insertar una nueva línea con la misma viñeta
+                                        const text = '\n' + bulletChar + spacing;
+                                        editor.executeEdits('', [{
+                                            range: {
+                                                startLineNumber: position.lineNumber,
+                                                startColumn: model.getLineMaxColumn(position.lineNumber),
+                                                endLineNumber: position.lineNumber,
+                                                endColumn: model.getLineMaxColumn(position.lineNumber)
+                                            },
+                                            text: text
+                                        }]);
+                                        
+                                        // Mover el cursor a la nueva línea después de la viñeta
+                                        editor.setPosition({
+                                            lineNumber: position.lineNumber + 1,
+                                            column: (bulletChar).length + spacing.length + 1
+                                        });
+                                        
+                                        return true; // Completado
+                                    }
+                                    
+                                    // Si no es ningún tipo de lista, usar el comportamiento predeterminado de Enter
                                     editor.trigger('keyboard', 'type', { text: '\n' });
                                     return true;
                                 }
@@ -1069,7 +1123,7 @@ https://example.com
                                             >
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("`", "`");
+                                                        insertText("language`", "`");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
