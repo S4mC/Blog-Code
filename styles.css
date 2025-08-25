@@ -338,7 +338,6 @@ body {
 }
 
 .entry-content li {
-    margin-bottom: var(--spacing-sm);
     color: var(--text-secondary);
 }
 
@@ -358,6 +357,11 @@ body {
     border-radius: 4px;
     font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace;
     font-size: 0.875rem;
+}
+
+.entry-content code:not([class]) {
+    background-color: var(--bg-hover);
+    color: #9CDCFE;
 }
 
 .entry-content pre {
@@ -393,6 +397,9 @@ body {
     width: 100%;
     border-collapse: collapse;
     margin-bottom: var(--spacing-md);
+    overflow: auto;
+    display: block;
+    scrollbar-width: thin;
 }
 
 .entry-content th,

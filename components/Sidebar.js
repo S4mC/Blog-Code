@@ -52,55 +52,21 @@ function findDOMElement(result, data) {
 
     const section = data.find(s => s.id === result.sectionId);
     if (!section) return null;
-
-    const sectionIndex = data.indexOf(section);
     
     if (result.type === 'section') {
-        // Para secciones (##), buscar el h2 correspondiente
-        const h2Elements = entryContent.querySelectorAll("h2");
-        return h2Elements[sectionIndex] || null;
+        // Para secciones (##), buscar directamente por ID
+        return document.getElementById(result.sectionId);
     } else {
-        // Para items (###), encontrar el h3 correcto dentro de la sección
+        // Para items (###), encontrar por ID específico
         const item = section.items.find(i => i.id === result.itemId);
         if (!item) return null;
-
+        
+        const sectionIndex = parseInt(result.sectionId.split('-')[1]);
         const itemIndex = section.items.indexOf(item);
         
-        // Obtener el h2 de la sección
-        const h2Elements = entryContent.querySelectorAll("h2");
-        const sectionH2 = h2Elements[sectionIndex];
-        
-        if (!sectionH2) return null;
-
-        // Buscar h3 desde el h2 hacia adelante
-        let currentElement = sectionH2.nextElementSibling;
-        let h3Count = 0;
-
-        while (currentElement) {
-            if (currentElement.tagName === 'H2') {
-                // Si encontramos otro h2, hemos salido de la sección
-                break;
-            }
-            
-            if (currentElement.tagName === 'H3') {
-                if (h3Count === itemIndex) {
-                    return currentElement;
-                }
-                h3Count++;
-            } else {
-                let posibleh3s = currentElement.querySelectorAll('h3');
-                for (let h3 of posibleh3s){
-                    if (h3Count === itemIndex) {
-                        return h3;
-                    }
-                    h3Count++;
-                }
-            }
-            
-            currentElement = currentElement.nextElementSibling;
-        }
-
-        return null;
+        // El ID del elemento h3 sigue el formato section-X-item-Y
+        const itemId = `section-${sectionIndex}-item-${itemIndex}`;
+        return document.getElementById(itemId);
     }
 }
 
@@ -435,8 +401,6 @@ class SidebarClass {
             return;
         }
 
-        console.log(sections.items);
-
         const html = sections.map(section => `
             <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}">
                 <div class="section-header">
@@ -631,13 +595,13 @@ class SidebarClass {
             }else if (scrollY >= scrollEnd) {
                 // Si estamos en la parte inferior de la página, resaltar el último encabezado
                 currentHeader = headers[headers.length - 1];
-            }else if (headers[i].offsetTop <= scrollPosition) {
+            }else if (headers[i]?.getBoundingClientRect().top + window.scrollY <= scrollPosition) {
                 currentHeader = headers[i];
             } else {
                 break;
             }
         }
-        
+
         if (!currentHeader) {
             currentHeader = headers[0]; // Si no se encuentra, usar el primero
         }
@@ -647,14 +611,35 @@ class SidebarClass {
         
         // Determinar tipo y posición del header
         const isH2 = currentHeader.tagName === 'H2';
-        const h2Elements = entryContent.querySelectorAll("h2");
-        const h2Index = Array.from(h2Elements).indexOf(isH2 ? currentHeader : this.findParentH2(currentHeader));
         
-        if (h2Index === -1) return;
+        // Obtener ID del elemento actual
+        const headerId = currentHeader.id;
         
-        // Encontrar la sección correspondiente
-        const section = this.data[h2Index];
-        if (!section) return;
+        // Determinar la sección correspondiente
+        let section;
+        let sectionIndex;
+        
+        if (isH2) {
+            // Si es un H2, buscar directamente por su ID
+            section = this.data.find(s => s.id === headerId);
+            sectionIndex = this.data.indexOf(section);
+        } else {
+            // Si es un H3, extraer la sección del ID (section-X-item-Y)
+            const idParts = headerId.split('-');
+            if (idParts.length >= 2) {
+                sectionIndex = parseInt(idParts[1]);
+                section = this.data[sectionIndex];
+            }
+        }
+        
+        // Si no se pudo determinar la sección por ID, intentar el método anterior
+        if (!section) {
+            const h2Elements = entryContent.querySelectorAll("h2");
+            const h2Index = Array.from(h2Elements).indexOf(isH2 ? currentHeader : this.findParentH2(currentHeader));
+            if (h2Index === -1) return;
+            section = this.data[h2Index];
+            if (!section) return;
+        }
         
         // Encontrar y resaltar en sidebar
         const sidebarSection = document.querySelector(`[data-section-id="${section.id}"]`);
@@ -670,15 +655,28 @@ class SidebarClass {
                 // Resaltar la sección
                 sidebarSection.querySelector('.section-header').classList.add('active');
             } else {
-                // Es un h3, buscar el item correspondiente
-                const h3Elements = this.getH3ElementsInSection(currentHeader);
-                const h3Index = h3Elements.indexOf(currentHeader);
-                
-                if (h3Index !== -1 && section.items[h3Index]) {
-                    const itemId = section.items[h3Index].id;
-                    const itemElement = sidebarSection.querySelector(`[data-item-id="${itemId}"]`);
-                    if (itemElement) {
-                        itemElement.classList.add('active');
+                // Es un h3, intentar extraer el índice del item del ID
+                const idParts = headerId.split('-');
+                if (idParts.length >= 4 && idParts[2] === 'item') {
+                    const itemIndex = parseInt(idParts[3]);
+                    if (section.items[itemIndex]) {
+                        const itemId = section.items[itemIndex].id;
+                        const itemElement = sidebarSection.querySelector(`[data-item-id="${itemId}"]`);
+                        if (itemElement) {
+                            itemElement.classList.add('active');
+                        }
+                    }
+                } else {
+                    // Método anterior como fallback
+                    const h3Elements = this.getH3ElementsInSection(currentHeader);
+                    const h3Index = h3Elements.indexOf(currentHeader);
+                    
+                    if (h3Index !== -1 && section.items[h3Index]) {
+                        const itemId = section.items[h3Index].id;
+                        const itemElement = sidebarSection.querySelector(`[data-item-id="${itemId}"]`);
+                        if (itemElement) {
+                            itemElement.classList.add('active');
+                        }
                     }
                 }
             }
@@ -699,6 +697,18 @@ class SidebarClass {
     }
     
     findParentH2(h3Element) {
+        // Intentar determinar la sección a partir del ID del h3
+        if (h3Element.id) {
+            const idParts = h3Element.id.split('-');
+            if (idParts.length >= 2) {
+                const sectionIndex = idParts[1];
+                const sectionId = `section-${sectionIndex}`;
+                const h2Element = document.getElementById(sectionId);
+                if (h2Element) return h2Element;
+            }
+        }
+        
+        // Método anterior como fallback
         let currentElement = h3Element.previousElementSibling;
         while (currentElement) {
             if (currentElement.tagName === 'H2') {
@@ -713,16 +723,20 @@ class SidebarClass {
         const parentH2 = this.findParentH2(h3Element);
         if (!parentH2) return [];
         
-        const h3Elements = [];
-        let currentElement = parentH2.nextElementSibling;
+        const sectionId = parentH2.id;
+        const sectionMatch = sectionId.match(/section-(\d+)/);
         
-        while (currentElement && currentElement.tagName !== 'H2') {
-            if (currentElement.tagName === 'H3') {
-                h3Elements.push(currentElement);
-            }
-            currentElement = currentElement.nextElementSibling;
-        }
+        if (!sectionMatch) return [];
         
-        return h3Elements;
+        const sectionIndex = parseInt(sectionMatch[1]);
+        const entryContent = document.getElementsByClassName("entry-content")[0];
+        if (!entryContent) return [];
+        
+        // Buscar todos los h3 con IDs que coincidan con el patrón section-{sectionIndex}-item-*
+        return Array.from(entryContent.querySelectorAll('h3'))
+            .filter(h3 => {
+                const idMatch = h3.id.match(new RegExp(`section-${sectionIndex}-item-\\d+`));
+                return idMatch !== null;
+            });
     }
 }

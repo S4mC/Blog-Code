@@ -121,7 +121,7 @@ function processMarkdownWithIframes(markdownContent) {
 }
 
 export function renderMarkdown(markdownContent) {
-    // Configurar el renderer personalizado para los enlaces
+    // Configurar el renderer personalizado para los enlaces y encabezados
     const renderer = new marked.Renderer();
     renderer.link = (element) => {
         const isNewWindow = element.text.endsWith(" new");
@@ -135,12 +135,37 @@ export function renderMarkdown(markdownContent) {
             element.title ? ` title="${element.title}"` : ""
         }>${cleanText}</a>`;
     };
+    
+    // Personalizar el renderer para los encabezados H2 y H3
+    let sectionCount = 0;
+    let itemCount = 0;
+    
+    renderer.heading = function(element) {
+        let id = '';
+
+        if (element.depth === 2) {
+            id = `section-${sectionCount}`;
+            sectionCount++;
+            itemCount = 0;
+        } else if (element.depth === 3) {
+            const currentSection = Math.max(0, sectionCount - 1);
+            id = `section-${currentSection}-item-${itemCount}`;
+            itemCount++;
+        } else {
+            // Para otros niveles de encabezado, usar el texto como base para el ID
+            id = element.text.toLowerCase()
+                .replace(/[^\w]+/g, '-')
+                .replace(/(^-|-$)/g, '');
+        }
+
+        return `<h${element.depth} id="${id}">${element.text}</h${element.depth}>`;
+    };
 
     marked.setOptions({
         breaks: true,
         gfm: true,
         renderer: renderer,
-        headerIds: false,
+        headerIds: true, // Activamos los IDs en los encabezados
         mangle: false,
     });
 
@@ -307,92 +332,95 @@ export function renderMarkdown(markdownContent) {
             </button>${code.replace("<svg ",`<svg id='page${numberSVGcontainer}'`)}</div>
             `;
 
-            finalJS += `               
+            finalJS += `
+                if (document.getElementById("page${numberSVGcontainer}")){
                 window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
-                
-                let viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
-                let rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
-
-                function proper_height${numberSVGcontainer}(){
-                    rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
-                    if (rectElement${numberSVGcontainer}) {
-                        // Get the dimensions of the rect
-                        const rectWidth = rectElement${numberSVGcontainer}.getAttribute('width') || rectElement${numberSVGcontainer}.width.baseVal.value;
-                        const rectHeight = rectElement${numberSVGcontainer}.getAttribute('height') || rectElement${numberSVGcontainer}.height.baseVal.value;
-                        
-                        // Calculate the ratio (height/width)
-                        const aspectRatio = rectHeight / rectWidth;
-                        
-                        // Get the current width of the SVG-viewer
-                        const viewerWidth = viewer${numberSVGcontainer}.offsetWidth;
-                        
-                        if (viewerWidth > 0) {
-                            // Calculate the proportional height
-                            const proportionalHeight = viewerWidth * aspectRatio;
-                            
-                            // Calculate 80vh in pixels
-                            const maxHeight = window.innerHeight * 0.8;
-                            
-                            // Apply proportional height with limit of 80vh
-                            const finalHeight = Math.min(proportionalHeight, maxHeight);
-                            viewer${numberSVGcontainer}.style.height = finalHeight + 'px';
-                        }
-                    }
-                }
-                
-                let resizeTimeout${numberSVGcontainer};
-                window.addEventListener("resize", function () {
-                    clearTimeout(resizeTimeout${numberSVGcontainer}); // Cancela cualquier timeout anterior
-                    resizeTimeout${numberSVGcontainer} = setTimeout(function () {
-                        viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
-                        if (window.zoomContainer${numberSVGcontainer}) {
-                            window.zoomContainer${numberSVGcontainer}.destroy();
-                        }
-                        proper_height${numberSVGcontainer}();
-                        viewer${numberSVGcontainer}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
-                            viewport.replaceWith(...viewport.childNodes);
-                        });
-                        window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
-                        center_svg${numberSVGcontainer}();
-                    }, 280); // 280ms después de que termine
-                });
-                
-                proper_height${numberSVGcontainer}();
-
-                // Button listeners
-                document.getElementById('zoom-in${numberSVGcontainer}').addEventListener('click', function(ev){
-                    ev.preventDefault()
-                    window.zoomContainer${numberSVGcontainer}.zoomIn()
-                });
-
-                document.getElementById('zoom-out${numberSVGcontainer}').addEventListener('click', function(ev){
-                    ev.preventDefault()
-                    window.zoomContainer${numberSVGcontainer}.zoomOut()
-                });
-                
-                function center_svg${numberSVGcontainer}(){
-                    const zoomContainer = window.zoomContainer${numberSVGcontainer};
-                    rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
                     
-                    if (zoomContainer && rectElement${numberSVGcontainer}) {
-                        zoomContainer.zoom(1);
-                        zoomContainer.pan({
-                            x: (viewer${numberSVGcontainer}.offsetWidth - (zoomContainer.getSizes().viewBox.width * zoomContainer.getSizes().realZoom))/2, 
-                            y: (viewer${numberSVGcontainer}.offsetHeight - (zoomContainer.getSizes().viewBox.height * zoomContainer.getSizes().realZoom))/2 
-                        });
-                    }else{
-                        window.zoomContainer${numberSVGcontainer}.resetZoom();
-                        window.zoomContainer${numberSVGcontainer}.fit();
-                        window.zoomContainer${numberSVGcontainer}.center();
-                    }
-                }
+                    let viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
+                    let rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
 
-                document.getElementById('reset_zoom${numberSVGcontainer}').addEventListener('click', function(ev){
-                    ev.preventDefault()
+                    function proper_height${numberSVGcontainer}(){
+                        rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
+                        if (rectElement${numberSVGcontainer}) {
+                            // Get the dimensions of the rect
+                            const rectWidth = rectElement${numberSVGcontainer}.getAttribute('width') || rectElement${numberSVGcontainer}.width.baseVal.value;
+                            const rectHeight = rectElement${numberSVGcontainer}.getAttribute('height') || rectElement${numberSVGcontainer}.height.baseVal.value;
+                            
+                            // Calculate the ratio (height/width)
+                            const aspectRatio = rectHeight / rectWidth;
+                            
+                            // Get the current width of the SVG-viewer
+                            const viewerWidth = viewer${numberSVGcontainer}.offsetWidth;
+                            
+                            if (viewerWidth > 0) {
+                                // Calculate the proportional height
+                                const proportionalHeight = viewerWidth * aspectRatio;
+                                
+                                // Calculate 80vh in pixels
+                                const maxHeight = window.innerHeight * 0.8;
+                                
+                                // Apply proportional height with limit of 80vh
+                                const finalHeight = Math.min(proportionalHeight, maxHeight);
+                                viewer${numberSVGcontainer}.style.height = finalHeight + 'px';
+                            }
+                        }
+                    }
+                    
+                    let resizeTimeout${numberSVGcontainer};
+                    window.addEventListener("resize", function () {
+                        clearTimeout(resizeTimeout${numberSVGcontainer}); // Cancela cualquier timeout anterior
+                        resizeTimeout${numberSVGcontainer} = setTimeout(function () {
+                            viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
+                            if (window.zoomContainer${numberSVGcontainer}) {
+                                window.zoomContainer${numberSVGcontainer}.destroy();
+                            }
+                            proper_height${numberSVGcontainer}();
+                            viewer${numberSVGcontainer}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
+                                viewport.replaceWith(...viewport.childNodes);
+                            });
+                            window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
+                            center_svg${numberSVGcontainer}();
+                        }, 280); // 280ms después de que termine
+                    });
+                    
+                    proper_height${numberSVGcontainer}();
+
+                    // Button listeners
+                    document.getElementById('zoom-in${numberSVGcontainer}').addEventListener('click', function(ev){
+                        ev.preventDefault()
+                        window.zoomContainer${numberSVGcontainer}.zoomIn()
+                    });
+
+                    document.getElementById('zoom-out${numberSVGcontainer}').addEventListener('click', function(ev){
+                        ev.preventDefault()
+                        window.zoomContainer${numberSVGcontainer}.zoomOut()
+                    });
+                    
+                    function center_svg${numberSVGcontainer}(){
+                        const zoomContainer = window.zoomContainer${numberSVGcontainer};
+                        rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
+                        
+                        if (zoomContainer && rectElement${numberSVGcontainer}) {
+                            zoomContainer.zoom(1);
+                            zoomContainer.pan({
+                                x: (viewer${numberSVGcontainer}.offsetWidth - (zoomContainer.getSizes().viewBox.width * zoomContainer.getSizes().realZoom))/2, 
+                                y: (viewer${numberSVGcontainer}.offsetHeight - (zoomContainer.getSizes().viewBox.height * zoomContainer.getSizes().realZoom))/2 
+                            });
+                        }else{
+                            window.zoomContainer${numberSVGcontainer}.resetZoom();
+                            window.zoomContainer${numberSVGcontainer}.fit();
+                            window.zoomContainer${numberSVGcontainer}.center();
+                        }
+                    }
+
+                    document.getElementById('reset_zoom${numberSVGcontainer}').addEventListener('click', function(ev){
+                        ev.preventDefault()
+                        center_svg${numberSVGcontainer}();
+                    });
+                    
                     center_svg${numberSVGcontainer}();
-                });
-                
-                center_svg${numberSVGcontainer}();`;
+                }`;
+            
             numberSVGcontainer+=1;
         }else{
             // Escapar el contenido para mostrarlo como texto

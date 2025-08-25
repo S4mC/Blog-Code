@@ -271,3 +271,74 @@ body {
     min-height: 500px;
 }
 
+/* Nuevos estilos para el selector de tabla tipo Excel */
+.table-grid-selector {
+    padding: 8px;
+    max-width: 320px;
+}
+
+.table-grid-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 0 4px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.table-grid-container {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    margin-bottom: 12px;
+}
+
+.table-grid-cell {
+    width: 22px;
+    height: 22px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.table-grid-cell.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.table-grid-container:hover .table-grid-cell.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.table-grid-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.table-grid-dimensions {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.table-grid-actions button {
+    padding: 4px 12px;
+    font-size: 0.85rem;
+}
+
+.table-grid-custom {
+    text-align: center;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+}
+
+.table-grid-custom button {
+    width: 100%;
+    padding: 6px;
+    font-size: 0.85rem;
+}
+
