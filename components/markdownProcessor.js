@@ -171,7 +171,10 @@ export function renderMarkdown(markdownContent) {
 
     // Primero protegemos los bloques de código
     const codeBlocks = new Map();
+    // Mapa para guardar los códigos en línea con prefijos de lenguaje
+    const inlineCodeBlocks = new Map();
     let blockCount = 0;
+    let inlineCodeCount = 0;
     let inCodeBlock = false;
     let currentLanguage = "";
     let currentCode = [];
@@ -226,6 +229,19 @@ export function renderMarkdown(markdownContent) {
         return `\n\n${brs}\n\n`;
     });
 
+    // Proteger código en línea con prefijo de lenguaje
+    processedMarkdown = processedMarkdown.replace(/\b([a-z0-9_-]+)`((?:[^`]|\\`)+)`/g, (match, lang, code) => {
+        // Verificar que el prefijo sea un identificador de lenguaje válido
+        if (lang.match(/^[a-z0-9_-]+$/)) {
+            const placeholder = `INLINE_CODE_${inlineCodeCount++}`;
+            // Reemplazamos cualquier \` por ` en el código
+            code = code.replace(/\\`/g, '`');
+            inlineCodeBlocks.set(placeholder, { language: lang, code: code });
+            return placeholder;
+        }
+        return match; // Devolver el match original si no parece un prefijo de lenguaje
+    });
+    
     // Procesar iframes y convertir a HTML
     processedMarkdown = processMarkdownWithIframes(processedMarkdown);
     const rawHtml = marked.parse(processedMarkdown);
@@ -299,10 +315,30 @@ export function renderMarkdown(markdownContent) {
         }
     });
 
+    // Convertir el documento a HTML
     let finalHtml = doc.body.innerHTML;
     let finalJS = "";
 
     let numberSVGcontainer = 1;
+
+    // Restaurar códigos en línea con prefijos de lenguaje
+    for (const [placeholder, { language, code }] of inlineCodeBlocks) {
+        // Escapamos el código HTML para asegurarnos de que se muestra correctamente
+        const escapedCode = code
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+        // Usamos una expresión regular para asegurarnos de reemplazar solo placeholders completos
+        // y no partes de texto que pudieran coincidir accidentalmente
+        const regex = new RegExp(placeholder, "g");
+        finalHtml = finalHtml.replace(
+            regex,
+            `<code class="language-${language}">${escapedCode}</code>`
+        );
+    }
 
     // Restaurar los bloques de código
     for (const [placeholder, { language, code }] of codeBlocks) {
