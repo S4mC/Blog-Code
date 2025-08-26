@@ -51,6 +51,9 @@
             
             // Configure the languages we want to load
             window.MonacoEnvironment = {
+                getWorkerUrl: function (moduleId, label) {
+                    return './cdn/monaco/vs/base/worker/workerMain.js';
+                },
                 getLanguages: function() {
                     return ['markdown'];
                 }

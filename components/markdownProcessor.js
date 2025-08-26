@@ -243,7 +243,10 @@ export function renderMarkdown(markdownContent) {
 
     for (let line of lines) {
         if (!inCodeBlock && (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### "))){
-            sidebarContent.push(line);
+            // Put the headers contents in the sidebar with proper formatting
+            sidebarContent.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
+                return ` ${`<code class="language-${lang}">${code}</code>`}`;
+            }));
         }
 
         if (line.startsWith("```")) {
@@ -294,7 +297,6 @@ export function renderMarkdown(markdownContent) {
         // Reemplazamos cualquier \` por ` en el código
         code = code.replace(/\\`/g, '`');
         inlineCodeBlocks.set(placeholder, { language: lang, code: code });
-        console.log(match);
         // IMPORTANTE: Mantener el espacio inicial
         return ` ${placeholder}`;
     });

@@ -47,7 +47,6 @@ export function Sidebar() {
 
 // Función para encontrar el elemento correcto en el DOM
 function findDOMElement(result, data) {
-    console.log("findDOMElement llamado con:", result);
     
     const entryContent = document.getElementsByClassName("entry-content")[0];
     if (!entryContent) {
@@ -64,7 +63,6 @@ function findDOMElement(result, data) {
     if (result.type === 'section') {
         // Para secciones (##), buscar directamente por ID
         const element = document.getElementById(result.sectionId);
-        console.log("Buscando sección por ID:", result.sectionId, "Encontrado:", element);
         return element;
     } else if (result.type === 'item') {
         // Para items (###), encontrar por ID específico
@@ -80,7 +78,6 @@ function findDOMElement(result, data) {
         // El ID del elemento h3 sigue el formato section-X-item-Y
         const itemId = `section-${sectionIndex}-item-${itemIndex}`;
         const element = document.getElementById(itemId);
-        console.log("Buscando item por ID:", itemId, "Encontrado:", element);
         return element;
     } else if (result.type === 'subitem') {
         // Para subitems (H4-H6)
@@ -99,21 +96,13 @@ function findDOMElement(result, data) {
         // Usar el domId almacenado si está disponible
         const subitemId = subitem.domId || 
             `section-${parseInt(result.sectionId.split('-')[1])}-item-${section.items.indexOf(item)}-subitem-${item.subitems.indexOf(subitem)}`;
-        
-        // Imprimir todos los IDs disponibles en el DOM para ayudar a depurar
-        console.log("IDs de encabezados en el documento:", 
-            Array.from(document.querySelectorAll('h1, h2, h3, h4, h5, h6')).map(el => el.id));
-        
         let element = document.getElementById(subitemId);
-        console.log("Buscando subitem por ID:", subitemId, "Encontrado:", element);
         
         // Si no lo encontramos con el ID esperado, intentemos buscar por el nivel y título
         if (!element && subitem.level) {
-            console.log("Intentando buscar el subitem por nivel y contenido");
             
             // Buscar todos los encabezados del nivel correspondiente
             const possibleElements = Array.from(document.querySelectorAll(`h${subitem.level}`));
-            console.log(`Encabezados h${subitem.level} encontrados:`, possibleElements.map(el => ({id: el.id, text: el.textContent})));
             
             // Filtrar por contenido similar
             const titleNormalized = subitem.title.toLowerCase().trim();
@@ -121,7 +110,6 @@ function findDOMElement(result, data) {
                 el.textContent.toLowerCase().trim() === titleNormalized);
             
             if (match) {
-                console.log("Se encontró una coincidencia por contenido:", match.id);
                 element = match;
             }
         }
@@ -172,6 +160,7 @@ class SidebarClass {
         let currentItem = null;
 
         data.forEach(item => {
+            console.log(item);
             if (item.startsWith('## ')) {
                 // Si hay una sección activa, la guardamos
                 if (currentSection) sections.push(currentSection);
@@ -952,7 +941,6 @@ class SidebarClass {
     }
     
     highlightCurrentSection() {
-        console.log("Highlighting current section...");
         if (!this.scrollSpyActive || !this.data || this.data.length === 0) return;
         
         const entryContent = document.getElementsByClassName("entry-content")[0];
