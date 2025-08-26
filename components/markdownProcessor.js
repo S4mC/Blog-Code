@@ -39,7 +39,47 @@ function processMarkdownWithIframes(markdownContent) {
             // Dentro de un bloque de código, guardar la línea sin procesar
             currentCodeBlock.lines.push(line);
         } else {
-            if (line.trim().startsWith(":::details")) {
+            if (line.trim().startsWith(":::note")) {
+                // Inicio de note
+                processedLines.push('<div class="note-callout">');
+                processedLines.push('<div class="callout-header">');
+                processedLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>');
+                processedLines.push('<span>Note</span>');
+                processedLines.push('</div>');
+                processedLines.push('<div class="callout-content">');
+                processedLines.push('');
+
+                // Procesar el contenido hasta encontrar el final del bloque
+                i++;
+                while (i < lines.length && lines[i].trim() !== ":::") {
+                    processedLines.push(lines[i]);
+                    i++;
+                }
+                
+                processedLines.push('</div>');
+                processedLines.push('</div>');
+                
+            } else if (line.trim().startsWith(":::warning")) {
+                // Inicio de warning
+                processedLines.push('<div class="warning-callout">');
+                processedLines.push('<div class="callout-header">');
+                processedLines.push('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>');
+                processedLines.push('<span>Warning</span>');
+                processedLines.push('</div>');
+                processedLines.push('<div class="callout-content">');
+                processedLines.push('');
+
+                // Procesar el contenido hasta encontrar el final del bloque
+                i++;
+                while (i < lines.length && lines[i].trim() !== ":::") {
+                    processedLines.push(lines[i]);
+                    i++;
+                }
+                
+                processedLines.push('</div>');
+                processedLines.push('</div>');
+                
+            } else if (line.trim().startsWith(":::details")) {
                 // Inicio de details
                 let nameSummary = line.trim().replace(":::details", "").trim();
                 processedLines.push(
@@ -139,6 +179,7 @@ export function renderMarkdown(markdownContent) {
     // Personalizar el renderer para los encabezados H2 y H3
     let sectionCount = 0;
     let itemCount = 0;
+    let subitemCounts = {}; // Objeto para manejar contadores de subitems por cada item
     
     renderer.heading = function(element) {
         let id = '';
@@ -147,12 +188,30 @@ export function renderMarkdown(markdownContent) {
             id = `section-${sectionCount}`;
             sectionCount++;
             itemCount = 0;
+            // Reiniciar contadores de subitems para la nueva sección
+            subitemCounts = {};
         } else if (element.depth === 3) {
             const currentSection = Math.max(0, sectionCount - 1);
             id = `section-${currentSection}-item-${itemCount}`;
             itemCount++;
+            // Inicializar contador de subitems para este item
+            subitemCounts[`${currentSection}-${itemCount-1}`] = 0;
+        } else if (element.depth >= 4 && element.depth <= 6) {
+            // Para H4-H6, mantener el formato consistente
+            const currentSection = Math.max(0, sectionCount - 1);
+            const currentItem = Math.max(0, itemCount - 1);
+            const key = `${currentSection}-${currentItem}`;
+            
+            // Si el contador para este item no existe, inicializarlo
+            if (subitemCounts[key] === undefined) {
+                subitemCounts[key] = 0;
+            }
+            
+            // Generar ID con el formato section-X-item-Y-subitem-Z
+            id = `section-${currentSection}-item-${currentItem}-subitem-${subitemCounts[key]}`;
+            subitemCounts[key]++;
         } else {
-            // Para otros niveles de encabezado, usar el texto como base para el ID
+            // Para otros tipos de elementos (aunque no deberían existir)
             id = element.text.toLowerCase()
                 .replace(/[^\w]+/g, '-')
                 .replace(/(^-|-$)/g, '');
@@ -183,7 +242,7 @@ export function renderMarkdown(markdownContent) {
     let sidebarContent = []
 
     for (let line of lines) {
-        if (!inCodeBlock && (line.startsWith("## ") || line.startsWith("### "))){
+        if (!inCodeBlock && (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### "))){
             sidebarContent.push(line);
         }
 
@@ -230,16 +289,14 @@ export function renderMarkdown(markdownContent) {
     });
 
     // Proteger código en línea con prefijo de lenguaje
-    processedMarkdown = processedMarkdown.replace(/\b([a-z0-9_-]+)`((?:[^`]|\\`)+)`/g, (match, lang, code) => {
-        // Verificar que el prefijo sea un identificador de lenguaje válido
-        if (lang.match(/^[a-z0-9_-]+$/)) {
-            const placeholder = `INLINE_CODE_${inlineCodeCount++}`;
-            // Reemplazamos cualquier \` por ` en el código
-            code = code.replace(/\\`/g, '`');
-            inlineCodeBlocks.set(placeholder, { language: lang, code: code });
-            return placeholder;
-        }
-        return match; // Devolver el match original si no parece un prefijo de lenguaje
+    processedMarkdown = processedMarkdown.replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
+        const placeholder = `INLINE_CODE_${inlineCodeCount++}`;
+        // Reemplazamos cualquier \` por ` en el código
+        code = code.replace(/\\`/g, '`');
+        inlineCodeBlocks.set(placeholder, { language: lang, code: code });
+        console.log(match);
+        // IMPORTANTE: Mantener el espacio inicial
+        return ` ${placeholder}`;
     });
     
     // Procesar iframes y convertir a HTML
