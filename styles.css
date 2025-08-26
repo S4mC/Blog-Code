@@ -352,16 +352,15 @@ body {
 }
 
 .entry-content code {
-    background-color: var(--bg-tertiary);
-    padding: 2px 6px;
+    background-color: #1F1F1F;
+    padding: 2px 2px;
     border-radius: 4px;
-    font-family: "SF Mono", Monaco, "Cascadia Code", Consolas, monospace;
-    font-size: 0.875rem;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
 }
 
 .entry-content code:not([class]) {
-    background-color: var(--bg-hover);
     color: #9CDCFE;
+    border: solid #303030 1px;
 }
 
 .entry-content pre {
