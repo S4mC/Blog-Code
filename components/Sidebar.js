@@ -160,7 +160,6 @@ class SidebarClass {
         let currentItem = null;
 
         data.forEach(item => {
-            console.log(item);
             if (item.startsWith('## ')) {
                 // Si hay una sección activa, la guardamos
                 if (currentSection) sections.push(currentSection);

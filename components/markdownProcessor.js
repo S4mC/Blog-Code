@@ -23,7 +23,7 @@ function processMarkdownWithIframes(markdownContent) {
             } else {
                 // Fin de bloque de código
                 inCodeBlock = false;
-                const placeholder = `CODE_BLOCK_${codeBlockId}`;
+                const placeholder = `CODE_BLOCK_${codeBlockId}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
                     language: currentCodeBlock.language,
                     code: currentCodeBlock.lines.join("\n"),
@@ -82,9 +82,18 @@ function processMarkdownWithIframes(markdownContent) {
             } else if (line.trim().startsWith(":::details")) {
                 // Inicio de details
                 let nameSummary = line.trim().replace(":::details", "").trim();
-                processedLines.push(
-                    `REPLACE_SUMMARY_INIT_${nameSummary}_SUMMARY_INIT`
-                );
+                if (nameSummary.startsWith("-open ")){
+                    nameSummary = nameSummary.replace("-open ", "");
+                    processedLines.push(`<details open>
+                            <summary>${nameSummary}</summary>
+                            <div class="content-wrapper-details">
+                                <div class="contentDetails">`);
+                }
+                // Not default open details
+                processedLines.push(`<details>
+                            <summary>${nameSummary}</summary>
+                            <div class="content-wrapper-details">
+                                <div class="contentDetails">`);
                 processedLines.push("");
 
                 i++; // Avanzar a la siguiente línea
@@ -93,9 +102,8 @@ function processMarkdownWithIframes(markdownContent) {
                     i++;
                 }
                 processedLines.push("");
-                processedLines.push(
-                    `REPLACE_SUMMARY_END`
-                );
+                processedLines.push("</div> </div> </details>");
+                processedLines.push("");
             } else if (line.trim().startsWith(":::iframe")) {
                 // Inicio de iframe
                 let attributes = "";
@@ -258,7 +266,7 @@ export function renderMarkdown(markdownContent) {
             } else {
                 // Fin de bloque de código
                 inCodeBlock = false;
-                const placeholder = `CODE_BLOCK_${blockCount++}`;
+                const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
                     language: currentLanguage,
                     code: currentCode.join("\n"),
@@ -293,7 +301,7 @@ export function renderMarkdown(markdownContent) {
 
     // Proteger código en línea con prefijo de lenguaje
     processedMarkdown = processedMarkdown.replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
-        const placeholder = `INLINE_CODE_${inlineCodeCount++}`;
+        const placeholder = `INLINE_CODE_${inlineCodeCount++}_CODE_INLINE`;
         // Reemplazamos cualquier \` por ` en el código
         code = code.replace(/\\`/g, '`');
         inlineCodeBlocks.set(placeholder, { language: lang, code: code });
@@ -537,28 +545,6 @@ export function renderMarkdown(markdownContent) {
         }
         finalHtml = finalHtml.replace(placeholder, codeHtml);
     }
-
-
-    finalHtml = finalHtml.replace(/REPLACE_SUMMARY_INIT_(.*?)_SUMMARY_INIT/g, (match, key) => {
-        if (key.startsWith("-open ")){
-            key = key.replace("-open ", "");
-            return `<details open>
-                    <summary>${key}</summary>
-                    <div class="content-wrapper-details">
-                        <div class="contentDetails">`;
-        }
-        // Not default open details
-        return `<details>
-                    <summary>${key}</summary>
-                    <div class="content-wrapper-details">
-                        <div class="contentDetails">`;
-    });
-
-    finalHtml = finalHtml.replace(/REPLACE_SUMMARY_END/g, `            
-                            </div>
-                        </div>
-                    </details>`
-    );
 
     if (numberSVGcontainer > 1){
         finalJS += `
