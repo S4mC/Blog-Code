@@ -1,3 +1,64 @@
+function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) {
+    let inlineCodeCount = 0;
+    let result = text;
+    
+    // Regex más compatible: encuentra todos los backticks
+    const allBackticks = [];
+    let match;
+    const regex = /`/g;
+    
+    while ((match = regex.exec(text)) !== null) {
+        allBackticks.push(match.index);
+    }
+    
+    // Filtrar solo backticks simples
+    const singleBackticks = allBackticks.filter(pos => {
+        const before = pos > 0 && text[pos - 1] === '`';
+        const after = pos < text.length - 1 && text[pos + 1] === '`';
+        return !before && !after;
+    });
+    
+    // Resto igual...
+    const validBlocks = [];
+    for (let i = 0; i < singleBackticks.length - 1; i += 2) {
+        const start = singleBackticks[i];
+        const end = singleBackticks[i + 1];
+        
+        if (end !== undefined) {
+            const beforeBacktick = text.substring(0, start);
+            const langMatch = beforeBacktick.match(/ ([a-zA-Z0-9]+)$/);
+            
+            if (langMatch) {
+                const lang = langMatch[1];
+                const code = text.substring(start + 1, end);
+                validBlocks.push({
+                    start: start - langMatch[0].length + 1,
+                    end: end + 1,
+                    lang,
+                    code
+                });
+            }
+        }
+    }
+    
+    validBlocks.reverse().forEach(block => {
+        let placeholder = `INLINE_CODE_${inlineCodeCount++}_CODE_INLINE`;
+        if (noPlaceHolder) {
+            placeholder = `<code class="language-${block.lang}">${block.code}</code>`;
+        }else{
+            inlineCodeBlocks.set(placeholder, { 
+                language: block.lang, 
+                code: block.code 
+            });
+        }
+        result = result.substring(0, block.start) + 
+                ` ${placeholder}` + 
+                result.substring(block.end);
+    });
+    
+    return [result, inlineCodeBlocks];
+}
+
 function processMarkdownWithIframes(markdownContent) {
     // Procesamos el contenido línea por línea
     const lines = markdownContent.split("\n");
@@ -39,7 +100,21 @@ function processMarkdownWithIframes(markdownContent) {
             // Dentro de un bloque de código, guardar la línea sin procesar
             currentCodeBlock.lines.push(line);
         } else {
-            if (line.trim().startsWith(":::note")) {
+            // Detectar inicio/fin de bloque flotante
+            if (line.trim().startsWith(":::float-")) {
+                const floatId = line.trim().substring(":::float-".length);
+                processedLines.push('');
+                processedLines.push(`<div class="float-container" id="float-${floatId}">`);
+                processedLines.push('');
+                i++;
+                while (i < lines.length && lines[i].trim() !== ":::") {
+                    processedLines.push(lines[i]);
+                    i++;
+                }
+                processedLines.push('');
+                processedLines.push('<button class="float-close">×</button></div>');
+                processedLines.push('');
+            } else if (line.trim().startsWith(":::note")) {
                 // Inicio de note
                 processedLines.push('<div class="note-callout">');
                 processedLines.push('<div class="callout-header">');
@@ -88,12 +163,13 @@ function processMarkdownWithIframes(markdownContent) {
                             <summary>${nameSummary}</summary>
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);
+                } else {
+                    // Not default open details
+                    processedLines.push(`<details>
+                                <summary>${nameSummary}</summary>
+                                <div class="content-wrapper-details">
+                                    <div class="contentDetails">`);
                 }
-                // Not default open details
-                processedLines.push(`<details>
-                            <summary>${nameSummary}</summary>
-                            <div class="content-wrapper-details">
-                                <div class="contentDetails">`);
                 processedLines.push("");
 
                 i++; // Avanzar a la siguiente línea
@@ -239,9 +315,8 @@ export function renderMarkdown(markdownContent) {
     // Primero protegemos los bloques de código
     const codeBlocks = new Map();
     // Mapa para guardar los códigos en línea con prefijos de lenguaje
-    const inlineCodeBlocks = new Map();
+    let inlineCodeBlocks = new Map();
     let blockCount = 0;
-    let inlineCodeCount = 0;
     let inCodeBlock = false;
     let currentLanguage = "";
     let currentCode = [];
@@ -252,9 +327,8 @@ export function renderMarkdown(markdownContent) {
     for (let line of lines) {
         if (!inCodeBlock && (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### "))){
             // Put the headers contents in the sidebar with proper formatting
-            sidebarContent.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
-                return ` ${`<code class="language-${lang}">${code}</code>`}`;
-            }));
+            let textHeader = processInlineCodeBlocks(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"), inlineCodeBlocks, true)[0];
+            sidebarContent.push(textHeader);
         }
 
         if (line.startsWith("```")) {
@@ -299,33 +373,36 @@ export function renderMarkdown(markdownContent) {
         return `\n\n${brs}\n\n`;
     });
 
+
     // Proteger código en línea con prefijo de lenguaje
-    processedMarkdown = processedMarkdown.replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
-        const placeholder = `INLINE_CODE_${inlineCodeCount++}_CODE_INLINE`;
-        // Reemplazamos cualquier \` por ` en el código
-        code = code.replace(/\\`/g, '`');
-        inlineCodeBlocks.set(placeholder, { language: lang, code: code });
-        // IMPORTANTE: Mantener el espacio inicial
-        return ` ${placeholder}`;
-    });
+    [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(processedMarkdown, inlineCodeBlocks);
+    // processedMarkdown = processedMarkdown.replace(/ ([a-zA-Z0-9]+)`([^`]+)`/g, (match, lang, code) => {
+    //     const placeholder = `INLINE_CODE_${inlineCodeCount++}_CODE_INLINE`;
+    //     // Reemplazamos cualquier \` por ` en el código
+    //     code = code.replace(/\\`/g, '`');
+    //     inlineCodeBlocks.set(placeholder, { language: lang, code: code });
+    //     // IMPORTANTE: Mantener el espacio inicial
+    //     return ` ${placeholder}`;
+    // });
     
     // Procesar iframes y convertir a HTML
-    processedMarkdown = processMarkdownWithIframes(processedMarkdown);
+    const processedWithIframes = processMarkdownWithIframes(processedMarkdown);
+    processedMarkdown = processedWithIframes;
     const rawHtml = marked.parse(processedMarkdown);
-
+    
     // Post-procesar para restaurar texto plano y HTML
     const parser = new DOMParser();
     const doc = parser.parseFromString(rawHtml, "text/html");
-
+    
     const tagsToUnwrap = ["plain", "rawhtml"];
-
+    
     doc.querySelectorAll("p").forEach((p) => {
         const extracted = [];
         const children = [...p.childNodes];
-
+        
         for (let i = 0; i < children.length; i++) {
             const node = children[i];
-
+            
             // Caso: <br> seguido de <plain|rawhtml> -> formar bloque [br, ...childrenOfTag]
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
@@ -345,7 +422,7 @@ export function renderMarkdown(markdownContent) {
                     continue;
                 }
             }
-
+            
             // Caso: directamente <plain|rawhtml> (sin br previo)
             if (
                 node.nodeType === Node.ELEMENT_NODE &&
@@ -356,7 +433,7 @@ export function renderMarkdown(markdownContent) {
                 node.remove();
             }
         }
-
+        
         if (extracted.length) {
             // Construir un fragmento manteniendo el orden original
             const frag = doc.createDocumentFragment();
@@ -381,13 +458,20 @@ export function renderMarkdown(markdownContent) {
             p.after(frag);
         }
     });
-
+    
     // Convertir el documento a HTML
     let finalHtml = doc.body.innerHTML;
     let finalJS = "";
-
+    
     let numberSVGcontainer = 1;
-
+    
+    // Process the float element
+    finalHtml = finalHtml.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g, (match, id) => {
+        return `<span class="float-trigger" data-float-id="${id}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
+        </span>`;
+    });
+    
     // Restaurar códigos en línea con prefijos de lenguaje
     for (const [placeholder, { language, code }] of inlineCodeBlocks) {
         // Escapamos el código HTML para asegurarnos de que se muestra correctamente
@@ -667,6 +751,132 @@ export function renderMarkdown(markdownContent) {
         });
     `
 
+    // Añadir el código JavaScript para manejar los elementos flotantes
+    finalJS += `
+    // Limpiar event listeners anteriores si existen
+    if (window.floatEventListeners) {
+        if (window.floatEventListeners.triggerClick) {
+            window.floatEventListeners.triggerClick.forEach(item => {
+                item.element.removeEventListener('click', item.handler);
+            });
+        }
+        if (window.floatEventListeners.documentClick) {
+            document.removeEventListener('click', window.floatEventListeners.documentClick);
+        }
+        if (window.floatEventListeners.documentKeydown) {
+            document.removeEventListener('keydown', window.floatEventListeners.documentKeydown);
+        }
+    }
+    
+    // Inicializar el objeto para almacenar los event listeners
+    window.floatEventListeners = {
+        triggerClick: [],
+        documentClick: null,
+        documentKeydown: null,
+        activeFloats: new Set()
+    };
+    
+    // Manejar los elementos flotantes
+    document.querySelectorAll('.float-trigger').forEach(trigger => {
+        const clickHandler = function() {
+            const floatId = this.getAttribute('data-float-id');
+            const floatContainer = document.getElementById('float-' + floatId);
+            
+            if (!floatContainer) return;
+            
+            // Si el contenedor ya está visible, lo cerramos
+            if (floatContainer.classList.contains('visible')) {
+                floatContainer.classList.remove('visible');
+                window.floatEventListeners.activeFloats.delete(floatId);
+                return;
+            }
+            
+            // Cerrar todos los contenedores flotantes que estén abiertos
+            document.querySelectorAll('.float-container.visible').forEach(container => {
+                container.classList.remove('visible');
+                const openFloatId = container.id.replace('float-', '');
+                window.floatEventListeners.activeFloats.delete(openFloatId);
+            });
+            
+            // Mostrar el contenedor
+            floatContainer.classList.add('visible');
+            window.floatEventListeners.activeFloats.add(floatId);
+            
+            // Posicionar el contenedor flotante cerca del trigger
+            const triggerRect = this.getBoundingClientRect();
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const floatWidth = floatContainer.offsetWidth;
+            const floatHeight = floatContainer.offsetHeight;
+            
+            // Calcular posición
+            let left = triggerRect.left + window.scrollX;
+            let top = triggerRect.bottom + window.scrollY + 10;
+            
+            // Ajustar si se sale de la pantalla
+            if (left + floatWidth > windowWidth - 20) {
+                left = windowWidth - floatWidth - 20;
+            }
+            
+            if (top + floatHeight > window.scrollY + windowHeight - 20) {
+                top = triggerRect.top + window.scrollY - floatHeight - 10;
+            }
+            
+            floatContainer.style.left = left + 'px';
+            floatContainer.style.top = top + 'px';
+        };
+        
+        trigger.addEventListener('click', clickHandler);
+        window.floatEventListeners.triggerClick.push({
+            element: trigger,
+            handler: clickHandler
+        });
+    });
+    
+    // Cerrar los elementos flotantes al hacer clic fuera
+    const documentClickHandler = function(e) {
+        if (e.target.classList.contains('float-close')) {
+            const container = e.target.closest('.float-container');
+            if (container) {
+                container.classList.remove('visible');
+                const floatId = container.id.replace('float-', '');
+                window.floatEventListeners.activeFloats.delete(floatId);
+            }
+        } else if (!e.target.closest('.float-container') && !e.target.closest('.float-trigger')) {
+            document.querySelectorAll('.float-container.visible').forEach(container => {
+                container.classList.remove('visible');
+                const floatId = container.id.replace('float-', '');
+                window.floatEventListeners.activeFloats.delete(floatId);
+            });
+        }
+    };
+    
+    document.addEventListener('click', documentClickHandler);
+    window.floatEventListeners.documentClick = documentClickHandler;
+    
+    // Cerrar con ESC
+    const documentKeydownHandler = function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.float-container.visible').forEach(container => {
+                container.classList.remove('visible');
+                const floatId = container.id.replace('float-', '');
+                window.floatEventListeners.activeFloats.delete(floatId);
+            });
+        }
+    };
+    
+    document.addEventListener('keydown', documentKeydownHandler);
+    window.floatEventListeners.documentKeydown = documentKeydownHandler;
+    
+    // Método global para cerrar todos los elementos flotantes
+    window.closeAllFloats = function() {
+        document.querySelectorAll('.float-container.visible').forEach(container => {
+            container.classList.remove('visible');
+        });
+        window.floatEventListeners.activeFloats.clear();
+    };
+    `;
+    
     // Reemplaza todas las coincidencias de <p></p>
     return [finalHtml.replace(/<p>\s*<\/p>/g, ""), sidebarContent, finalJS];
 }

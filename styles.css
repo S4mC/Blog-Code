@@ -1039,7 +1039,7 @@ summary::-webkit-details-marker {
 }
 
 .contentDetails {
-    padding: 15px 15px 15px 15px;
+    padding: 20px 20px 20px 20px;
     border-top: 1px solid rgba(48, 54, 61, 0.5);
     transform: translateY(-10px);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1342,11 +1342,81 @@ details::after {
 }
 
 @keyframes pulse {
-    0%,
-    100% {
+    0% {
         transform: scale(1);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.05);
     }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Estilos para los elementos flotantes */
+.float-trigger {
+    display: inline-flex;
+    cursor: pointer;
+    color: var(--primary-color);
+    position: relative;
+    vertical-align: sub;
+    transition: color 0.3s ease;
+}
+
+.float-trigger:hover {
+    color: var(--primary-dark);
+}
+
+.float-trigger svg {
+    width: 19px;
+    height: 22px;
+}
+
+.float-container {
+    position: absolute;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+    pointer-events: none;
+}
+
+.float-container.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.float-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.float-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-color);
 }
