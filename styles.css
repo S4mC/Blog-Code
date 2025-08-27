@@ -11,7 +11,7 @@
     --error-color: #ef4444;
 
     --bg-color: #040506;
-    --bg-secondary: #1F1F1F;
+    --bg-secondary: #1f1f1f;
     --bg-hover: #3f3f46;
     --bg-tertiary: #52525b;
     --text-color: #fafafa;
@@ -352,14 +352,14 @@ body {
 }
 
 .entry-content code {
-    background-color: #1F1F1F;
+    background-color: #1f1f1f;
     padding: 2px 2px;
     border-radius: 4px;
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+    font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
 }
 
 .entry-content code:not([class]) {
-    color: #9CDCFE;
+    color: #9cdcfe;
     border: solid #303030 1px;
 }
 
@@ -1071,7 +1071,8 @@ details::after {
 }
 
 /* Estilos para los callouts tipo MDN */
-.note-callout, .warning-callout {
+.note-callout,
+.warning-callout {
     margin: 1rem 0;
     padding: 0.75rem;
     border-radius: 0.25rem;
@@ -1138,6 +1139,186 @@ details::after {
 .sidebar-component .section-header.active .section-title,
 .sidebar-component .section-item.active {
     color: #ffffff;
+}
+
+
+/* Estilos para los encabezados H4-H6 en la barra lateral */
+.sidebar-component .subitems {
+    margin-left: 10px;
+    border-left: 2px solid #ffffff52;
+    margin-top: 5px;
+    position: relative;
+}
+
+/* Estilo base para todos los subitems */
+.sidebar-component .subitem {
+    padding: 6px 10px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    margin-bottom: 2px;
+}
+
+.sidebar-component .subitem:hover {
+    background: rgba(255, 255, 255, 0.05);
+    text-decoration: underline;
+}
+
+/* Conectores visuales para subitems */
+.sidebar-component .subitem::before {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 2px;
+    background: #ffffff52;
+    left: -6px;
+    top: 50%;
+}
+
+/* Nivel H4 */
+.sidebar-component .subitem.level-4 {
+    padding-left: 12px;
+    border-left: 2px solid transparent;
+    margin-left: 5px;
+    position: relative;
+}
+
+/* Agregar indicador de anidamiento */
+.sidebar-component .subitem.level-4:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 6px;
+    top: 100%;
+    bottom: -5px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Nivel H5 - Anidado visualmente dentro de H4 */
+.sidebar-component .subitem.level-5 {
+    margin-left: 15px;
+    padding-left: 15px;
+    font-size: 12px;
+    border-left: 2px solid #ffffff52;
+    position: relative;
+}
+
+.sidebar-component .subitem.level-5::before {
+    width: 5px;
+    left: 0px;
+}
+
+/* Agregar indicador de anidamiento */
+.sidebar-component .subitem.level-5:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 5px;
+    top: 100%;
+    bottom: -5px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+/* Nivel H6 - Anidado visualmente dentro de H5 */
+.sidebar-component .subitem.level-6 {
+    margin-left: 30px;
+    font-size: 11px;
+    border-left: 2px solid #ffffff52;
+    position: relative;
+}
+
+.sidebar-component .subitem.level-6::before {
+    width: 5px;
+    left: 0px;
+}
+
+.sidebar-component .section-item.has-subitems {
+    border-bottom: none;
+}
+
+/* Estilos para los elementos flotantes */
+.float-trigger {
+    display: inline-flex;
+    cursor: pointer;
+    color: var(--primary-color);
+    position: relative;
+    vertical-align: sub;
+    transition: color 0.3s ease;
+}
+
+.float-trigger:hover {
+    color: var(--primary-dark);
+}
+
+.float-trigger svg {
+    width: 19px;
+    height: 22px;
+}
+
+.float-container {
+    position: absolute;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    box-shadow: var(--shadow-lg);
+    max-width: 400px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1001;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+    pointer-events: none;
+}
+
+.float-container p:last-child {
+    margin-bottom: 0px;
+}
+
+.float-container.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.float-close {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.float-close:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-color);
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
 }
 
 /* Delete header tittle in small screens */
@@ -1244,179 +1425,4 @@ details::after {
         width: 100%;
         max-width: 350px;
     }
-}
-
-/* Estilos para los encabezados H4-H6 en la barra lateral */
-.sidebar-component .subitems {
-    margin-left: 10px;
-    border-left: 2px solid #ffffff52;
-    margin-top: 5px;
-    position: relative;
-}
-
-/* Estilo base para todos los subitems */
-.sidebar-component .subitem {
-    padding: 6px 10px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    position: relative;
-    margin-bottom: 2px;
-}
-
-.sidebar-component .subitem:hover {
-    background: rgba(255, 255, 255, 0.05);
-    text-decoration: underline;
-}
-
-/* Conectores visuales para subitems */
-.sidebar-component .subitem::before {
-    content: "";
-    position: absolute;
-    width: 6px;
-    height: 2px;
-    background: #ffffff52;
-    left: -6px;
-    top: 50%;
-}
-
-/* Nivel H4 */
-.sidebar-component .subitem.level-4 {
-    padding-left: 12px;
-    border-left: 2px solid transparent;
-    margin-left: 5px;
-    position: relative;
-}
-
-/* Agregar indicador de anidamiento */
-.sidebar-component .subitem.level-4:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    left: 6px;
-    top: 100%;
-    bottom: -5px;
-    width: 1px;
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Nivel H5 - Anidado visualmente dentro de H4 */
-.sidebar-component .subitem.level-5 {
-    margin-left: 15px;
-    padding-left: 15px;
-    font-size: 12px;
-    border-left: 2px solid #ffffff52;
-    position: relative;
-}
-
-.sidebar-component .subitem.level-5::before {
-    width: 5px;
-    left: 0px;
-}
-
-/* Agregar indicador de anidamiento */
-.sidebar-component .subitem.level-5:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    left: 5px;
-    top: 100%;
-    bottom: -5px;
-    width: 1px;
-    background: rgba(255, 255, 255, 0.03);
-}
-
-/* Nivel H6 - Anidado visualmente dentro de H5 */
-.sidebar-component .subitem.level-6 {
-    margin-left: 30px;
-    font-size: 11px;
-    border-left: 2px solid #ffffff52;
-    position: relative;
-}
-
-.sidebar-component .subitem.level-6::before {
-    width: 5px;
-    left: 0px;
-}
-
-.sidebar-component .section-item.has-subitems {
-    border-bottom: none;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(1);
-    }
-    50% {
-        transform: scale(1.05);
-    }
-    100% {
-        transform: scale(1);
-    }
-}
-
-/* Estilos para los elementos flotantes */
-.float-trigger {
-    display: inline-flex;
-    cursor: pointer;
-    color: var(--primary-color);
-    position: relative;
-    vertical-align: sub;
-    transition: color 0.3s ease;
-}
-
-.float-trigger:hover {
-    color: var(--primary-dark);
-}
-
-.float-trigger svg {
-    width: 19px;
-    height: 22px;
-}
-
-.float-container {
-    position: absolute;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: var(--spacing-md);
-    box-shadow: var(--shadow-lg);
-    max-width: 400px;
-    max-height: 300px;
-    overflow-y: auto;
-    z-index: 1001;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
-    pointer-events: none;
-}
-
-.float-container.visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-.float-close {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50%;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-
-.float-close:hover {
-    background-color: var(--bg-hover);
-    color: var(--text-color);
 }

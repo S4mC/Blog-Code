@@ -104,7 +104,7 @@ function processMarkdownWithIframes(markdownContent) {
             if (line.trim().startsWith(":::float-")) {
                 const floatId = line.trim().substring(":::float-".length);
                 processedLines.push('');
-                processedLines.push(`<div class="float-container" id="float-${floatId}">`);
+                processedLines.push(`<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`);
                 processedLines.push('');
                 i++;
                 while (i < lines.length && lines[i].trim() !== ":::") {
@@ -112,7 +112,7 @@ function processMarkdownWithIframes(markdownContent) {
                     i++;
                 }
                 processedLines.push('');
-                processedLines.push('<button class="float-close">×</button></div>');
+                processedLines.push('</div>');
                 processedLines.push('');
             } else if (line.trim().startsWith(":::note")) {
                 // Inicio de note
