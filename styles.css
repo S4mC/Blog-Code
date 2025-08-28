@@ -1257,6 +1257,7 @@ details::after {
 }
 
 .float-container {
+    display: none;
     position: absolute;
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-color);
@@ -1283,6 +1284,7 @@ details::after {
     visibility: visible;
     transform: translateY(0);
     pointer-events: auto;
+    display: block !important;
 }
 
 .float-close {
