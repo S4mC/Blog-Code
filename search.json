@@ -1,6 +1,13 @@
 {
   "entries": [
     {
+      "title": "C language",
+      "summary": "C language documentation",
+      "path": "./posts/C-language.md",
+      "date": "2025-08-27",
+      "tags": ["language"]
+    },
+    {
       "title": "Test Post",
       "summary": "Learn how to embed external content using the special iframe syntax.",
       "path": "./posts/test-posts.md",
