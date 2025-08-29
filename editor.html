@@ -87,7 +87,7 @@
                 }
             });
 
-            // Contenido por defecto para un nuevo documento
+            // Contenido por defecto para un Nuevo documento
             const DEFAULT_MARKDOWN_CONTENT = `# My First Entry
 
 This is an example of a **blog entry** with *italic text*.
@@ -156,12 +156,46 @@ Be careful with this action!
                 };
                 
                 const [isContentModified, setIsContentModified] = useState(false);
-                // Intentar recuperar el contenido y configuración guardados de localStorage
-                const savedContent = localStorage.getItem('editorContent');
+                
+                // Estado para manejar las pestañas
+                // Función auxiliar para generar IDs numéricos secuenciales
+                const getNextTabId = (existingTabs) => {
+                    if (!existingTabs || existingTabs.length === 0) return 1;
+                    // Buscamos el ID numérico más alto y le sumamos 1
+                    const maxId = Math.max(...existingTabs.map(tab => parseInt(tab.id)));
+                    return isNaN(maxId) ? 1 : maxId + 1;
+                };
+
+                const [tabs, setTabs] = useState(() => {
+                    const savedTabs = localStorage.getItem('editorTabs');
+                    return savedTabs ? JSON.parse(savedTabs) : [
+                        {
+                            id: 1, // ID inicial fijo
+                            title: "My First Entry",
+                            content: DEFAULT_MARKDOWN_CONTENT,
+                            isModified: false
+                        }
+                    ];
+                });
+                
+                // ID de la pestaña activa
+                const [activeTabId, setActiveTabId] = useState(() => {
+                    const savedActiveTabId = localStorage.getItem('editorActiveTabId');
+                    return parseInt(savedActiveTabId) || (tabs.length > 0 ? parseInt(tabs[0].id) : null);
+                });
+
+                window.activeTabId = activeTabId;
+
+                // Intentar recuperar configuración guardada de localStorage
                 const savedShowPreview = localStorage.getItem('editorShowPreview');
                 const savedPreviewPosition = localStorage.getItem('editorPreviewPosition');
-                const [markdown, setMarkdown] = useState(savedContent || DEFAULT_MARKDOWN_CONTENT);
-
+                
+                // Estado para el contenido y la vista previa
+                const [markdown, setMarkdown] = useState(() => {
+                    const activeTab = tabs.find(tab => parseInt(tab.id) === parseInt(activeTabId));
+                    return activeTab?.content || DEFAULT_MARKDOWN_CONTENT;
+                });
+                
                 const [preview, setPreview] = useState("");
                 const [showPreview, setShowPreview] = useState(savedShowPreview === 'true' ? true : false);
                 const [previewPosition, setPreviewPosition] = useState(savedPreviewPosition === 'bottom' ? 'bottom' : 'right'); // 'right' o 'bottom'
@@ -197,9 +231,14 @@ Be careful with this action!
                         if (isContentModified) {
                             // Intentar guardar una última vez en localStorage
                             try {
-                                if (editorRef.current) {
+                                if (editorRef.current && window.activeTabId) {
                                     const content = editorRef.current.getValue();
-                                    localStorage.setItem('editorContent', content);
+                                    
+                                    // Actualizar la pestaña activa con el contenido actual
+                                    updateTabContent(window.activeTabId, content);
+
+                                    // Guardar todas las pestañas en localStorage
+                                    localStorage.setItem('editorTabs', JSON.stringify(tabs));
                                     // Si se guarda correctamente, no mostramos alerta
                                     return;
                                 }
@@ -224,6 +263,8 @@ Be careful with this action!
                         // La configuración ya está hecha arriba
 
                         require(["vs/editor/editor.main"], () => {
+                            // Asegurar que cargamos el contenido correcto para la pestaña activa
+
                             editorRef.current = monaco.editor.create(
                                 containerRef.current,
                                 {
@@ -369,22 +410,168 @@ Be careful with this action!
                             });
                             
                             editorRef.current.onDidChangeModelContent(() => {
+
                                 const content = editorRef.current.getValue();
                                 setMarkdown(content);
                                 setIsContentModified(true);
                                 
-                                // Guardar en localStorage
-                                try {
-                                    localStorage.setItem('editorContent', content);
-                                } catch (e) {
-                                    console.warn('No se pudo guardar en localStorage:', e);
-                                    // Si falla el guardado, mantenemos isContentModified en true
-                                    // para que se muestre la alerta al salir
+                                // Actualizar contenido de la pestaña activa
+                                if (window.activeTabId !== null) {
+                                    updateTabContent(window.activeTabId, content);
                                 }
                             });
                         });
                     }
                 }, []);
+                
+                // Efecto para guardar las pestañas en localStorage cuando cambian
+                useEffect(() => {
+                    try {
+                        localStorage.setItem('editorTabs', JSON.stringify(tabs));
+                    } catch (e) {
+                        console.warn('Error al guardar las pestañas en localStorage:', e);
+                    }
+                }, [tabs]);
+
+                // Efecto para actualizar el editor cuando cambia la pestaña activa
+                useEffect(() => {
+                    if (!editorRef.current || activeTabId === null) return;
+
+                    window.activeTabId = activeTabId;
+                    // Evitar actualizaciones en cascada
+                    
+                    const activeTab = tabs.find(tab => parseInt(tab.id) === parseInt(activeTabId));
+                    if (activeTab && editorRef.current.getModel()) {
+                        const currentContent = editorRef.current.getValue();
+                        
+                        if (currentContent !== activeTab.content) {
+                            editorRef.current.setValue(activeTab.content || '');
+                            setMarkdown(activeTab.content || '');
+                            setIsContentModified(!!activeTab.isModified);
+                        }
+                    }
+
+                    localStorage.setItem('editorActiveTabId', activeTabId?.toString());
+
+                }, [activeTabId]);
+                
+                // Función para extraer el título del contenido markdown
+                const extractTitleFromMarkdown = (content) => {
+                    const titleMatch = content.match(/^#\s+(.+)$/m);
+                    return titleMatch ? titleMatch[1].trim() : "Sin título";
+                };
+                
+                // Función para crear una nueva pestaña
+                const createNewTab = () => {
+                    // Guardar contenido actual antes de crear una nueva pestaña
+                    if (editorRef.current && activeTabId) {
+                        updateTabContent(activeTabId, editorRef.current.getValue());
+                    }
+                    
+                    const newTabNumber = tabs.length + 1;
+                    const newTabId = getNextTabId(tabs);
+                    
+                    // Crear contenido con título único
+                    let newContent = DEFAULT_MARKDOWN_CONTENT;
+                    if (newTabNumber > 1) {
+                        newContent = newContent.replace("# My First Entry", `# Document ${newTabNumber}`);
+                    }
+                    
+                    const newTab = {
+                        id: newTabId,
+                        title: newTabNumber === 1 ? "Mi primer entrada" : `Document ${newTabNumber}`,
+                        content: newContent,
+                        isModified: false
+                    };
+                    
+                    // Actualizar estado
+                    setTabs([...tabs, newTab]);
+                    setActiveTabId(newTabId);
+                };
+                
+                // Función para cambiar a una pestaña
+                const switchToTab = (tabId) => {
+                    const numericTabId = parseInt(tabId);
+                    const numericActiveTabId = parseInt(activeTabId);
+                    
+                    if (numericActiveTabId === numericTabId) return;
+                    
+                    // Guardar contenido actual antes de cambiar
+                    if (editorRef.current && activeTabId !== null) {
+                        const currentContent = editorRef.current.getValue();
+                        updateTabContent(numericActiveTabId, currentContent);
+                    }
+                    
+                    // Cambiar a la nueva pestaña
+                    const targetTab = tabs.find(tab => parseInt(tab.id) === numericTabId);
+                    if (!targetTab) return;
+                    
+                    setActiveTabId(numericTabId);
+                };
+                
+                // Función para actualizar el contenido de una pestaña
+                const updateTabContent = (tabId, newContent) => {
+                    const numericTabId = parseInt(tabId);
+
+                    setTabs(prevTabs => 
+                        prevTabs.map(tab => {
+                            if (parseInt(tab.id) !== numericTabId) return tab;
+
+                            // Solo actualiza si realmente cambió el contenido
+                            if (tab.content === newContent) {
+                                return tab; // sin cambios
+                            }
+
+                            const tabTitle = extractTitleFromMarkdown(newContent);
+
+                            return {
+                                ...tab,
+                                content: newContent,
+                                title: tabTitle,
+                                isModified: true
+                            };
+                        })
+                    );
+                };
+
+                
+                // Función para cerrar una pestaña
+                const closeTab = (tabId, event) => {
+                    if (event) event.stopPropagation();
+                    
+                    const numericTabId = parseInt(tabId);
+                    const numericActiveTabId = parseInt(activeTabId);
+                    const tabToClose = tabs.find(tab => parseInt(tab.id) === numericTabId);
+                    
+                    // Confirmar cierre si hay cambios
+                    if (tabToClose?.isModified) {
+                        const confirmClose = window.confirm(`¿Estás seguro que deseas cerrar "${tabToClose.title}"? Los cambios no guardados se perderán.`);
+                        if (!confirmClose) return;
+                    }
+                    
+                    // Manejar caso especial: última pestaña
+                    if (tabs.length === 1) {
+                        const newTabId = getNextTabId(tabs);
+                        setTabs([{
+                            id: newTabId,
+                            title: "New document",
+                            content: DEFAULT_MARKDOWN_CONTENT,
+                            isModified: false
+                        }]);
+                        setActiveTabId(newTabId);
+                        return;
+                    }
+                    
+                    // Si cerramos la pestaña activa, seleccionar otra
+                    if (numericActiveTabId === numericTabId) {
+                        const tabIndex = tabs.findIndex(tab => parseInt(tab.id) === numericTabId);
+                        const newActiveTab = tabs[tabIndex === 0 ? 1 : tabIndex - 1];
+                        setActiveTabId(parseInt(newActiveTab.id));
+                    }
+                    
+                    // Eliminar la pestaña
+                    setTabs(prevTabs => prevTabs.filter(tab => parseInt(tab.id) !== numericTabId));
+                };
 
                 const insertText = (
                     beforeText,
@@ -478,21 +665,32 @@ Be careful with this action!
                 };
 
                 const handleSave = () => {
+                    const activeTab = tabs.find(tab => parseInt(tab.id) === parseInt(activeTabId));
+                    const fileName = activeTab ? `${activeTab.title.replace(/[\\/:*?"<>|]/g, '_')}.md` : "post.md";
+                    
                     const blob = new Blob([markdown], {
                         type: "text/markdown",
                     });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;
-                    a.download = "post.md";
+                    a.download = fileName;
                     document.body.appendChild(a);
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
                     
-                    // Actualizar localStorage y marcar como guardado
+                    // Actualizar pestaña y marcar como guardado
                     try {
-                        localStorage.setItem('editorContent', markdown);
+                        // Marcar la pestaña como no modificada
+                        if (activeTabId) {
+                            setTabs(prevTabs => prevTabs.map(tab => 
+                                parseInt(tab.id) === parseInt(activeTabId)
+                                    ? { ...tab, isModified: false, content: markdown }
+                                    : tab
+                            ));
+                        }
+                        
                         setIsContentModified(false); // Marcamos el contenido como guardado
                     } catch (e) {
                         console.warn('No se pudo guardar en localStorage:', e);
@@ -717,7 +915,7 @@ Be careful with this action!
                                                         stroke-linejoin="round"
                                                     />
                                                 </svg>
-                                                Guardar (.md)
+                                                Save (.md)
                                             </button>
                                             <button onClick=${handleExport}>
                                                 <svg
@@ -735,26 +933,9 @@ Be careful with this action!
                                                         stroke-linejoin="round"
                                                     />
                                                 </svg>
-                                                Exportar HTML
+                                                Export HTML
                                             </button>
-                                            <button onClick=${() => {
-                                                if (confirm("¿Crear nuevo documento? Se perderán los cambios no guardados.")) {
-                                                    // Solo limpiamos el contenido, mantenemos las preferencias de vista
-                                                    localStorage.removeItem('editorContent');
-                                                    
-                                                    // Usamos la constante con el contenido por defecto
-                                                    const newContent = DEFAULT_MARKDOWN_CONTENT;
-                                                    
-                                                    // Primero actualizamos el editor directamente
-                                                    if (editorRef.current) {
-                                                        editorRef.current.setValue(newContent);
-                                                    }
-                                                    
-                                                    // Luego actualizamos el estado
-                                                    setMarkdown(newContent);
-                                                    setIsContentModified(false);
-                                                }
-                                            }}>
+                                            <button onClick=${createNewTab}>
                                                 <svg
                                                     width="16"
                                                     height="16"
@@ -777,8 +958,40 @@ Be careful with this action!
                                                         stroke-linejoin="round"
                                                     />
                                                 </svg>
-                                                Nuevo documento
+                                                New Document
                                             </button>
+                                            
+                                            <!-- Listado de pestañas en formato vertical -->
+                                            <div class="editor-tabs-vertical">
+                                                <div class="editor-tabs-title">Open documents:</div>
+                                                ${tabs.map(tab => html`
+                                                    <div 
+                                                        key=${tab.id}
+                                                        class=${`editor-tab-vertical ${parseInt(activeTabId) === parseInt(tab.id) ? "active" : ""}`}
+                                                        onClick=${(e) => {
+                                                            // Evitar que se cierre el menú al hacer clic en una pestaña
+                                                            e.stopPropagation();
+                                                            switchToTab(tab.id);
+                                                        }}
+                                                    >
+                                                        <div class="editor-tab-vertical-title" title=${tab.title}>
+                                                            ${tab.title}
+                                                        </div>
+                                                        ${tab.isModified ? html`<span>*</span>` : ""}
+                                                        <div 
+                                                            class="editor-tab-vertical-close"
+                                                            onClick=${(e) => {
+                                                                // Evitar que se propague al contenedor de la pestaña y al menú
+                                                                e.stopPropagation();
+                                                                closeTab(tab.id, e);
+                                                            }}
+                                                            title="Close tab"
+                                                        >
+                                                            ✕
+                                                        </div>
+                                                    </div>
+                                                `)}
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="editor-toolbar">
@@ -1732,6 +1945,7 @@ Be careful with this action!
                                         </svg>
                                     </button>
                                 </div>
+                                
                                 <div
                                     class="editor-content ${previewPosition} ${!showPreview
                                         ? "preview-hidden"

@@ -198,6 +198,90 @@ body {
     cursor: pointer;
     color: var(--text-color);
 }
+
+/* Estilos para el sistema de pestañas verticales */
+.editor-tabs-vertical {
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: 1px solid var(--border-color);
+    margin-top: 8px;
+    padding-top: 8px;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+    user-select: none;
+}
+
+.editor-tabs-title {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin: 5px 0;
+    padding-left: 8px;
+    font-weight: 500;
+}
+
+.editor-tabs-vertical::-webkit-scrollbar {
+    width: 4px;
+}
+
+.editor-tabs-vertical::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+}
+
+.editor-tab-vertical {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    margin: 2px 0;
+    background-color: transparent;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    position: relative;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.editor-tab-vertical span {
+    margin-right: 10px;
+}
+
+.editor-tab-vertical.active {
+    background-color: var(--bg-hover);
+    color: white;
+    border-left-color: var(--secondary-color);
+    font-weight: bold;
+}
+
+.editor-tab-vertical:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.editor-tab-vertical-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 3px;
+    max-width: 160px;
+}
+
+.editor-tab-vertical-close {
+    background: none;
+    border: none;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 5px;
+    border-radius: 50%;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+}
+
+.editor-tab-vertical-close:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: #ff3333;
+}
 .menu-content {
     position: absolute;
     top: 100%;
