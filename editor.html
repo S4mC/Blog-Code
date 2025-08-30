@@ -88,7 +88,7 @@
             });
 
             // Contenido por defecto para un Nuevo documento
-            const DEFAULT_MARKDOWN_CONTENT = `# My First Entry
+            const DEFAULT_MARKDOWN_CONTENT = `# New document
 
 This is an example of a **blog entry** with *italic text*.
 
@@ -171,7 +171,7 @@ Be careful with this action!
                     return savedTabs ? JSON.parse(savedTabs) : [
                         {
                             id: 1, // ID inicial fijo
-                            title: "My First Entry",
+                            title: "New document",
                             content: DEFAULT_MARKDOWN_CONTENT,
                             isModified: false
                         }
@@ -474,12 +474,12 @@ Be careful with this action!
                     // Crear contenido con título único
                     let newContent = DEFAULT_MARKDOWN_CONTENT;
                     if (newTabNumber > 1) {
-                        newContent = newContent.replace("# My First Entry", `# Document ${newTabNumber}`);
+                        newContent = newContent.replace("# New document", `# Document ${newTabNumber}`);
                     }
                     
                     const newTab = {
                         id: newTabId,
-                        title: newTabNumber === 1 ? "Mi primer entrada" : `Document ${newTabNumber}`,
+                        title: newTabNumber === 1 ? "New document" : `Document ${newTabNumber}`,
                         content: newContent,
                         isModified: false
                     };

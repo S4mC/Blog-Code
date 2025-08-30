@@ -458,7 +458,7 @@ export function renderMarkdown(markdownContent) {
             p.after(frag);
         }
     });
-    
+
     // Convertir el documento a HTML
     let finalHtml = doc.body.innerHTML;
     let finalJS = "";
@@ -874,11 +874,20 @@ export function renderMarkdown(markdownContent) {
             container.classList.remove('visible');
         });
         window.floatEventListeners.activeFloats.clear();
-    };
-    `;
+    };`;
+
+    // Quitar el primer p del li (titulo) para que no ocupe espacio
+    finalJS += `
+    document.querySelectorAll('li').forEach(li => {
+        const primerParrafo = li.querySelector('p');
+        if (primerParrafo) {
+            const nuevoSpan = document.createElement('span');
+            nuevoSpan.textContent = primerParrafo.textContent;
+            primerParrafo.replaceWith(nuevoSpan);
+        }
+    });`;
     
-    // Reemplaza todas las coincidencias de <p></p>
-    return [finalHtml.replace(/<p>\s*<\/p>/g, ""), sidebarContent, finalJS];
+    return [finalHtml, sidebarContent, finalJS];
 }
 
 export function showCopySuccess(button, originalHTML) {
