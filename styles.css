@@ -327,7 +327,6 @@ body {
 }
 
 .entry-content p {
-    margin-bottom: var(--spacing-md);
     color: var(--text-secondary);
 }
 
