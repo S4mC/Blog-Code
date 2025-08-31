@@ -1,4 +1,4 @@
-<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Markdown Editor</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><link rel=stylesheet href=styles/editor-styles.css><link rel=stylesheet href=cdn/prism/prism-dark-svc.css><link rel=stylesheet href=cdn/monaco/editor.main.min.css><script src=cdn/prism/prism-core.min.js></script><script src=cdn/prism/prism-autoloader.min.js></script><script src=cdn/marked/marked.umd.js></script><script src=cdn/SVGpanzoom/svg-pan-zoom.min.js></script><script src=cdn/monaco/vs/loader.js></script><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs"}}</script><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect,useRef}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar,initSidebar}from"./components/Sidebar.js";import{renderMarkdown,showCopySuccess,manageEscapeIframe,manageClickFloatButton,}from"./components/markdownProcessor.js";require.config({paths:{vs:"./cdn/monaco/vs"}}),window.MonacoEnvironment={getWorkerUrl:function(){return"./cdn/monaco/vs/base/worker/workerMain.js"},getLanguages:function(){return["markdown"]}},document.addEventListener("keydown",function(e){e.key==="Escape"&&manageEscapeIframe()}),document.addEventListener("click",function(e){if(manageClickFloatButton(e),e.target.closest(".copy-button")){const t=e.target.closest(".copy-button"),n=t.innerHTML;window.handleCopy&&window.handleCopy().then(()=>{showCopySuccess(t,n)}).catch(e=>{console.error("Error copying:",e)})}});const DEFAULT_MARKDOWN_CONTENT=`# New document
+<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Markdown Editor</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><link rel=stylesheet href=styles/editor-styles.css><link rel=stylesheet href=cdn/prism/prism-dark-svc.css><link rel=stylesheet href=cdn/monaco/editor.main.min.css><script src=cdn/prism/prism.js></script><script src=cdn/marked/marked.umd.js></script><script src=cdn/SVGpanzoom/svg-pan-zoom.min.js></script><script src=cdn/monaco/vs/loader.js></script><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs"}}</script><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect,useRef}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar,initSidebar}from"./components/Sidebar.js";import{renderMarkdown,showCopySuccess,manageEscapeIframe,manageClickFloatButton,}from"./components/markdownProcessor.js";require.config({paths:{vs:"./cdn/monaco/vs"}}),window.MonacoEnvironment={getWorkerUrl:function(){return"./cdn/monaco/vs/base/worker/workerMain.js"},getLanguages:function(){return["markdown"]}},document.addEventListener("keydown",function(e){e.key==="Escape"&&manageEscapeIframe()}),document.addEventListener("click",function(e){if(manageClickFloatButton(e),e.target.closest(".copy-button")){const t=e.target.closest(".copy-button"),n=t.innerHTML;window.handleCopy&&window.handleCopy().then(()=>{showCopySuccess(t,n)}).catch(e=>{console.error("Error copying:",e)})}});const DEFAULT_MARKDOWN_CONTENT=`# New document
 
 This is an example of a **blog entry** with *italic text*.
 
@@ -58,11 +58,11 @@ You can include **formatted text** here.
 :::warning
 This is a warning callout to highlight potential issues or important alerts.
 Be careful with this action!
-:::`;function MarkdownEditor(){const D=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`},[v,c]=useState(!1),g=e=>{if(!e||e.length===0)return 1;const t=Math.max(...e.map(e=>parseInt(e.id)));return isNaN(t)?1:t+1},[n,a]=useState(()=>{const e=localStorage.getItem("editorTabs");return e?JSON.parse(e):[{id:1,title:"New document",content:DEFAULT_MARKDOWN_CONTENT,isModified:!1}]}),[s,l]=useState(()=>{const e=localStorage.getItem("editorActiveTabId");return parseInt(e)||(n.length>0?parseInt(n[0].id):null)});window.activeTabId=s;const j=localStorage.getItem("editorShowPreview"),S=localStorage.getItem("editorPreviewPosition"),[i,m]=useState(()=>{const e=n.find(e=>parseInt(e.id)===parseInt(s));return e?.content||DEFAULT_MARKDOWN_CONTENT}),[d,k]=useState(""),[o,C]=useState(j==="true"),[u,_]=useState(S==="bottom"?"bottom":"right"),[h,y]=useState(localStorage.getItem("editorWordWrap")==="off"?"off":"on"),t=useRef(null),b=useRef(null);useEffect(()=>{if(o){let[e,t,n]=renderMarkdown(i);k(e),setTimeout(()=>{initSidebar(t),eval(n)},100)}},[o,i]),useEffect(()=>{o&&setTimeout(()=>{window.Prism&&window.Prism.highlightAll()},100)},[o,d]),useEffect(()=>{const e=e=>{if(v)try{if(t.current&&window.activeTabId){const e=t.current.getValue();r(window.activeTabId,e),localStorage.setItem("editorTabs",JSON.stringify(n));return}}catch{return e.preventDefault(),e.returnValue="No se pudieron guardar los cambios automáticamente. ¿Seguro que quieres salir?",e.returnValue}};return window.addEventListener("beforeunload",e),()=>{window.removeEventListener("beforeunload",e)}},[v]),useEffect(()=>{t.current||require(["vs/editor/editor.main"],()=>{t.current=monaco.editor.create(b.current,{value:i,language:"markdown",theme:"vs-dark",minimap:{enabled:!0},fontSize:16,lineNumbers:"on",roundedSelection:!1,scrollBeyondLastLine:!1,wordWrap:h,acceptSuggestionOnEnter:"off",automaticLayout:!0,smoothScrolling:!0}),t.current.addAction({id:"extend-list",label:"Extend List",keybindings:[monaco.KeyCode.Enter],precondition:null,keybindingContext:null,contextMenuGroupId:"navigation",contextMenuOrder:1.5,run:function(e){const s=t.current,c=s.getSelection(),n={lineNumber:c.startLineNumber,column:c.startColumn},o=s.getModel(),i=o.getLineContent(n.lineNumber),l=e._standaloneKeybindingService._currentChord?.[0]?.shiftKey,d=/^(\d+)\.(\s+)(.*)$/,u=/^(-|\*)(\s+)(.*)$/,a=i.match(d),r=i.match(u);if(l)return s.trigger("keyboard","type",{text:`
+:::`;function MarkdownEditor(){const D=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`},[v,c]=useState(!1),g=e=>{if(!e||e.length===0)return 1;const t=Math.max(...e.map(e=>parseInt(e.id)));return isNaN(t)?1:t+1},[n,a]=useState(()=>{const e=localStorage.getItem("editorTabs");return e?JSON.parse(e):[{id:1,title:"New document",content:DEFAULT_MARKDOWN_CONTENT,isModified:!1}]}),[s,l]=useState(()=>{const e=localStorage.getItem("editorActiveTabId");return parseInt(e)||(n.length>0?parseInt(n[0].id):null)});window.activeTabId=s;const j=localStorage.getItem("editorShowPreview"),S=localStorage.getItem("editorPreviewPosition"),[i,m]=useState(()=>{const e=n.find(e=>parseInt(e.id)===parseInt(s));return e?.content||DEFAULT_MARKDOWN_CONTENT}),[d,k]=useState(""),[o,C]=useState(j==="true"),[u,_]=useState(S==="bottom"?"bottom":"right"),[h,y]=useState(localStorage.getItem("editorWordWrap")==="off"?"off":"on"),t=useRef(null),b=useRef(null);useEffect(()=>{if(r(window.activeTabId,i),o){let[e,t,n]=renderMarkdown(i);k(e),setTimeout(()=>{initSidebar(t),eval(n)},100)}},[o,i]),useEffect(()=>{o&&setTimeout(()=>{window.Prism&&window.Prism.highlightAll()},100)},[o,d]),useEffect(()=>{const e=e=>{if(v)try{if(t.current&&window.activeTabId){const e=t.current.getValue();r(window.activeTabId,e),localStorage.setItem("editorTabs",JSON.stringify(n));return}}catch{return e.preventDefault(),e.returnValue="No se pudieron guardar los cambios automáticamente. ¿Seguro que quieres salir?",e.returnValue}};return window.addEventListener("beforeunload",e),()=>{window.removeEventListener("beforeunload",e)}},[v]),useEffect(()=>{t.current||require(["vs/editor/editor.main"],()=>{t.current=monaco.editor.create(b.current,{value:i,language:"markdown",theme:"vs-dark",minimap:{enabled:!0},fontSize:16,lineNumbers:"on",roundedSelection:!1,scrollBeyondLastLine:!1,wordWrap:h,acceptSuggestionOnEnter:"off",automaticLayout:!0,smoothScrolling:!0}),t.current.addAction({id:"extend-list",label:"Extend List",keybindings:[monaco.KeyCode.Enter],precondition:null,keybindingContext:null,contextMenuGroupId:"navigation",contextMenuOrder:1.5,run:function(e){const s=t.current,c=s.getSelection(),n={lineNumber:c.startLineNumber,column:c.startColumn},o=s.getModel(),i=o.getLineContent(n.lineNumber),l=e._standaloneKeybindingService._currentChord?.[0]?.shiftKey,d=/^(\d+)\.(\s+)(.*)$/,u=/^(-|\*)(\s+)(.*)$/,a=i.match(d),r=i.match(u);if(l)return s.trigger("keyboard","type",{text:`
 `}),!0;if(a){if(a[3].trim()===""){const e={startLineNumber:n.lineNumber,startColumn:1,endLineNumber:n.lineNumber,endColumn:i.length+1};return s.executeEdits("",[{range:e,text:""}]),!0}const r=parseInt(a[1],10),e=r+1,t=a[2],c=`
 `+e+"."+t;return s.executeEdits("",[{range:{startLineNumber:n.lineNumber,startColumn:o.getLineMaxColumn(n.lineNumber),endLineNumber:n.lineNumber,endColumn:o.getLineMaxColumn(n.lineNumber)},text:c}]),s.setPosition({lineNumber:n.lineNumber+1,column:(e+".").length+t.length+1}),!0}if(r){if(r[3].trim()===""){const e={startLineNumber:n.lineNumber,startColumn:1,endLineNumber:n.lineNumber,endColumn:i.length+1};return s.executeEdits("",[{range:e,text:""}]),!0}const e=r[1],t=r[2],a=`
 `+e+t;return s.executeEdits("",[{range:{startLineNumber:n.lineNumber,startColumn:o.getLineMaxColumn(n.lineNumber),endLineNumber:n.lineNumber,endColumn:o.getLineMaxColumn(n.lineNumber)},text:a}]),s.setPosition({lineNumber:n.lineNumber+1,column:e.length+t.length+1}),!0}return s.trigger("keyboard","type",{text:`
-`}),!0}}),t.current.onDidChangeModelContent(()=>{const e=t.current.getValue();m(e),c(!0),window.activeTabId!==null&&r(window.activeTabId,e)})})},[]),useEffect(()=>{try{localStorage.setItem("editorTabs",JSON.stringify(n))}catch(e){console.warn("Error al guardar las pestañas en localStorage:",e)}},[n]),useEffect(()=>{if(!t.current||s===null)return;window.activeTabId=s;const e=n.find(e=>parseInt(e.id)===parseInt(s));if(e&&t.current.getModel()){const n=t.current.getValue();n!==e.content&&(t.current.setValue(e.content||""),m(e.content||""),c(!!e.isModified))}localStorage.setItem("editorActiveTabId",s?.toString())},[s]);const w=e=>{const t=e.match(/^#\s+(.+)$/m);return t?t[1].trim():"Sin título"},O=()=>{t.current&&s&&r(s,t.current.getValue());const e=n.length+1,i=g(n);let o=DEFAULT_MARKDOWN_CONTENT;e>1&&(o=o.replace("# New document",`# Document ${e}`));const c={id:i,title:e===1?"New document":`Document ${e}`,content:o,isModified:!1};a([...n,c]),l(i)},x=e=>{const o=parseInt(e),i=parseInt(s);if(i===o)return;if(t.current&&s!==null){const e=t.current.getValue();r(i,e)}const a=n.find(e=>parseInt(e.id)===o);if(!a)return;l(o)},r=(e,t)=>{const n=parseInt(e);a(e=>e.map(e=>{if(parseInt(e.id)!==n)return e;if(e.content===t)return e;const s=w(t);return{...e,content:t,title:s,isModified:!0}}))},E=(e,t)=>{t&&t.stopPropagation();const o=parseInt(e),r=parseInt(s),i=n.find(e=>parseInt(e.id)===o);if(i?.isModified){const e=window.confirm(`¿Estás seguro que deseas cerrar "${i.title}"? Los cambios no guardados se perderán.`);if(!e)return}if(n.length===1){const e=g(n);a([{id:e,title:"New document",content:DEFAULT_MARKDOWN_CONTENT,isModified:!1}]),l(e);return}if(r===o){const e=n.findIndex(e=>parseInt(e.id)===o),t=n[e===0?1:e-1];l(parseInt(t.id))}a(e=>e.filter(e=>parseInt(e.id)!==o))},e=(e,n="",s=!1)=>{if(!t.current)return;const o=t.current,i=o.getSelection(),l=o.getModel().getValueInRange(i);if(i.isEmpty()&&s){const s=i.startLineNumber,t=o.getModel().getLineContent(s),c=/^(#{1,6}\s|#t\s)/,r=t.match(c),l={startLineNumber:s,startColumn:1,endLineNumber:s,endColumn:t.length+1};let a;r?a=e+t.substring(r[0].length)+n:a=e+t+n,o.executeEdits("",[{range:l,text:a}])}else{const t=e+l+n;o.executeEdits("",[{range:i,text:t}])}let a=(e+l).split(`
+`}),!0}}),t.current.onDidChangeModelContent(()=>{const e=t.current.getValue();m(e),c(!0)})})},[]),useEffect(()=>{try{localStorage.setItem("editorTabs",JSON.stringify(n)),console.log(n)}catch(e){console.warn("Error al guardar las pestañas en localStorage:",e)}},[n]),useEffect(()=>{if(!t.current||s===null)return;window.activeTabId=s;const e=n.find(e=>parseInt(e.id)===parseInt(s));if(e&&t.current.getModel()){const n=t.current.getValue();n!==e.content&&(t.current.setValue(e.content||""),m(e.content||""),c(!!e.isModified))}localStorage.setItem("editorActiveTabId",s?.toString())},[s]);const w=e=>{const t=e.match(/^#\s+(.+)$/m);return t?t[1].trim():"Sin título"},O=()=>{t.current&&s&&r(s,t.current.getValue());const e=n.length+1,i=g(n);let o=DEFAULT_MARKDOWN_CONTENT;e>1&&(o=o.replace("# New document",`# Document ${e}`));const c={id:i,title:e===1?"New document":`Document ${e}`,content:o,isModified:!1};a([...n,c]),l(i)},x=e=>{const o=parseInt(e),i=parseInt(s);if(i===o)return;if(t.current&&s!==null){const e=t.current.getValue();r(i,e)}const a=n.find(e=>parseInt(e.id)===o);if(!a)return;l(o)},r=(e,t)=>{const n=parseInt(e);a(e=>e.map(e=>{if(parseInt(e.id)!==n)return e;if(e.content===t)return e;const s=w(t);return{...e,content:t,title:s,isModified:!0}}))},E=(e,t)=>{t&&t.stopPropagation();const o=parseInt(e),r=parseInt(s),i=n.find(e=>parseInt(e.id)===o);if(i?.isModified){const e=window.confirm(`¿Estás seguro que deseas cerrar "${i.title}"? Los cambios no guardados se perderán.`);if(!e)return}if(n.length===1){const e=g(n);a([{id:e,title:"New document",content:DEFAULT_MARKDOWN_CONTENT,isModified:!1}]),l(e);return}if(r===o){const e=n.findIndex(e=>parseInt(e.id)===o),t=n[e===0?1:e-1];l(parseInt(t.id))}a(e=>e.filter(e=>parseInt(e.id)!==o))},e=(e,n="",s=!1)=>{if(!t.current)return;const o=t.current,i=o.getSelection(),l=o.getModel().getValueInRange(i);if(i.isEmpty()&&s){const s=i.startLineNumber,t=o.getModel().getLineContent(s),c=/^(#{1,6}\s|#t\s)/,r=t.match(c),l={startLineNumber:s,startColumn:1,endLineNumber:s,endColumn:t.length+1};let a;r?a=e+t.substring(r[0].length)+n:a=e+t+n,o.executeEdits("",[{range:l,text:a}])}else{const t=e+l+n;o.executeEdits("",[{range:i,text:t}])}let a=(e+l).split(`
 `),c=i.startLineNumber+(a.length-1),r;a.length===1?r=i.startColumn+a[0].length:r=a[a.length-1].length+1,o.setSelection({startLineNumber:c,startColumn:r,endLineNumber:c,endColumn:r}),o.revealLineInCenter(c,monaco.editor.ScrollType.Smooth),o.focus()},A=()=>{const t=n.find(e=>parseInt(e.id)===parseInt(s)),r=t?`${t.title.replace(/[\\/:*?"<>|]/g,"_")}.md`:"post.md",l=new Blob([i],{type:"text/markdown"}),o=URL.createObjectURL(l),e=document.createElement("a");e.href=o,e.download=r,document.body.appendChild(e),e.click(),document.body.removeChild(e),URL.revokeObjectURL(o);try{s&&a(e=>e.map(e=>parseInt(e.id)===parseInt(s)?{...e,isModified:!1,content:i}:e)),c(!1)}catch(e){console.warn("No se pudo guardar en localStorage:",e),c(!1)}},f=async()=>{try{return await navigator.clipboard.writeText(i),Promise.resolve()}catch(e){return console.error("Error copying to clipboard:",e),Promise.reject(e)}};window.handleCopy=f;const M=()=>{const n=new Blob([d],{type:"text/html"}),t=URL.createObjectURL(n),e=document.createElement("a");e.href=t,e.download="post.html",document.body.appendChild(e),e.click(),document.body.removeChild(e),URL.revokeObjectURL(t)},F=()=>{const e=h==="on"?"off":"on";y(e);try{localStorage.setItem("editorWordWrap",e)}catch(e){console.warn("No se pudo guardar la preferencia de wordWrap en localStorage:",e)}t.current&&t.current.updateOptions({wordWrap:e})},T=()=>{const t=prompt("Enter the iframe URL:");t&&e(`
 :::iframe height="27em"
 ${t}
@@ -79,9 +79,9 @@ Write here the content that will appear when clicking on the question mark symbo
 `,`
 `),!0}return!1};return html`
                     <div class="app">
-                        <${Header} 
-                            showSearch=${!0} 
-                            onNavigateToEntry=${e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`}} 
+                        <${Header}
+                            showSearch=${!0}
+                            onNavigateToEntry=${e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`}}
                         />
 
                         <main class="main-container">
@@ -110,10 +110,7 @@ Write here the content that will appear when clicking on the question mark symbo
                                                 />
                                             </svg>
                                         </button>
-                                        <div
-                                            class="menu-content"
-                                            style="display: none;"
-                                        >
+                                        <div class="menu-content" style="display: none;">
                                             <button onClick=${A}>
                                                 <svg
                                                     width="16"
@@ -175,29 +172,32 @@ Write here the content that will appear when clicking on the question mark symbo
                                                 </svg>
                                                 New Document
                                             </button>
-                                            
+
                                             <!-- Listado de pestañas en formato vertical -->
                                             <div class="editor-tabs-vertical">
                                                 <div class="editor-tabs-title">Open documents:</div>
                                                 ${n.map(e=>html`
-                                                    <div 
-                                                        key=${e.id}
-                                                        class=${`editor-tab-vertical ${parseInt(s)===parseInt(e.id)?"active":""}`}
-                                                        onClick=${t=>{t.stopPropagation(),x(e.id)}}
-                                                    >
-                                                        <div class="editor-tab-vertical-title" title=${e.title}>
-                                                            ${e.title}
-                                                        </div>
-                                                        ${e.isModified?html`<span>*</span>`:""}
-                                                        <div 
-                                                            class="editor-tab-vertical-close"
-                                                            onClick=${t=>{t.stopPropagation(),E(e.id,t)}}
-                                                            title="Close tab"
+                                                        <div
+                                                            key=${e.id}
+                                                            class=${`editor-tab-vertical ${parseInt(s)===parseInt(e.id)?"active":""}`}
+                                                            onClick=${t=>{t.stopPropagation(),x(e.id)}}
                                                         >
-                                                            ✕
+                                                            <div
+                                                                class="editor-tab-vertical-title"
+                                                                title=${e.title}
+                                                            >
+                                                                ${e.title}
+                                                            </div>
+                                                            ${e.isModified?html`<span>*</span>`:""}
+                                                            <div
+                                                                class="editor-tab-vertical-close"
+                                                                onClick=${t=>{t.stopPropagation(),E(e.id,t)}}
+                                                                title="Close tab"
+                                                            >
+                                                                ✕
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                `)}
+                                                    `)}
                                             </div>
                                         </div>
                                     </div>
@@ -209,10 +209,7 @@ Write here the content that will appear when clicking on the question mark symbo
                                             title="Header"
                                         >
                                             H
-                                            <div
-                                                class="menu-content"
-                                                style="display: none;"
-                                            >
+                                            <div class="menu-content" style="display: none;">
                                                 <button
                                                     onClick=${t=>{e("# ","",!0),t.currentTarget.parentElement.style.display="none"}}
                                                 >
@@ -249,7 +246,18 @@ Write here the content that will appear when clicking on the question mark symbo
                                                     Text - Normal Text
                                                 </button>
                                             </div>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"></path></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
                                         </button>
                                         <button
                                             class="editor-menu"
@@ -257,27 +265,68 @@ Write here the content that will appear when clicking on the question mark symbo
                                             onClick=${e=>{if(e.target===e.currentTarget){const t=e.currentTarget.querySelector(".menu-content"),n=t.style.display==="block";if(t.style.display=n?"none":"block",!n){const n=s=>{!t.contains(s.target)&&!e.target.contains(s.target)&&(t.style.display="none",document.removeEventListener("click",n))};setTimeout(()=>document.addEventListener("click",n),0)}}}}
                                             title="List"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><path fill="currentColor" d="M7 9V7h14v2zm0 4v-2h14v2zm0 4v-2h14v2zM4 9q-.425 0-.712-.288T3 8t.288-.712T4 7t.713.288T5 8t-.288.713T4 9m0 4q-.425 0-.712-.288T3 12t.288-.712T4 11t.713.288T5 12t-.288.713T4 13m0 4q-.425 0-.712-.288T3 16t.288-.712T4 15t.713.288T5 16t-.288.713T4 17"></path></svg>
-                                            <div
-                                                class="menu-content"
-                                                style="display: none;"
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
                                             >
-                                                <button 
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M7 9V7h14v2zm0 4v-2h14v2zm0 4v-2h14v2zM4 9q-.425 0-.712-.288T3 8t.288-.712T4 7t.713.288T5 8t-.288.713T4 9m0 4q-.425 0-.712-.288T3 12t.288-.712T4 11t.713.288T5 12t-.288.713T4 13m0 4q-.425 0-.712-.288T3 16t.288-.712T4 15t.713.288T5 16t-.288.713T4 17"
+                                                ></path>
+                                            </svg>
+                                            <div class="menu-content" style="display: none;">
+                                                <button
                                                     style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${n=>{if(!t.current)return;const s=t.current,o=s.getSelection(),i=s.getModel(),a=o.startLineNumber!==o.endLineNumber;if(a){const e=[];for(let t=o.startLineNumber;t<=o.endLineNumber;t++){const s=i.getLineContent(t),r=/^(\d+)\.(\s+)(.*)$/,c=/^(-|\*|\+)(\s+)(.*)$/,a=s.match(r),n=s.match(c);a?e.push({range:{startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:a[0].length+1},text:"- "+a[3]}):n?n[1]!=="-"&&e.push({range:{startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:n[0].length+1},text:"- "+n[3]}):s.trim()!==""&&e.push({range:{startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:1},text:"- "})}e.length>0&&s.executeEdits("",e)}else{const t=o.startLineNumber,r=i.getLineContent(t),c=/^(\d+)\.(\s+)(.*)$/,l=/^(-|\*|\+)(\s+)(.*)$/,a=r.match(c),n=r.match(l);if(a){const e={startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:a[0].length+1};s.executeEdits("",[{range:e,text:"- "+a[3]}])}else if(n){if(n[1]!=="-"){const e={startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:n[0].length+1};s.executeEdits("",[{range:e,text:"- "+n[3]}])}}else e("- ","",!0)}n.currentTarget.parentElement.style.display="none"}}
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 23 18" style="margin-right: 8px;"><path fill="currentColor" d="M7 9V7h14v2zm0 4v-2h14v2zm0 4v-2h14v2zM4 9q-.425 0-.712-.288T3 8t.288-.712T4 7t.713.288T5 8t-.288.713T4 9m0 4q-.425 0-.712-.288T3 12t.288-.712T4 11t.713.288T5 12t-.288.713T4 13m0 4q-.425 0-.712-.288T3 16t.288-.712T4 15t.713.288T5 16t-.288.713T4 17"></path></svg>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 23 18"
+                                                        style="margin-right: 8px;"
+                                                    >
+                                                        <path
+                                                            fill="currentColor"
+                                                            d="M7 9V7h14v2zm0 4v-2h14v2zm0 4v-2h14v2zM4 9q-.425 0-.712-.288T3 8t.288-.712T4 7t.713.288T5 8t-.288.713T4 9m0 4q-.425 0-.712-.288T3 12t.288-.712T4 11t.713.288T5 12t-.288.713T4 13m0 4q-.425 0-.712-.288T3 16t.288-.712T4 15t.713.288T5 16t-.288.713T4 17"
+                                                        ></path>
+                                                    </svg>
                                                     Bulleted list
                                                 </button>
-                                                <button 
+                                                <button
                                                     style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${n=>{if(!t.current)return;const s=t.current,o=s.getSelection(),i=s.getModel(),a=o.startLineNumber!==o.endLineNumber;if(a){const t=[];let e=1;for(let n=o.startLineNumber;n<=o.endLineNumber;n++){const s=i.getLineContent(n),c=/^(\d+)\.(\s+)(.*)$/,l=/^(-|\*|\+)(\s+)(.*)$/,a=s.match(c),r=s.match(l);r?(t.push({range:{startLineNumber:n,startColumn:1,endLineNumber:n,endColumn:r[0].length+1},text:`${e}. `+r[3]}),e++):a?(t.push({range:{startLineNumber:n,startColumn:1,endLineNumber:n,endColumn:a[0].length+1},text:`${e}. `+a[3]}),e++):s.trim()!==""&&(t.push({range:{startLineNumber:n,startColumn:1,endLineNumber:n,endColumn:1},text:`${e}. `}),e++)}t.length>0&&s.executeEdits("",t)}else{const t=o.startLineNumber,r=i.getLineContent(t),c=/^(\d+)\.(\s+)(.*)$/,l=/^(-|\*|\+)(\s+)(.*)$/,n=r.match(c),a=r.match(l);if(a){const e={startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:a[0].length+1};s.executeEdits("",[{range:e,text:"1. "+a[3]}])}else if(n){if(n[1]!=="1"){const e={startLineNumber:t,startColumn:1,endLineNumber:t,endColumn:n[0].length+1};s.executeEdits("",[{range:e,text:"1. "+n[3]}])}}else e("1. ","",!0)}n.currentTarget.parentElement.style.display="none"}}
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 23 18" style="margin-right: 8px;"><path fill="currentColor" d="M3 22v-1.5h2.5v-.75H4v-1.5h1.5v-.75H3V16h3q.425 0 .713.288T7 17v1q0 .425-.288.713T6 19q.425 0 .713.288T7 20v1q0 .425-.288.713T6 22zm0-7v-2.75q0-.425.288-.712T4 11.25h1.5v-.75H3V9h3q.425 0 .713.288T7 10v1.75q0 .425-.288.713T6 12.75H4.5v.75H7V15zm1.5-7V3.5H3V2h3v6zM9 19v-2h12v2zm0-6v-2h12v2zm0-6V5h12v2z"/></svg>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 23 18"
+                                                        style="margin-right: 8px;"
+                                                    >
+                                                        <path
+                                                            fill="currentColor"
+                                                            d="M3 22v-1.5h2.5v-.75H4v-1.5h1.5v-.75H3V16h3q.425 0 .713.288T7 17v1q0 .425-.288.713T6 19q.425 0 .713.288T7 20v1q0 .425-.288.713T6 22zm0-7v-2.75q0-.425.288-.712T4 11.25h1.5v-.75H3V9h3q.425 0 .713.288T7 10v1.75q0 .425-.288.713T6 12.75H4.5v.75H7V15zm1.5-7V3.5H3V2h3v6zM9 19v-2h12v2zm0-6v-2h12v2zm0-6V5h12v2z"
+                                                        />
+                                                    </svg>
                                                     Numbered list
                                                 </button>
                                             </div>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"></path></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
                                         </button>
                                         <button
                                             onClick=${()=>e("**","**")}
@@ -285,54 +334,94 @@ Write here the content that will appear when clicking on the question mark symbo
                                         >
                                             <strong>B</strong>
                                         </button>
-                                        <button
-                                            onClick=${()=>e("*","*")}
-                                            title="Italics"
-                                        >
+                                        <button onClick=${()=>e("*","*")} title="Italics">
                                             <em>C</em>
                                         </button>
                                         <button
                                             onClick=${()=>e("["," new](url)")}
                                             title="Link"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18"><path fill="currentColor" d="M11 17H7q-2.075 0-3.537-1.463T2 12t1.463-3.537T7 7h4v2H7q-1.25 0-2.125.875T4 12t.875 2.125T7 15h4zm-3-4v-2h8v2zm5 4v-2h4q1.25 0 2.125-.875T20 12t-.875-2.125T17 9h-4V7h4q2.075 0 3.538 1.463T22 12t-1.463 3.538T17 17z"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M11 17H7q-2.075 0-3.537-1.463T2 12t1.463-3.537T7 7h4v2H7q-1.25 0-2.125.875T4 12t.875 2.125T7 15h4zm-3-4v-2h8v2zm5 4v-2h4q1.25 0 2.125-.875T20 12t-.875-2.125T17 9h-4V7h4q2.075 0 3.538 1.463T22 12t-1.463 3.538T17 17z"
+                                                />
+                                            </svg>
                                         </button>
                                         <button
                                             onClick=${()=>e("![alt](",")")}
                                             title="Image"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V5H5zm1-2h12l-3.75-5l-3 4L9 13zm-1 2V5zm3.5-9q.625 0 1.063-.437T10 8.5t-.437-1.062T8.5 7t-1.062.438T7 8.5t.438 1.063T8.5 10"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V5H5zm1-2h12l-3.75-5l-3 4L9 13zm-1 2V5zm3.5-9q.625 0 1.063-.437T10 8.5t-.437-1.062T8.5 7t-1.062.438T7 8.5t.438 1.063T8.5 10"
+                                                />
+                                            </svg>
                                         </button>
                                         <div class="toolbar-separator"></div>
-                                        
+
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
                                             onClick=${e=>{if(e.target===e.currentTarget){const t=e.currentTarget.querySelector(".menu-content"),n=t.style.display==="block";if(t.style.display=n?"none":"block",!n){const n=s=>{!t.contains(s.target)&&!e.target.contains(s.target)&&(t.style.display="none",document.removeEventListener("click",n))};setTimeout(()=>document.addEventListener("click",n),0)}}}}
                                             title="Code"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m8 18l-6-6l6-6l1.425 1.425l-4.6 4.6L9.4 16.6zm8 0l-1.425-1.425l4.6-4.6L14.6 7.4L16 6l6 6z"/></svg>
-                                            <div
-                                                class="menu-content"
-                                                style="display: none;"
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
                                             >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m8 18l-6-6l6-6l1.425 1.425l-4.6 4.6L9.4 16.6zm8 0l-1.425-1.425l4.6-4.6L14.6 7.4L16 6l6 6z"
+                                                />
+                                            </svg>
+                                            <div class="menu-content" style="display: none;">
                                                 <button
                                                     onClick=${t=>{e("language`","`"),t.currentTarget.parentElement.style.display="none"}}
                                                 >
                                                     One-line code
                                                 </button>
                                                 <button
+                                                    onClick=${t=>{e("green`","`"),t.currentTarget.parentElement.style.display="none"}}
+                                                >
+                                                    Green code
+                                                </button>
+                                                <button
+                                                    onClick=${t=>{e("purple`","`"),t.currentTarget.parentElement.style.display="none"}}
+                                                >
+                                                    Purple code
+                                                </button>
+                                                <button
+                                                    onClick=${t=>{e("blue`","`"),t.currentTarget.parentElement.style.display="none"}}
+                                                >
+                                                    Blue code
+                                                </button>
+                                                <button
                                                     onClick=${t=>{e("<!-- ","-->"),t.currentTarget.parentElement.style.display="none"}}
                                                 >
                                                     Comment
                                                 </button>
-                                                <hr style="border: 1px solid #2d2d2d"/>
+                                                <hr style="border: 1px solid #2d2d2d" />
                                                 <button
                                                     onClick=${t=>{e("\n```\n","\n```\n"),t.currentTarget.parentElement.style.display="none"}}
                                                 >
                                                     Code block
                                                 </button>
-                                                ${(()=>{const t="css+javascript+c+csharp+json+markdown+plsql+powershell+python+sql+typescript".split("+");return t.map(t=>{const n=t.charAt(0).toUpperCase()+t.slice(1);return html`
+                                                ${(()=>{const t="css+javascript+arduino+bash+c+csharp+cpp+docker+git+json+markdown+plsql+powershell+python+sql+typescript".split("+");return t.map(t=>{const n=t.charAt(0).toUpperCase()+t.slice(1);return html`
                                                                 <button
                                                                     onClick=${n=>{e(`
 \`\`\`${t}
@@ -342,22 +431,66 @@ Write here the content that will appear when clicking on the question mark symbo
                                                                 </button>
                                                             `})})()}
                                             </div>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"></path></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
                                         </button>
-                                        
+
                                         <button
                                             class="editor-menu"
                                             title="Callout Types"
                                             onClick=${e=>{if(e.target===e.currentTarget){const t=e.currentTarget.querySelector(".menu-content"),n=t.style.display==="block";if(t.style.display=n?"none":"block",!n){const n=s=>{!t.contains(s.target)&&!e.target.contains(s.target)&&(t.style.display="none",document.removeEventListener("click",n))};setTimeout(()=>document.addEventListener("click",n),0)}}}}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><path fill="currentColor" d="M2 20V4h20v16zm3-3h14v-2H5zm0-4h14v-2H5zm0-4h10V7H5z"></path></svg>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"></path></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M2 20V4h20v16zm3-3h14v-2H5zm0-4h14v-2H5zm0-4h10V7H5z"
+                                                ></path>
+                                            </svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
                                             <div class="menu-content" style="display: none;">
                                                 <button
                                                     onClick=${t=>{e("> ",""),t.currentTarget.parentElement.style.display="none"}}
                                                     title="Quote"
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><path fill="currentColor" d="M2 20V4h20v16zm3-3h14v-2H5zm0-4h14v-2H5zm0-4h10V7H5z"></path></svg>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="18"
+                                                        height="18"
+                                                        viewBox="0 0 23 18"
+                                                        style="pointer-events: none;"
+                                                    >
+                                                        <path
+                                                            fill="currentColor"
+                                                            d="M2 20V4h20v16zm3-3h14v-2H5zm0-4h14v-2H5zm0-4h10V7H5z"
+                                                        ></path>
+                                                    </svg>
                                                     Blockquote
                                                 </button>
                                                 <button
@@ -368,7 +501,21 @@ Write here the content that will appear when clicking on the question mark symbo
 `),t.currentTarget.parentElement.style.display="none"}}
                                                     title="Note"
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="18"
+                                                        height="18"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"
+                                                        />
+                                                    </svg>
                                                     Note
                                                 </button>
                                                 <button
@@ -379,7 +526,18 @@ Write here the content that will appear when clicking on the question mark symbo
 `),t.currentTarget.parentElement.style.display="none"}}
                                                     title="Warning"
                                                 >
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="pointer-events: none;"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="18"
+                                                        height="18"
+                                                        viewBox="0 0 24 24"
+                                                        style="pointer-events: none;"
+                                                    >
+                                                        <path
+                                                            fill="currentColor"
+                                                            d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"
+                                                        ></path>
+                                                    </svg>
                                                     Warning
                                                 </button>
                                             </div>
@@ -389,21 +547,61 @@ Write here the content that will appear when clicking on the question mark symbo
                                             onClick=${z}
                                             title="Floating question element"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="18" viewBox="0 0 24 20"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"></rect><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"></path></g></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="22"
+                                                height="18"
+                                                viewBox="0 0 24 20"
+                                            >
+                                                <g fill="none" stroke="currentColor" stroke-width="2">
+                                                    <rect
+                                                        width="14"
+                                                        height="14"
+                                                        x="5"
+                                                        y="5"
+                                                        rx="4"
+                                                    ></rect>
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"
+                                                    ></path>
+                                                </g>
+                                            </svg>
                                         </button>
 
-                                        <button
-                                            onClick=${T}
-                                            title="Iframe"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" viewBox="0 0 2048 1548"><path fill="currentColor" d="M960 768q93 0 174 35t142 96t96 142t36 175q0 93-35 174t-96 142t-142 96t-175 36q-93 0-174-35t-142-96t-96-142t-36-175q0-93 35-174t96-142t142-96t175-36m346 384q-15-80-63-145t-120-103q29 58 42 121t17 127zm-221 128H834q1 16 4 44t10 60t17 64t24 59t31 44t40 17q21 0 38-17t30-44t24-60t17-65t11-59t5-43m-251-128h252q-1-15-5-42t-11-59t-17-65t-24-60t-31-45t-38-17q-22 0-39 17t-31 44t-24 60t-17 65t-10 59t-5 43m-41-246q-35 19-64 45t-53 57t-39 68t-23 76h124q4-63 16-125t39-121m-179 374q14 78 61 142t116 103q-26-57-37-119t-16-126zm510 248q71-38 119-103t63-145h-124q-5 63-18 126t-40 122M1115 0l549 549v1371H256V0zm37 219v293h293zM384 1792h1152V640h-512V128H384z"></path></svg>
+                                        <button onClick=${T} title="Iframe">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="20"
+                                                viewBox="0 0 2048 1548"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M960 768q93 0 174 35t142 96t96 142t36 175q0 93-35 174t-96 142t-142 96t-175 36q-93 0-174-35t-142-96t-96-142t-36-175q0-93 35-174t96-142t142-96t175-36m346 384q-15-80-63-145t-120-103q29 58 42 121t17 127zm-221 128H834q1 16 4 44t10 60t17 64t24 59t31 44t40 17q21 0 38-17t30-44t24-60t17-65t11-59t5-43m-251-128h252q-1-15-5-42t-11-59t-17-65t-24-60t-31-45t-38-17q-22 0-39 17t-31 44t-24 60t-17 65t-10 59t-5 43m-41-246q-35 19-64 45t-53 57t-39 68t-23 76h124q4-63 16-125t39-121m-179 374q14 78 61 142t116 103q-26-57-37-119t-16-126zm510 248q71-38 119-103t63-145h-124q-5 63-18 126t-40 122M1115 0l549 549v1371H256V0zm37 219v293h293zM384 1792h1152V640h-512V128H384z"
+                                                ></path>
+                                            </svg>
                                         </button>
-                                        
+
                                         <button
                                             onClick=${()=>e('\n```svgcontainer style="height:15em;"\n',"\n```\n")}
                                             title="SVG Container"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 8h-2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4h-1M7 8H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3m7-8l1.5 8h1L14 8"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                            >
+                                                <path
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M21 8h-2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4h-1M7 8H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3m7-8l1.5 8h1L14 8"
+                                                />
+                                            </svg>
                                         </button>
                                         <button
                                             onClick=${()=>e(`
@@ -413,7 +611,17 @@ Write here the content that will appear when clicking on the question mark symbo
 `)}
                                             title="Collapsible Element"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 25 18"><path fill="currentColor" d="M11.65 14.65q.15.15.35.15t.35-.15l2.8-2.8q.25-.25.125-.55T14.8 11H9.2q-.35 0-.475.3t.125.55zM12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 25 18"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M11.65 14.65q.15.15.35.15t.35-.15l2.8-2.8q.25-.25.125-.55T14.8 11H9.2q-.35 0-.475.3t.125.55zM12 22q-2.075 0-3.9-.788t-3.175-2.137T2.788 15.9T2 12t.788-3.9t2.137-3.175T8.1 2.788T12 2t3.9.788t3.175 2.137T21.213 8.1T22 12t-.788 3.9t-2.137 3.175t-3.175 2.138T12 22m0-2q3.35 0 5.675-2.325T20 12t-2.325-5.675T12 4T6.325 6.325T4 12t2.325 5.675T12 20m0-8"
+                                                />
+                                            </svg>
                                         </button>
                                         <button
                                             class="editor-menu"
@@ -421,7 +629,18 @@ Write here the content that will appear when clicking on the question mark symbo
                                             onClick=${e=>{if(e.target===e.currentTarget){const t=e.currentTarget.querySelector(".menu-content"),n=t.style.display==="block";if(t.style.display=n?"none":"block",!n){setTimeout(()=>{const e=t.querySelector(".table-grid-container"),n=t.querySelector(".table-grid-dimensions");if(e){const s=(t,s)=>{const o=e.querySelectorAll(".table-grid-cell");o.forEach((e,n)=>{const o=Math.floor(n/10)+1,i=n%10+1;o<=t&&i<=s?e.classList.add("active"):e.classList.remove("active")}),n&&(n.textContent=`${s}x${t}`)};s(1,1),e.hasInitializedEvents||(e.mousemoveHandler=t=>{const n=t.target;if(n.classList.contains("table-grid-cell")){const t=Array.from(e.children).indexOf(n),o=Math.floor(t/10)+1,i=t%10+1;s(o,i)}},e.clickHandler=n=>{const s=n.target;if(s.classList.contains("table-grid-cell")){const n=Array.from(e.children).indexOf(s),o=Math.floor(n/10)+1,i=n%10+1;p(o,i),t.style.display="none"}},e.addEventListener("mousemove",e.mousemoveHandler),e.addEventListener("click",e.clickHandler),e.hasInitializedEvents=!0)}},0);const n=s=>{!t.contains(s.target)&&!e.target.contains(s.target)&&(t.style.display="none",document.removeEventListener("click",n))};setTimeout(()=>document.addEventListener("click",n),0)}}}}
                                             title="Table"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><path fill="currentColor" d="M4 21q-.825 0-1.412-.587T2 19V5q0-.825.588-1.412T4 3h16q.825 0 1.413.588T22 5v14q0 .825-.587 1.413T20 21zm0-2h4v-7H4zm0-9h4V5H4zm6 9h4v-7h-4zm0-9h4V5h-4zm6 9h4v-7h-4zm0-9h4V5h-4z"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M4 21q-.825 0-1.412-.587T2 19V5q0-.825.588-1.412T4 3h16q.825 0 1.413.588T22 5v14q0 .825-.587 1.413T20 21zm0-2h4v-7H4zm0-9h4V5H4zm6 9h4v-7h-4zm0-9h4V5h-4zm6 9h4v-7h-4zm0-9h4V5h-4z"
+                                                />
+                                            </svg>
                                             <div
                                                 class="menu-content"
                                                 style="display: none; width: 300px;"
@@ -431,12 +650,15 @@ Write here the content that will appear when clicking on the question mark symbo
                                                         <span>Insert table</span>
                                                         <span class="table-grid-dimensions">1x1</span>
                                                     </div>
-                                                    
+
                                                     <div class="table-grid-container">
                                                         <!-- Generate 10x10 cells for the grid -->
-                                                        ${Array.from({length:100}).map((e,t)=>html`<div class="table-grid-cell" key=${t}></div>`)}
+                                                        ${Array.from({length:100}).map((e,t)=>html`<div
+                                                                    class="table-grid-cell"
+                                                                    key=${t}
+                                                                ></div>`)}
                                                     </div>
-                                                    
+
                                                     <div class="table-grid-custom">
                                                         <button
                                                             onClick=${e=>{const t=prompt("Number of rows:","3");if(!t)return;const n=prompt("Number of columns:","3");if(t&&n){const s=parseInt(t),o=parseInt(n);!isNaN(s)&&!isNaN(o)&&s>0&&o>0&&(p(s,o),e.currentTarget.closest(".menu-content").style.display="none")}}}
@@ -446,7 +668,18 @@ Write here the content that will appear when clicking on the question mark symbo
                                                     </div>
                                                 </div>
                                             </div>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="16" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="currentColor" d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"></path></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
                                         </button>
                                         <div class="toolbar-separator"></div>
                                         <button
@@ -454,8 +687,16 @@ Write here the content that will appear when clicking on the question mark symbo
                                             class=${h==="on"?"active":""}
                                             title="Toggle Word Wrap"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 17">
-                                                <path fill="currentColor" d="M4 19h6v-2H4zm0-4h8v-2H4zm16-4V9l-3 3l3 3zM4 9h10V7H4zm0-4h12V3H4z"/>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 17"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M4 19h6v-2H4zm0-4h8v-2H4zm16-4V9l-3 3l3 3zM4 9h10V7H4zm0-4h12V3H4z"
+                                                />
                                             </svg>
                                         </button>
                                         <button
@@ -463,7 +704,18 @@ Write here the content that will appear when clicking on the question mark symbo
                                             class=${o?"active":""}
                                             title="Show/Hide Preview"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V7H5zm7-2q-2.05 0-3.662-1.112T6 13q.725-1.775 2.338-2.887T12 9t3.663 1.113T18 13q-.725 1.775-2.337 2.888T12 17m0-2.5q-.625 0-1.062-.437T10.5 13t.438-1.062T12 11.5t1.063.438T13.5 13t-.437 1.063T12 14.5m0 1q1.05 0 1.775-.725T14.5 13t-.725-1.775T12 10.5t-1.775.725T9.5 13t.725 1.775T12 15.5"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h14q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21zm0-2h14V7H5zm7-2q-2.05 0-3.662-1.112T6 13q.725-1.775 2.338-2.887T12 9t3.663 1.113T18 13q-.725 1.775-2.337 2.888T12 17m0-2.5q-.625 0-1.062-.437T10.5 13t.438-1.062T12 11.5t1.063.438T13.5 13t-.437 1.063T12 14.5m0 1q1.05 0 1.775-.725T14.5 13t-.725-1.775T12 10.5t-1.775.725T9.5 13t.725 1.775T12 15.5"
+                                                />
+                                            </svg>
                                         </button>
                                         <button
                                             onClick=${()=>{const e=u==="right"?"bottom":"right";_(e);try{localStorage.setItem("editorPreviewPosition",e)}catch(e){console.warn("No se pudo guardar posición de preview:",e)}}}
@@ -471,7 +723,24 @@ Write here the content that will appear when clicking on the question mark symbo
                                             title="Change Preview Position"
                                             disabled=${!o}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 23 18" style="pointer-events: none;"><g fill="none" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.5 9.5L6 12l2.5 2.5m7-5L18 12l-2.5 2.5"/><path d="M2 15V9a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"/></g></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <g fill="none" stroke="currentColor" stroke-width="1.5">
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        d="M8.5 9.5L6 12l2.5 2.5m7-5L18 12l-2.5 2.5"
+                                                    />
+                                                    <path
+                                                        d="M2 15V9a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"
+                                                    />
+                                                </g>
+                                            </svg>
                                         </button>
                                     </div>
                                     <button
@@ -501,7 +770,7 @@ Write here the content that will appear when clicking on the question mark symbo
                                         </svg>
                                     </button>
                                 </div>
-                                
+
                                 <div
                                     class="editor-content ${u} ${o?"":"preview-hidden"}"
                                 >

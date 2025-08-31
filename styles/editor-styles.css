@@ -321,6 +321,8 @@ body {
     box-shadow: var(--shadow);
     z-index: 1000;
     min-width: 180px;
+    max-height: 83vh;
+    overflow: auto;
 }
 .editor-toolbar .menu-content button {
     width: 100%;
