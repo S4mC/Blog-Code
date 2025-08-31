@@ -1,0 +1,50 @@
+<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Code</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=/styles/global-styles.css><link rel=stylesheet href=cdn/prism/prism-dark-svc.css><script src=cdn/prism/prism-core.min.js></script><script src=cdn/prism/prism-autoloader.min.js></script><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs"}}</script><style>#sidebarToggle{display:none}</style><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar}from"./components/Sidebar.js";function BlogList({entries:e}){return html`
+                    <div class="blog-list">
+                        ${e.map(e=>html`
+                                <article
+                                    key=${e.path}
+                                    class="blog-entry-card"
+                                >
+                                    <h3>
+                                        <a
+                                            href=${`./post.html?path=${encodeURIComponent(e.path)}`}
+                                        >
+                                            ${e.title}
+                                        </a>
+                                    </h3>
+                                    <p class="entry-summary">
+                                        ${e.summary}
+                                    </p>
+                                    <div class="entry-meta">
+                                        <span class="entry-date"
+                                            >${e.date}</span
+                                        >
+                                        ${e.tags&&html`
+                                            <div class="entry-tags">
+                                                ${e.tags.map(e=>html`
+                                                        <span
+                                                            key=${e}
+                                                            class="tag"
+                                                            >${e}</span
+                                                        >
+                                                    `)}
+                                            </div>
+                                        `}
+                                    </div>
+                                </article>
+                            `)}
+                    </div>
+                `}function App(){const[e,t]=useState([]);useEffect(()=>{fetch("./search.json").then(e=>e.json()).then(e=>t(e.entries||[])).catch(e=>console.error("Error loading entries:",e))},[]);const n=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`};return html`
+                    <div class="app">
+                        <${Header} showSearch=${!0} onNavigateToEntry=${n} />
+
+                        <main class="main-container">
+                            <${Sidebar} />
+                            <${BlogList} entries=${e} />
+                        </main>
+
+                        <footer class="footer">
+                            <p>© 2025 Blog Code.</p>
+                        </footer>
+                    </div>
+                `}render(html`<${App} />`,document.getElementById("app"))</script>

@@ -1,0 +1,31 @@
+<!doctype html><html lang=en><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Entry</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=/styles/global-styles.css><link rel=stylesheet href=/styles/post-styles.css><link rel=stylesheet href=cdn/prism/prism-dark-svc.css><script src=cdn/prism/prism-core.min.js></script><script src=cdn/prism/prism-autoloader.min.js></script><script src=cdn/marked/marked.umd.js></script><script src=cdn/SVGpanzoom/svg-pan-zoom.min.js></script><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs"}}</script><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect,useRef}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar,initSidebar}from"./components/Sidebar.js";import{renderMarkdown,showCopySuccess,manageEscapeIframe,manageClickFloatButton,}from"./components/markdownProcessor.js";document.addEventListener("keydown",function(e){e.key==="Escape"&&manageEscapeIframe()}),document.addEventListener("click",function(e){manageClickFloatButton(e)});function BlogEntry(){const[s,o]=useState(""),[c,i]=useState(""),[a,e]=useState(!0),[t,n]=useState(null),r=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`};return useEffect(()=>{const s=new URLSearchParams(window.location.search),t=s.get("path");if(!t){n("Entry path not specified"),e(!1);return}fetch(t).then(e=>{if(!e.ok)throw new Error(`Error ${e.status}: ${e.statusText}`);return e.text()}).then(t=>{let[s,a,r]=renderMarkdown(t);o(s);const n=t.match(/^#\s+(.+)$/m);n&&(i(n[1]),document.title=n[1]+" - Blog Code"),e(!1),setTimeout(()=>{window.Prism&&window.Prism.highlightAll(),initSidebar(a),eval(r)},100)}).catch(t=>{console.error("Error loading entry:",t),n(t.message),e(!1)})},[]),html`
+                    <div class="app">
+                        <${Header} showSearch=${!0} onNavigateToEntry=${r} />
+                        
+                        <main class="main-container">
+                            <${Sidebar} />
+                            ${a?html`
+                                <div class="loading">Loading entry...</div>
+                            `:t?html`
+                                <div class="error">
+                                    <h2>Error loading entry</h2>
+                                    <p>${t}</p>
+                                    <a href="./index.html">← Back to home</a>
+                                </div>
+                            `:html`
+                                <article class="blog-entry">
+                                    <div class="entry-navigation">
+                                        <a href="./index.html">← Back to home</a>
+                                    </div>
+                                    <div
+                                        class="entry-content"
+                                        dangerouslySetInnerHTML=${{__html:s}}
+                                    />
+                                </article>
+                            `}
+                        </main>
+                        <footer class="footer">
+                            <p>© 2025 Blog Code.</p>
+                        </footer>
+                    </div>
+                `}render(html`<${BlogEntry} />`,document.getElementById("app")),setTimeout(()=>{initSidebar([])},0)</script>
