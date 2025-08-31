@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 desktop.ini
+minify.exe
+compile.bat
 
 # Editor directories and files
 .vscode/*
