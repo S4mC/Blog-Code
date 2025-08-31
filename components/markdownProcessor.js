@@ -1,8 +1,28 @@
-function processInlineCodeBlocks(
-    text,
-    inlineCodeBlocks,
-    noPlaceHolder = false
-) {
+function obtainAttributes(line) {
+    const attributeRegex = /(\w+)="([^"]+)"/g;
+    let match;
+    let attributes = "";
+    while ((match = attributeRegex.exec(line)) !== null) {
+        const [, attr, value] = match;
+        if (attr !== "src") {
+            // Ignoramos src ya que lo manejamos aparte
+            attributes += ` ${attr}="${value}"`;
+        }
+    }
+    return attributes;
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) {
     let inlineCodeCount = 0;
     let result = text;
 
@@ -55,216 +75,182 @@ function processInlineCodeBlocks(
                 code: block.code,
             });
         }
-        result =
-            result.substring(0, block.start) +
-            ` ${placeholder}` +
-            result.substring(block.end);
+        result = result.substring(0, block.start) + ` ${placeholder}` + result.substring(block.end);
     });
 
     return [result, inlineCodeBlocks];
 }
 
-function processMarkdownWithIframes(markdownContent) {
-    // Procesamos el contenido línea por línea
-    const lines = markdownContent.split("\n");
+function processCodeBlocksAndTitles(text) {
+    let blockCount = 0;
     let inCodeBlock = false;
-    let currentCodeBlock = {
-        language: "",
-        lines: [],
-    };
-    const codeBlocks = new Map();
-    let codeBlockId = 0;
-    let processedLines = [];
+    let currentLanguage = "";
+    let currentCode = [];
+    let sidebarContent = [];
+    let protectedContent = [];
+    let codeBlocks = new Map();
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    const lines = text.split("\n");
 
-        // Detectar inicio/fin de bloque de código (con o sin espacios al inicio)
+    for (let line of lines) {
+
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith("```")) {
             if (!inCodeBlock) {
                 // Inicio de bloque de código
                 inCodeBlock = true;
-                currentCodeBlock.language = trimmedLine.slice(3).trim();
-                currentCodeBlock.lines = [];
+                currentLanguage = trimmedLine.slice(3).trim();
+                currentCode = [];
             } else {
                 // Fin de bloque de código
                 inCodeBlock = false;
-                const placeholder = `CODE_BLOCK_${codeBlockId}_BLOCK_CODE`;
+                const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
-                    language: currentCodeBlock.language,
-                    code: currentCodeBlock.lines.join("\n"),
+                    language: currentLanguage,
+                    code: currentCode.join("\n"),
                 });
-                processedLines.push(placeholder);
-                codeBlockId++;
-                currentCodeBlock = { language: "", lines: [] };
+                protectedContent.push(placeholder);
             }
             continue;
         }
 
         if (inCodeBlock) {
-            // Dentro de un bloque de código, guardar la línea sin procesar
-            currentCodeBlock.lines.push(line);
+            currentCode.push(line);
         } else {
-            // Detectar inicio/fin de bloque flotante
-            if (line.trim().startsWith(":::float-")) {
-                const floatId = line.trim().substring(":::float-".length);
-                processedLines.push("");
-                processedLines.push(
-                    `<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`
-                );
-                processedLines.push("");
-                i++;
-                while (i < lines.length && lines[i].trim() !== ":::") {
-                    processedLines.push(lines[i]);
-                    i++;
-                }
-                processedLines.push("");
-                processedLines.push("</div>");
-                processedLines.push("");
-            } else if (line.trim().startsWith(":::note")) {
-                // Inicio de note
-                processedLines.push('<div class="note-callout">');
-                processedLines.push('<div class="callout-header">');
-                processedLines.push(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'
-                );
-                processedLines.push("<span>Note</span>");
-                processedLines.push("</div>");
-                processedLines.push('<div class="callout-content">');
-                processedLines.push("");
-
-                // Procesar el contenido hasta encontrar el final del bloque
-                i++;
-                while (i < lines.length && lines[i].trim() !== ":::") {
-                    processedLines.push(lines[i]);
-                    i++;
-                }
-
-                processedLines.push("</div>");
-                processedLines.push("</div>");
-            } else if (line.trim().startsWith(":::warning")) {
-                // Inicio de warning
-                processedLines.push('<div class="warning-callout">');
-                processedLines.push('<div class="callout-header">');
-                processedLines.push(
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'
-                );
-                processedLines.push("<span>Warning</span>");
-                processedLines.push("</div>");
-                processedLines.push('<div class="callout-content">');
-                processedLines.push("");
-
-                // Procesar el contenido hasta encontrar el final del bloque
-                i++;
-                while (i < lines.length && lines[i].trim() !== ":::") {
-                    processedLines.push(lines[i]);
-                    i++;
-                }
-
-                processedLines.push("</div>");
-                processedLines.push("</div>");
-            } else if (line.trim().startsWith(":::details")) {
-                // Inicio de details
-                let nameSummary = line.trim().replace(":::details", "").trim();
-                if (nameSummary.startsWith("-open ")) {
-                    nameSummary = nameSummary.replace("-open ", "");
-                    processedLines.push(`<details open>
-                            <summary>${nameSummary}</summary>
-                            <div class="content-wrapper-details">
-                                <div class="contentDetails">`);
-                } else {
-                    // Not default open details
-                    processedLines.push(`<details>
-                                <summary>${nameSummary}</summary>
-                                <div class="content-wrapper-details">
-                                    <div class="contentDetails">`);
-                }
-                processedLines.push("");
-
-                i++; // Avanzar a la siguiente línea
-                while (i < lines.length && lines[i].trim() !== ":::") {
-                    processedLines.push(lines[i]);
-                    i++;
-                }
-                processedLines.push("");
-                processedLines.push("</div> </div> </details>");
-                processedLines.push("");
-            } else if (line.trim().startsWith(":::iframe")) {
-                // Inicio de iframe
-                let attributes = "";
-                // Extraer todos los atributos de la línea
-                const attributeRegex = /(\w+)="([^"]+)"/g;
-                let match;
-                while ((match = attributeRegex.exec(line)) !== null) {
-                    const [, attr, value] = match;
-                    if (attr !== "src") {
-                        // Ignoramos src ya que lo manejamos aparte
-                        attributes += ` ${attr}="${value}"`;
-                    }
-                }
-
-                let iframeContent = [];
-                i++; // Avanzar a la siguiente línea
-                while (i < lines.length && lines[i].trim() !== ":::") {
-                    iframeContent.push(lines[i]);
-                    i++;
-                }
-                const url = iframeContent.join("").trim();
-                const expandIcon = `<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path fill="currentColor" d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
-                            </svg>`;
-                const contractIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>`;
-                processedLines.push(
-                    `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
-                );
+            // Si no estamos en un bloque de código, procesamos titulos y parte de html
+            if (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### ")) {
+                let textHeader = processInlineCodeBlocks(
+                    line.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                    [],
+                    true
+                )[0];
+                sidebarContent.push(textHeader);
+                protectedContent.push(line);
+            } else if (line.startsWith("#t ")) {
+                protectedContent.push(`<plain>${line.substring(3)}</plain>`);
+            } else if (line.startsWith("<")) {
+                protectedContent.push(`<rawhtml>${line}</rawhtml>`);
             } else {
-                processedLines.push(line);
+                protectedContent.push(line);
             }
         }
     }
 
-    let processedContent = processedLines.join("\n");
+    return [protectedContent.join("\n"), codeBlocks, sidebarContent]
+}
 
-    // Finalmente, restauramos los bloques de código sin procesar su contenido
-    for (const [placeholder, { language, code }] of codeBlocks) {
-        const copyButton = `<button class="code-copy-button">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
-                    <path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                </svg>
-            </button>`;
+function processMarkdownBlocks(markdownContent) {
+    // Procesamos el contenido línea por línea
+    const lines = markdownContent.split("\n");
+    let processedLines = [];
 
-        // Escapar el HTML pero preservar los saltos de línea
-        const escapedCode = code
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-
-        processedContent = processedContent.replace(
-            placeholder,
-            `<div class="code-block-wrapper">${copyButton}<pre><code class="language-${language}">${escapedCode}</code></pre></div>`
-        );
+    function skipToEnd(i) {
+        // Esperar hasta el final del bloque
+        processedLines.push("");
+        i++;
+        while (i < lines.length && lines[i].trim() !== ":::") {
+            processedLines.push(lines[i]);
+            i++;
+        }
+        processedLines.push("");
+        return i;
     }
 
-    return processedContent;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        if (line.trim().startsWith(":::float-")) {
+            const floatId = line.trim().substring(":::float-".length);
+            processedLines.push("");
+            processedLines.push(
+                `<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`
+            );
+
+            i = skipToEnd(i);
+
+            processedLines.push("</div>");
+            processedLines.push("");
+        } else if (line.trim().startsWith(":::note")) {
+            processedLines.push('<div class="note-callout">');
+            processedLines.push('<div class="callout-header">');
+            processedLines.push(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'
+            );
+            processedLines.push("<span>Note</span>");
+            processedLines.push("</div>");
+            processedLines.push('<div class="callout-content">');
+
+            i = skipToEnd(i);
+
+            processedLines.push("</div>");
+            processedLines.push("</div>");
+        } else if (line.trim().startsWith(":::warning")) {
+            processedLines.push('<div class="warning-callout">');
+            processedLines.push('<div class="callout-header">');
+            processedLines.push(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'
+            );
+            processedLines.push("<span>Warning</span>");
+            processedLines.push("</div>");
+            processedLines.push('<div class="callout-content">');
+
+            i = skipToEnd(i);
+
+            processedLines.push("</div>");
+            processedLines.push("</div>");
+        } else if (line.trim().startsWith(":::details")) {
+            let nameSummary = line.trim().replace(":::details", "").trim();
+            let openDefault = false;
+            if (nameSummary.startsWith("-open ")) {
+                nameSummary = nameSummary.replace("-open ", "");
+                openDefault = true;
+            }
+            processedLines.push(`<details${openDefault ? " open" : ""}>
+                            <summary>${nameSummary}</summary>
+                            <div class="content-wrapper-details">
+                                <div class="contentDetails">`);
+
+            i = skipToEnd(i);
+
+            processedLines.push("</div> </div> </details>");
+            processedLines.push("");
+        } else if (line.trim().startsWith(":::iframe")) {
+            let attributes = obtainAttributes(line);
+
+            let iframeContent = [];
+            i++;
+            while (i < lines.length && lines[i].trim() !== ":::") {
+                iframeContent.push(lines[i]); // Put the content in the iframe, not the processed content
+                i++;
+            }
+
+            const url = iframeContent.join("").trim();
+            const expandIcon = `<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill="currentColor" d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
+                        </svg>`;
+            const contractIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>`;
+            processedLines.push(
+                `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
+            );
+        } else {
+            processedLines.push(line);
+        }
+    }
+
+    return processedLines.join("\n");
 }
 
 export function renderMarkdown(markdownContent) {
     // Configurar el renderer personalizado para los enlaces y encabezados
     const renderer = new marked.Renderer();
+
+    // Personalizar el renderer para los links
     renderer.link = (element) => {
         const isNewWindow = element.text.endsWith(" new");
-        const cleanText = isNewWindow
-            ? element.text.slice(0, -4)
-            : element.text;
-        const target = isNewWindow
-            ? 'target="_blank" rel="noopener noreferrer"'
-            : "";
+        const cleanText = isNewWindow ? element.text.slice(0, -4) : element.text;
+        const target = isNewWindow ? 'target="_blank" rel="noopener noreferrer"' : "";
         return `<a href="${element.href}" ${target}${
             element.title ? ` title="${element.title}"` : ""
         }>${cleanText}</a>`;
@@ -315,79 +301,14 @@ export function renderMarkdown(markdownContent) {
         return `<h${element.depth} id="${id}">${element.text}</h${element.depth}>`;
     };
 
-    marked.setOptions({
-        breaks: true,
-        gfm: true,
-        renderer: renderer,
-        headerIds: true, // Activamos los IDs en los encabezados
-        mangle: false,
-    });
+    let codeBlocks = new Map(); // Mapa para guardar los bloques de código
+    let inlineCodeBlocks = new Map(); // Mapa para guardar los códigos en línea
 
-    // Primero protegemos los bloques de código
-    const codeBlocks = new Map();
-    // Mapa para guardar los códigos en línea con prefijos de lenguaje
-    let inlineCodeBlocks = new Map();
-    let blockCount = 0;
-    let inCodeBlock = false;
-    let currentLanguage = "";
-    let currentCode = [];
-    const lines = markdownContent.split("\n");
-    let protectedContent = [];
     let sidebarContent = [];
+    let processedMarkdown = "";
 
-    for (let line of lines) {
-        if (
-            !inCodeBlock &&
-            (line.startsWith("## ") ||
-                line.startsWith("### ") ||
-                line.startsWith("#### ") ||
-                line.startsWith("##### ") ||
-                line.startsWith("###### "))
-        ) {
-            // Put the headers contents in the sidebar with proper formatting
-            let textHeader = processInlineCodeBlocks(
-                line.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
-                inlineCodeBlocks,
-                true
-            )[0];
-            sidebarContent.push(textHeader);
-        }
-
-        const trimmedLine = line.trim();
-        if (trimmedLine.startsWith("```")) {
-            if (!inCodeBlock) {
-                // Inicio de bloque de código
-                inCodeBlock = true;
-                currentLanguage = trimmedLine.slice(3).trim();
-                currentCode = [];
-            } else {
-                // Fin de bloque de código
-                inCodeBlock = false;
-                const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
-                codeBlocks.set(placeholder, {
-                    language: currentLanguage,
-                    code: currentCode.join("\n"),
-                });
-                protectedContent.push(placeholder);
-            }
-            continue;
-        }
-
-        if (inCodeBlock) {
-            currentCode.push(line);
-        } else {
-            // Si no estamos en un bloque de código, procesamos normalmente
-            if (line.startsWith("#t ")) {
-                protectedContent.push(`<plain>${line.substring(3)}</plain>`);
-            } else if (line.startsWith("<")) {
-                protectedContent.push(`<rawhtml>${line}</rawhtml>`);
-            } else {
-                protectedContent.push(line);
-            }
-        }
-    }
-
-    let processedMarkdown = protectedContent.join("\n");
+    // This must be run first because it prevents processing the contents of the code blocks and also getting the sidebar titles
+    [processedMarkdown, codeBlocks, sidebarContent] = processCodeBlocksAndTitles(markdownContent);
 
     // Procesar saltos de línea múltiples
     processedMarkdown = processedMarkdown.replace(/\n\n\n+/g, (match) => {
@@ -397,89 +318,23 @@ export function renderMarkdown(markdownContent) {
     });
 
     // Proteger código en línea con prefijo de lenguaje
-    [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(
-        processedMarkdown,
-        inlineCodeBlocks
-    );
+    [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(processedMarkdown, inlineCodeBlocks);
 
-    // Procesar iframes y convertir a HTML
-    const processedWithIframes = processMarkdownWithIframes(processedMarkdown);
+    // Procesar el contenido dentro de los bloques de código
+    const processedWithIframes = processMarkdownBlocks(processedMarkdown);
     processedMarkdown = processedWithIframes;
-    const rawHtml = marked.parse(processedMarkdown);
-    // Post-procesar para restaurar texto plano y HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(rawHtml, "text/html");
 
-    const tagsToUnwrap = ["plain", "rawhtml"];
-
-    doc.querySelectorAll("p").forEach((p) => {
-        const extracted = [];
-        const children = [...p.childNodes];
-
-        for (let i = 0; i < children.length; i++) {
-            const node = children[i];
-
-            // Caso: <br> seguido de <plain|rawhtml> -> formar bloque [br, ...childrenOfTag]
-            if (
-                node.nodeType === Node.ELEMENT_NODE &&
-                node.tagName.toLowerCase() === "br"
-            ) {
-                const next = children[i + 1];
-                if (
-                    next &&
-                    next.nodeType === Node.ELEMENT_NODE &&
-                    tagsToUnwrap.includes(next.tagName.toLowerCase())
-                ) {
-                    const block = [node, ...[...next.childNodes]]; // incluimos el <br> explícitamente
-                    extracted.push(block);
-                    node.remove(); // quitamos del DOM original
-                    next.remove(); // quitamos la etiqueta que contenía los nodos
-                    i++; // saltamos el siguiente porque ya lo procesamos
-                    continue;
-                }
-            }
-
-            // Caso: directamente <plain|rawhtml> (sin br previo)
-            if (
-                node.nodeType === Node.ELEMENT_NODE &&
-                tagsToUnwrap.includes(node.tagName.toLowerCase())
-            ) {
-                const block = [...node.childNodes];
-                extracted.push(block);
-                node.remove();
-            }
-        }
-
-        if (extracted.length) {
-            // Construir un fragmento manteniendo el orden original
-            const frag = doc.createDocumentFragment();
-
-            extracted.forEach((block, index) => {
-                // Si es el primer bloque y empieza con <br>, lo omitimos (quitamos el <br> inicial)
-                let start = 0;
-                if (
-                    index === 0 &&
-                    block[0] &&
-                    block[0].nodeType === Node.ELEMENT_NODE &&
-                    block[0].tagName.toLowerCase() === "br"
-                ) {
-                    start = 1;
-                }
-                for (let j = start; j < block.length; j++) {
-                    frag.appendChild(block[j]);
-                }
-            });
-
-            // Insertar todo de una vez después del <p>
-            p.after(frag);
-        }
+    marked.setOptions({
+        breaks: true,
+        gfm: true,
+        renderer: renderer,
+        headerIds: true, // Activamos los IDs en los encabezados
+        mangle: false,
     });
 
     // Convertir el documento a HTML
-    let finalHtml = doc.body.innerHTML;
+    let finalHtml = marked.parse(processedMarkdown);
     let finalJS = "";
-
-    let numberSVGcontainer = 1;
 
     // Process the float element
     finalHtml = finalHtml.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g, (match, id) => {
@@ -491,38 +346,20 @@ export function renderMarkdown(markdownContent) {
     // Restaurar códigos en línea con prefijos de lenguaje
     for (const [placeholder, { language, code }] of inlineCodeBlocks) {
         // Escapamos el código HTML para asegurarnos de que se muestra correctamente
-        const escapedCode = code
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+        const escapedCode = escapeHtml(code);
 
         // Usamos una expresión regular para asegurarnos de reemplazar solo placeholders completos
         // y no partes de texto que pudieran coincidir accidentalmente
         const regex = new RegExp(placeholder, "g");
-        finalHtml = finalHtml.replace(
-            regex,
-            `<code class="language-${language}">${escapedCode}</code>`
-        );
+        finalHtml = finalHtml.replace(regex, `<code class="language-${language}">${escapedCode}</code>`);
     }
 
     // Restaurar los bloques de código
+    let numberSVGcontainer = 1;
     for (const [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
         if (language.startsWith("svgcontainer")) {
-            let attributes = "";
-            // Extraer todos los atributos de la línea
-            const attributeRegex = /(\w+)="([^"]+)"/g;
-            let match;
-            while ((match = attributeRegex.exec(language)) !== null) {
-                const [, attr, value] = match;
-                if (attr !== "src") {
-                    // Ignoramos src ya que lo manejamos aparte
-                    attributes += ` ${attr}="${value}"`;
-                }
-            }
-
+            let attributes = obtainAttributes(language);
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
                 class="SVG-viewer"
@@ -532,10 +369,7 @@ export function renderMarkdown(markdownContent) {
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M4.929 4.929A10 10 0 1 1 19.07 19.07A10 10 0 0 1 4.93 4.93zM13 9a1 1 0 1 0-2 0v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2z"/></svg>
                 <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34A10 10 0 1 1 2 12l.005-.324A10 10 0 0 1 17 3.34M16.5 11.5H8.5a0.5 0.5 0 0 0-0.5 0.5v1a0.5 0.5 0 0 0 0.5 0.5h8a0.5 0.5 0 0 0 0.5-0.5v-1a0.5 0.5 0 0 0-0.5-0.5"/></svg>
                 <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34a10 10 0 1 1-14.995 8.984L2 12l.005-.324A10 10 0 0 1 17 3.34m-6.489 5.8a1 1 0 0 0-1.218 1.567L10.585 12l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 13.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 12l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 10.585l-1.293-1.292l-.094-.083z"/></svg>
-            </button>${code.replace(
-                "<svg ",
-                `<svg id='page${numberSVGcontainer}'`
-            )}</div>
+            </button>${code.replace("<svg ", `<svg id='page${numberSVGcontainer}'`)}</div>
             `;
 
             finalJS += `
@@ -630,12 +464,7 @@ export function renderMarkdown(markdownContent) {
             numberSVGcontainer += 1;
         } else {
             // Escapar el contenido para mostrarlo como texto
-            const escapedCode = code
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
+            const escapedCode = escapeHtml(code);
 
             const copyButton = `<button class="code-copy-button">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -654,7 +483,6 @@ export function renderMarkdown(markdownContent) {
     if (numberSVGcontainer > 1) {
         finalJS += `
         //Center SVG inside SVG-viewer
-        //If you have a lot of SVG use this and the id of SVG Viewer need to be SVGiewer{number} and window.zoomContainer need to be window.zoomContainer{number}:
         document.querySelectorAll('.SVG-viewer').forEach((viewer) => {
             const viewerId = viewer.id;
             const containerNumber = viewerId.replace('SVGiewer', '');
@@ -897,17 +725,6 @@ export function renderMarkdown(markdownContent) {
         window.floatEventListeners.activeFloats.clear();
     };`;
 
-    // // Quitar el primer p del li (titulo) para que no ocupe espacio
-    // finalJS += `
-    // document.querySelectorAll('li').forEach(li => {
-    //     const primerParrafo = li.querySelector('p');
-    //     if (primerParrafo) {
-    //         const nuevoSpan = document.createElement('span');
-    //         nuevoSpan.textContent = primerParrafo.textContent;
-    //         primerParrafo.replaceWith(nuevoSpan);
-    //     }
-    // });`;
-
     return [finalHtml, sidebarContent, finalJS];
 }
 
@@ -937,9 +754,7 @@ export function manageEscapeIframe() {
     }
 
     // También manejar el cierre de imágenes en pantalla completa
-    const fullscreenContainer = document.querySelector(
-        ".fullscreen-image-container"
-    );
+    const fullscreenContainer = document.querySelector(".fullscreen-image-container");
     if (fullscreenContainer) {
         fullscreenContainer.classList.remove("visible");
         setTimeout(() => fullscreenContainer.remove(), 300);
