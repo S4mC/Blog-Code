@@ -21,12 +21,74 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
+// Generic function to process balanced delimiters
+function processBalancedDelimiters(text, config) {
+    let result = text;
+    const { 
+        findPattern, 
+        openChar, 
+        closeChar, 
+        processMatch, 
+        shouldProcess = () => true 
+    } = config;
+    
+    const matches = [];
+    let match;
+    
+    // Find all potential starts
+    while ((match = findPattern.exec(text)) !== null) {
+        const matchData = {
+            fullMatch: match,
+            start: match.index,
+            ...match.groups || {}
+        };
+        
+        // Find the balanced end
+        let count = 1;
+        let i = match.index + match[0].length;
+        let endPos = -1;
+        
+        while (i < text.length && count > 0) {
+            const char = text[i];
+            if (char === openChar) {
+                count++;
+            } else if (char === closeChar) {
+                count--;
+                if (count === 0) {
+                    endPos = i;
+                    break;
+                }
+            }
+            i++;
+        }
+        
+        if (endPos !== -1) {
+            matchData.end = endPos + 1;
+            matchData.content = text.substring(match.index + match[0].length, endPos);
+            
+            if (shouldProcess(matchData)) {
+                matches.push(matchData);
+            }
+        }
+    }
+    
+    // Process from right to left to maintain positions
+    matches.reverse().forEach(matchData => {
+        const replacement = processMatch(matchData, text);
+        if (replacement !== null) {
+            result = result.substring(0, matchData.start) + replacement + result.substring(matchData.end);
+        }
+    });
+    
+    return result;
+}
+
 
 function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) {
     let inlineCodeCount = 0;
     let result = text;
 
-    // Regex más compatible: encuentra todos los backticks
+    // More compatible regex: finds all backticks
     const allBackticks = [];
     let match;
     const regex = /`/g;
@@ -35,7 +97,7 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
         allBackticks.push(match.index);
     }
 
-    // Filtrar solo backticks simples
+    // Filter only simple backticks
     const singleBackticks = allBackticks.filter((pos) => {
         const before = pos > 0 && text[pos - 1] === "`";
         const after = pos < text.length - 1 && text[pos + 1] === "`";
@@ -97,12 +159,12 @@ function processCodeBlocksAndTitles(text) {
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith("```")) {
             if (!inCodeBlock) {
-                // Inicio de bloque de código
+                // Start of code block
                 inCodeBlock = true;
                 currentLanguage = trimmedLine.slice(3).trim();
                 currentCode = [];
             } else {
-                // Fin de bloque de código
+                // End of code block
                 inCodeBlock = false;
                 const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
@@ -117,7 +179,7 @@ function processCodeBlocksAndTitles(text) {
         if (inCodeBlock) {
             currentCode.push(line);
         } else {
-            // Si no estamos en un bloque de código, procesamos titulos y parte de html
+            // If we're not in a code block, process titles and part of html
             if (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### ")) {
                 let textHeader = processInlineCodeBlocks(
                     line.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
@@ -140,12 +202,12 @@ function processCodeBlocksAndTitles(text) {
 }
 
 function processMarkdownBlocks(markdownContent) {
-    // Procesamos el contenido línea por línea
+    // Process the content line by line
     const lines = markdownContent.split("\n");
     let processedLines = [];
 
     function skipToEnd(i) {
-        // Esperar hasta el final del bloque
+        // Wait until the end of the block
         processedLines.push("");
         i++;
         while (i < lines.length && lines[i].trim() !== ":::") {
@@ -268,7 +330,7 @@ export function renderMarkdown(markdownContent) {
             id = `section-${sectionCount}`;
             sectionCount++;
             itemCount = 0;
-            // Reiniciar contadores de subitems para la nueva sección
+            // Reset subitem counters for the new section
             subitemCounts = {};
         } else if (element.depth === 3) {
             const currentSection = Math.max(0, sectionCount - 1);
@@ -291,7 +353,7 @@ export function renderMarkdown(markdownContent) {
             id = `section-${currentSection}-item-${currentItem}-subitem-${subitemCounts[key]}`;
             subitemCounts[key]++;
         } else {
-            // Para otros tipos de elementos (aunque no deberían existir)
+            // For other types of elements (although they shouldn't exist)
             id = element.text
                 .toLowerCase()
                 .replace(/[^\w]+/g, "-")
@@ -301,8 +363,8 @@ export function renderMarkdown(markdownContent) {
         return `<h${element.depth} id="${id}">${element.text}</h${element.depth}>`;
     };
 
-    let codeBlocks = new Map(); // Mapa para guardar los bloques de código
-    let inlineCodeBlocks = new Map(); // Mapa para guardar los códigos en línea
+    let codeBlocks = new Map(); // Map to store code blocks
+    let inlineCodeBlocks = new Map(); // Map to store inline codes
 
     let sidebarContent = [];
     let processedMarkdown = "";
@@ -310,17 +372,47 @@ export function renderMarkdown(markdownContent) {
     // This must be run first because it prevents processing the contents of the code blocks and also getting the sidebar titles
     [processedMarkdown, codeBlocks, sidebarContent] = processCodeBlocksAndTitles(markdownContent);
 
-    // Procesar saltos de línea múltiples
+    // Process multiple line breaks
     processedMarkdown = processedMarkdown.replace(/\n\n\n+/g, (match) => {
         const lineBreakCount = match.length - 2;
         const brs = "<rawhtml><br></rawhtml>".repeat(lineBreakCount);
         return `\n\n${brs}\n\n`;
     });
 
-    // Proteger código en línea con prefijo de lenguaje
+    // Protect inline code with language prefix
     [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(processedMarkdown, inlineCodeBlocks);
 
-    // Procesar el contenido dentro de los bloques de código
+    // Handle links that might have spaces in the href that Marked.js doesn't parse correctly
+    // Using the generic balanced delimiter processor
+    processedMarkdown = processBalancedDelimiters(processedMarkdown, {
+        findPattern: /\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,
+        openChar: '(',
+        closeChar: ')',
+        shouldProcess: (matchData) => {
+            // Check if encoding is needed
+            const href = matchData.content;
+            return href.includes(' ') || href.includes('(') || href.includes(')') || 
+                   href.includes('<') || href.includes('>') || href.includes('"') || 
+                   href.includes('=') || href.includes('&') || href.includes('%');
+        },
+        processMatch: (matchData, text) => {
+            const linkText = matchData.linkText;
+            const href = matchData.hrefStart + matchData.content;
+            
+            let encodedHref = href
+                .replace(/"/g, '%22')
+                .replace(/ /g, '%20')
+                .replace(/\(/g, '%28')
+                .replace(/\)/g, '%29')
+                .replace(/</g, '%3C')
+                .replace(/>/g, '%3E')
+                .replace(/&/g, '%26');
+
+            return `[${linkText}](${encodedHref})`;
+        }
+    });
+
+    // Process the content within code blocks
     const processedWithIframes = processMarkdownBlocks(processedMarkdown);
     processedMarkdown = processedWithIframes;
 
@@ -343,18 +435,18 @@ export function renderMarkdown(markdownContent) {
         </span>`;
     });
 
-    // Restaurar códigos en línea con prefijos de lenguaje
+    // Restore inline codes with language prefixes
     for (const [placeholder, { language, code }] of inlineCodeBlocks) {
-        // Escapamos el código HTML para asegurarnos de que se muestra correctamente
+        // Escape HTML code to ensure it displays correctly
         const escapedCode = escapeHtml(code);
 
-        // Usamos una expresión regular para asegurarnos de reemplazar solo placeholders completos
-        // y no partes de texto que pudieran coincidir accidentalmente
+        // Use a regular expression to ensure we only replace complete placeholders
+        // and not parts of text that might accidentally match
         const regex = new RegExp(placeholder, "g");
         finalHtml = finalHtml.replace(regex, `<code class="language-${language}">${escapedCode}</code>`);
     }
 
-    // Restaurar los bloques de código
+    // Restore code blocks
     let numberSVGcontainer = 1;
     for (const [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
@@ -420,7 +512,7 @@ export function renderMarkdown(markdownContent) {
                             });
                             window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
                             center_svg${numberSVGcontainer}();
-                        }, 280); // 280ms después de que termine
+                        }, 280); // 280ms after it finishes
                     });
                     
                     proper_height${numberSVGcontainer}();
@@ -463,7 +555,7 @@ export function renderMarkdown(markdownContent) {
 
             numberSVGcontainer += 1;
         } else {
-            // Escapar el contenido para mostrarlo como texto
+            // Escape the content to display it as text
             const escapedCode = escapeHtml(code);
 
             const copyButton = `<button class="code-copy-button">
@@ -475,7 +567,7 @@ export function renderMarkdown(markdownContent) {
 
             codeHtml = `<div class="code-block-wrapper">${copyButton}<pre><code class="language-${language}">${escapedCode}</code></pre></div>`;
         }
-        // Reemplazar el placeholder por el bloque de código, manejando posibles <br> antes/después
+        // Replace the placeholder with the code block, handling possible <br> before/after
         const regex = new RegExp(`(<br>\\s*)?${placeholder}(\\s*<br>)?`, "g");
         finalHtml = finalHtml.replace(regex, codeHtml);
     }
@@ -511,39 +603,158 @@ export function renderMarkdown(markdownContent) {
                     zoomContainer.center();
                 }
             }
-        });
-        
-        /* Hacer que se desplaze lentamente */
+        });`;
+    }
+
+    
+    // Slow scroll code for internal links - works on all pages
+    finalJS += `
+        /* Make it scroll slowly with special functionalities */
         document.querySelectorAll("a").forEach((link) => {
             link.addEventListener("click", function (e) {
                 const href = this.getAttribute("href") || this.getAttribute("xlink:href");
                 
-                // Solo procesar si es un enlace interno (empieza con #)
+                // Only process if it's an internal link (starts with #)
                 if (href && href.startsWith("#")) {
-                    e.preventDefault(); // evita el salto instantáneo
+                    e.preventDefault(); // prevents instant jump
 
-                    const targetId = href.substring(1); // substring quita el "#"
-                    const target = document.getElementById(targetId);
+                    let target = null;
+                    const entryContent = document.querySelector('.entry-content');
+                    let targetId = href.substring(1); // substring removes the "#"
+                    
+                    targetId = decodeURIComponent(targetId);
+                    
+                    // Check if it's a special link with parameters
+                    if (targetId.includes('=')) {
+                        
+                        // Use indexOf to properly handle values with spaces or special characters
+                        const equalIndex = targetId.indexOf('=');
+                        const type = targetId.substring(0, equalIndex);
+                        const value = targetId.substring(equalIndex + 1);
+                        
+                        if (type === 'h' && !isNaN(value)) {
+                            // Search for the specified h{number} (e.g. #h=1 searches for the first h1)
+                            const headingLevel = parseInt(value);
+                            if (headingLevel >= 1 && headingLevel <= 6) {
+                                const headings = entryContent ? 
+                                    entryContent.querySelectorAll(\`h\${headingLevel}\`) : 
+                                    document.querySelectorAll(\`h\${headingLevel}\`);
+                                if (headings.length > 0) {
+                                    target = headings[0];
+                                }
+                            }
+                        } else if (type.match(/^h[1-6]$/)) {
+                            // Search by position or by text in the specified h type
+                            const headingLevel = parseInt(type.substring(1));
+                            
+                            if (headingLevel >= 1 && headingLevel <= 6) {
+                                const headings = entryContent ? 
+                                    entryContent.querySelectorAll(\`h\${headingLevel}\`) : 
+                                    document.querySelectorAll(\`h\${headingLevel}\`);
+                                
+                                if (!isNaN(value)) {
+                                    // Search by position (e.g. #h2=3 searches for the third h2)
+                                    const elementIndex = parseInt(value) - 1; // Convert to 0-based index
+                                    if (elementIndex >= 0 && headings.length > elementIndex) {
+                                        target = headings[elementIndex];
+                                    }
+                                } else {
+                                    // Search by text (e.g. #h2=Introduction searches for the first h2 containing "Introduction")
+                                    const searchText = decodeURIComponent(value);
+                                    target = Array.from(headings).find(heading => 
+                                        heading.textContent.toLowerCase().includes(searchText.toLowerCase())
+                                    );
+                                }
+                            }
+                        } else if (type === 'text') {
+                            const searchText = decodeURIComponent(value);
+                            const searchArea = entryContent || document;
+
+                            // Search directly in all elements
+                            const allElements = searchArea.querySelectorAll('*');
+                            target = Array.from(allElements).find(element => 
+                                element.textContent.includes(searchText)
+                            );
+                        } else if (type === 'query') {
+                            // Execute custom querySelector (e.g. #query=document.querySelector("selector"))
+                            try {
+                                const queryString = decodeURIComponent(value);
+                                // Evaluate the query safely
+                                target = eval(queryString);
+                            } catch (error) {
+                                console.warn('Error executing query selector:', error);
+                                target = null;
+                            }
+                        }
+                    } else {
+                        // Normal search by ID
+                        target = document.getElementById(targetId);
+                    }
 
                     if (target) {
-                        const rect = target.getBoundingClientRect();
-                        const scrollTop =
-                            window.pageYOffset || document.documentElement.scrollTop;
-                        const offset =
-                            rect.top +
-                            scrollTop -
-                            window.innerHeight / 2 +
-                            rect.height / 2;
+                        const container = document.getElementsByClassName('entry-content')[0];
+                        if (container) {
+                            const containerRect = container.getBoundingClientRect();
+                            const targetRect = target.getBoundingClientRect();
+                            
+                            // Calculate the relative position of target within the container
+                            const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+                            
+                            // Calculate offset to center in the container
+                            const offset = relativeTop - container.clientHeight / 2 + targetRect.height / 2;
+                            
+                            container.scrollTo({
+                                top: Math.max(0, offset),
+                                behavior: 'smooth'
+                            });
+                        }
+                        
+                        // Add highlighting animation to the target element
+                        if (window.isHighlighting == target) {
+                            return; // Do nothing if already animating
+                        }
+                        window.isHighlighting = target;
 
-                        window.scrollTo({
-                            top: offset,
-                            behavior: "smooth",
-                        });
+                        setTimeout(() => {
+                            // Clear previous animations
+                            document.querySelectorAll('.target-highlight').forEach(el => {
+                                el.classList.remove('target-highlight');
+                                // Restore original display if it was changed
+                                if (el.dataset.originalDisplay) {
+                                    el.style.display = el.dataset.originalDisplay;
+                                    delete el.dataset.originalDisplay;
+                                }
+                            });
+                            
+                            // Check if element is inline or computed inline
+                            const computedStyle = window.getComputedStyle(target);
+                            const isInline = computedStyle.display === 'inline';
+                            
+                            // Store original display and temporarily change to inline-block if needed
+                            if (isInline) {
+                                target.dataset.originalDisplay = computedStyle.display;
+                                target.style.display = 'inline-block';
+                            }
+                            
+                            // Add highlighting class
+                            target.classList.add('target-highlight');
+                            
+                            // Remove class after animation
+                            window.highlightTargetTimeoutOut = setTimeout(() => {
+                                target.classList.remove('target-highlight');
+                                // Restore original display if it was changed
+                                if (target.dataset.originalDisplay) {
+                                    target.style.display = target.dataset.originalDisplay;
+                                    delete target.dataset.originalDisplay;
+                                }
+                                window.isHighlighting = false;
+                            }, 1100);
+                        }, 300); // Reduced from 500ms to 300ms to be faster
                     }
                 }
             });
-        });`;
-    }
+        });
+    `;
 
     // This code makes the summary work with animation
     finalJS += `
@@ -566,7 +777,7 @@ export function renderMarkdown(markdownContent) {
             e.preventDefault();
             
             if (details.open) {
-                // Cerrar con animación
+                // Close with animation
                 contentWrapper.classList.add('animating');
                 contentWrapper.classList.remove('opening');
                 
@@ -575,7 +786,7 @@ export function renderMarkdown(markdownContent) {
                     contentWrapper.classList.remove('animating');
                 }, 400);
             } else {
-                // Abrir con animación
+                // Open with animation
                 details.open = true;
                 contentWrapper.classList.add('animating');
                 
@@ -600,9 +811,9 @@ export function renderMarkdown(markdownContent) {
         });
     `;
 
-    // Añadir el código JavaScript para manejar los elementos flotantes
+    // Add JavaScript code to handle floating elements
     finalJS += `
-    // Limpiar event listeners anteriores si existen
+    // Clean previous event listeners if they exist
     if (window.floatEventListeners) {
         if (window.floatEventListeners.triggerClick) {
             window.floatEventListeners.triggerClick.forEach(item => {
@@ -633,14 +844,14 @@ export function renderMarkdown(markdownContent) {
             
             if (!floatContainer) return;
             
-            // Si el contenedor ya está visible, lo cerramos
+            // If the container is already visible, we close it
             if (floatContainer.classList.contains('visible')) {
                 floatContainer.classList.remove('visible');
                 window.floatEventListeners.activeFloats.delete(floatId);
                 return;
             }
             
-            // Cerrar todos los contenedores flotantes que estén abiertos
+            // Close all floating containers that are open
             document.querySelectorAll('.float-container.visible').forEach(container => {
                 container.classList.remove('visible');
                 const openFloatId = container.id.replace('float-', '');
@@ -658,7 +869,7 @@ export function renderMarkdown(markdownContent) {
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
             
-            // Calcular posición
+            // Calculate position
             let left = triggerRect.left + window.scrollX;
             let top = triggerRect.bottom + window.scrollY + 10;
             
@@ -717,7 +928,7 @@ export function renderMarkdown(markdownContent) {
     document.addEventListener('keydown', documentKeydownHandler);
     window.floatEventListeners.documentKeydown = documentKeydownHandler;
     
-    // Método global para cerrar todos los elementos flotantes
+    // Global method to close all floating elements
     window.closeAllFloats = function() {
         document.querySelectorAll('.float-container.visible').forEach(container => {
             container.classList.remove('visible');
@@ -753,7 +964,7 @@ export function manageEscapeIframe() {
         button.title = "Expand";
     }
 
-    // También manejar el cierre de imágenes en pantalla completa
+    // Also handle closing fullscreen images
     const fullscreenContainer = document.querySelector(".fullscreen-image-container");
     if (fullscreenContainer) {
         fullscreenContainer.classList.remove("visible");
@@ -785,7 +996,7 @@ export function manageClickFloatButton(e) {
         }
     }
 
-    // Para las imágenes
+    // For images
     if (
         e.target.tagName === "IMG" &&
         e.target.closest(".entry-content") &&
@@ -795,7 +1006,7 @@ export function manageClickFloatButton(e) {
         const container = document.createElement("div");
         container.className = "fullscreen-image-container";
 
-        // Crear el botón de cerrar
+        // Create the close button
         const closeButton = document.createElement("button");
         closeButton.className = "fullscreen-image-close";
         closeButton.innerHTML = `
@@ -814,21 +1025,21 @@ export function manageClickFloatButton(e) {
         container.appendChild(fullImage);
         document.body.appendChild(container);
 
-        // Mostrar con animación
+        // Show with animation
         requestAnimationFrame(() => {
             container.classList.add("visible");
         });
 
         document.body.style.overflow = "hidden";
 
-        // Función para cerrar
+        // Function to close
         const closeFullscreen = () => {
             container.classList.remove("visible");
             setTimeout(() => container.remove(), 300);
             document.body.style.overflow = "auto";
         };
 
-        // Manejar el cierre con el botón
+        // Handle closing with the button
         closeButton.onclick = (e) => {
             e.stopPropagation();
             closeFullscreen();
@@ -842,7 +1053,7 @@ export function manageClickFloatButton(e) {
         };
     }
 
-    // Para los botones de copiar código
+    // For copy code buttons
     if (e.target.closest(".code-copy-button")) {
         const button = e.target.closest(".code-copy-button");
         const codeBlock = button.parentElement.querySelector("code");

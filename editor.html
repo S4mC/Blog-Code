@@ -445,7 +445,6 @@ Be careful with this action!
                 useEffect(() => {
                     try {
                         localStorage.setItem("editorTabs", JSON.stringify(tabs));
-                        console.log(tabs);
                     } catch (e) {
                         console.warn("Error al guardar las pestañas en localStorage:", e);
                     }
@@ -723,6 +722,248 @@ Be careful with this action!
 
                 // Make the handleCopy function globally accessible
                 window.handleCopy = handleCopy;
+
+                const copyElementSelector = async () => {
+                    try {
+                        // Check if entry-content area exists
+                        const entryContent = document.querySelector('.entry-content');
+                        if (!entryContent) {
+                            throw new Error('Preview area (.entry-content) not found');
+                        }
+
+                        // Function to generate a unique selector for an element within entry-content
+                        const generateSelector = (element) => {
+                            // Validaciones iniciales más robustas
+    if (!element || 
+        !element.nodeType || 
+        element.nodeType !== Node.ELEMENT_NODE ||
+        element === document || 
+        element === document.body ||
+        element === document.documentElement) {
+        return null;
+    }
+    
+    // Verificar que entryContent existe y contiene el elemento
+    const entryContent = document.querySelector('.entry-content');
+    if (!entryContent || !entryContent.contains(element)) {
+        return null;
+    }
+    
+    let path = [];
+    let current = element;
+    
+    while (current && current !== entryContent && current !== document && current !== document.body) {
+        let selector = current.tagName.toLowerCase();
+        
+        // Priorizar ID únicos
+        if (current.id && current.id.trim()) {
+            const id = current.id.trim();
+            // Verificar que el ID sea único en el documento
+            if (document.querySelectorAll(`#${CSS.escape(id)}`).length === 1) {
+                selector = `#${CSS.escape(id)}`;
+                
+                // Validar que el selector con ID funciona directamente
+                try {
+                    const testElement = document.querySelector(selector);
+                    if (testElement === current) {
+                        return selector; // Retornar directamente el ID único
+                    }
+                } catch (error) {
+                    console.warn('ID selector is invalid:', selector, error);
+                }
+            }
+        }
+        
+        // Agregar clases válidas
+        if (current.className && typeof current.className === 'string') {
+            const classes = current.className.trim()
+                .split(/\s+/)
+                .filter(cls => cls && /^[a-zA-Z_-][a-zA-Z0-9_-]*$/.test(cls)) // Solo clases válidas
+                .map(cls => CSS.escape(cls));
+            
+            if (classes.length > 0) {
+                selector += '.' + classes.join('.');
+            }
+        }
+        
+        // Agregar atributos únicos si están disponibles
+        const uniqueAttributes = ['data-id', 'data-key', 'name'];
+        for (const attr of uniqueAttributes) {
+            if (current.hasAttribute(attr)) {
+                const attrValue = current.getAttribute(attr);
+                if (attrValue && attrValue.trim()) {
+                    const attrSelector = `${selector}[${attr}="${CSS.escape(attrValue.trim())}"]`;
+                    
+                    // Verificar si este atributo hace el selector único
+                    try {
+                        const testElements = document.querySelectorAll(attrSelector);
+                        if (testElements.length === 1 && testElements[0] === current) {
+                            return attrSelector; // Retornar directamente si es único
+                        }
+                    } catch (error) {
+                        // Continuar si hay error
+                    }
+                    
+                    selector += `[${attr}="${CSS.escape(attrValue.trim())}"]`;
+                    break;
+                }
+            }
+        }
+        
+        // Usar nth-child solo cuando sea necesario
+        const parent = current.parentElement;
+        if (parent && parent !== entryContent) {
+            const siblings = Array.from(parent.children).filter(child => 
+                child.tagName === current.tagName && 
+                child.nodeType === Node.ELEMENT_NODE
+            );
+            
+            if (siblings.length > 1) {
+                const index = siblings.indexOf(current) + 1;
+                if (index > 0) { // Verificar que encontramos el elemento
+                    selector += `:nth-child(${index})`;
+                }
+            }
+        }
+        
+        path.unshift(selector);
+        current = current.parentElement;
+        
+        // Prevenir bucles infinitos
+        if (path.length > 50) {
+            console.warn('Selector path too long, breaking to prevent infinite loop');
+            break;
+        }
+    }
+    
+    // Si llegamos aquí, construir el selector final con el container
+    const finalSelector = '.entry-content > ' + path.join(' > ');
+    
+    // Validar que el selector funciona antes de devolverlo
+    try {
+        const testElement = document.querySelector(finalSelector);
+        if (testElement === element) {
+            return finalSelector;
+        } else {
+            // Si el selector no funciona, intentar con un enfoque más específico
+            return null;
+        }
+    } catch (error) {
+        console.warn('Generated selector is invalid:', finalSelector, error);
+        return null;
+    }
+                        };
+
+                        // Enable element selection mode restricted to entry-content
+                        const selectElement = () => {
+                            return new Promise((resolve) => {
+                                let isSelecting = true;
+                                const originalCursor = entryContent.style.cursor;
+                                entryContent.style.cursor = 'crosshair';
+                                
+                                // Create overlay to show selection feedback
+                                const overlay = document.createElement('div');
+                                overlay.style.cssText = `
+                                    position: fixed;
+                                    pointer-events: none;
+                                    border: 2px solid #007ACC;
+                                    background: rgba(0, 122, 204, 0.1);
+                                    z-index: 10000;
+                                    transition: all 0.1s ease;
+                                    display: none;
+                                `;
+                                document.body.appendChild(overlay);
+
+                                const updateOverlay = (element) => {
+                                    // Only highlight elements within entry-content
+                                    if (element && entryContent.contains(element) && element !== entryContent) {
+                                        const rect = element.getBoundingClientRect();
+                                        overlay.style.left = rect.left + 'px';
+                                        overlay.style.top = rect.top + 'px';
+                                        overlay.style.width = rect.width + 'px';
+                                        overlay.style.height = rect.height + 'px';
+                                        overlay.style.display = 'block';
+                                    } else {
+                                        overlay.style.display = 'none';
+                                    }
+                                };
+
+                                const handleMouseMove = (e) => {
+                                    if (!isSelecting) return;
+                                    const element = document.elementFromPoint(e.clientX, e.clientY);
+                                    updateOverlay(element);
+                                };
+
+                                const handleClick = (e) => {
+                                    if (!isSelecting) return;
+                                    
+                                    // Only allow selection within entry-content
+                                    if (!entryContent.contains(e.target) || e.target === entryContent) {
+                                        return;
+                                    }
+                                    
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    isSelecting = false;
+                                    entryContent.style.cursor = originalCursor;
+                                    document.removeEventListener('mousemove', handleMouseMove);
+                                    document.removeEventListener('click', handleClick);
+                                    document.removeEventListener('keydown', handleEscape);
+                                    document.body.removeChild(overlay);
+                                    
+                                    resolve(e.target);
+                                };
+
+                                const handleEscape = (e) => {
+                                    if (e.key === 'Escape') {
+                                        isSelecting = false;
+                                        entryContent.style.cursor = originalCursor;
+                                        document.removeEventListener('mousemove', handleMouseMove);
+                                        document.removeEventListener('click', handleClick);
+                                        document.removeEventListener('keydown', handleEscape);
+                                        document.body.removeChild(overlay);
+                                        resolve(null);
+                                    }
+                                };
+
+                                // Add visual indicator to entry-content
+                                const originalBorder = entryContent.style.border;
+                                entryContent.style.border = '2px dashed #007ACC';
+                                
+                                // Restore border when done
+                                const restoreBorder = () => {
+                                    entryContent.style.border = originalBorder;
+                                };
+
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('click', handleClick);
+                                document.addEventListener('keydown', handleEscape);
+                                
+                                // Restore border when selection ends
+                                const originalResolve = resolve;
+                                resolve = (result) => {
+                                    restoreBorder();
+                                    originalResolve(result);
+                                };
+                            });
+                        };
+
+                        const selectedElement = await selectElement();
+                        if (selectedElement) {
+                            const selector = generateSelector(selectedElement);
+                            if (selector) {
+                                const fullSelector = `document.querySelector("${selector}")`;
+                                await navigator.clipboard.writeText(fullSelector);
+                                return Promise.resolve();
+                            }
+                        }
+                        return Promise.reject('No element selected');
+                    } catch (err) {
+                        console.error("Error copying element selector:", err);
+                        return Promise.reject(err);
+                    }
+                };
 
                 const handleExport = () => {
                     const blob = new Blob([preview], { type: "text/html" });
@@ -1524,7 +1765,39 @@ Be careful with this action!
                                             <em>C</em>
                                         </button>
                                         <button
-                                            onClick=${() => insertText("[", " new](url)")}
+                                            class="editor-menu"
+                                            style="padding-left: 4px;"
+                                            onClick=${(e) => {
+                                                if (e.target === e.currentTarget) {
+                                                    const menu =
+                                                        e.currentTarget.querySelector(".menu-content");
+                                                    const isVisible = menu.style.display === "block";
+                                                    menu.style.display = isVisible ? "none" : "block";
+
+                                                    if (!isVisible) {
+                                                        const closeMenu = (event) => {
+                                                            if (
+                                                                !menu.contains(event.target) &&
+                                                                !e.target.contains(event.target)
+                                                            ) {
+                                                                menu.style.display = "none";
+                                                                document.removeEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                );
+                                                            }
+                                                        };
+                                                        setTimeout(
+                                                            () =>
+                                                                document.addEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                ),
+                                                            0
+                                                        );
+                                                    }
+                                                }
+                                            }}
                                             title="Link"
                                         >
                                             <svg
@@ -1532,11 +1805,70 @@ Be careful with this action!
                                                 width="18"
                                                 height="18"
                                                 viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
                                             >
                                                 <path
                                                     fill="currentColor"
                                                     d="M11 17H7q-2.075 0-3.537-1.463T2 12t1.463-3.537T7 7h4v2H7q-1.25 0-2.125.875T4 12t.875 2.125T7 15h4zm-3-4v-2h8v2zm5 4v-2h4q1.25 0 2.125-.875T20 12t-.875-2.125T17 9h-4V7h4q2.075 0 3.538 1.463T22 12t-1.463 3.538T17 17z"
                                                 />
+                                            </svg>
+                                            <div class="menu-content" style="display: none;">
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("[", "](url)");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Normal Link
+                                                </button>
+                                                ${
+                                                    // Generate navigation header buttons dynamically
+                                                    (() => {
+                                                        const headerLevels = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+                                                        
+                                                        const handleHeaderClick = (level) => (e) => {
+                                                            insertText("[", `](#${level}=number or content text)`);
+                                                            e.currentTarget.parentElement.style.display = "none";
+                                                        };
+                                                        
+                                                        return headerLevels.map(level => 
+                                                            html`<button onClick=${handleHeaderClick(level)}>
+                                                                Navigate in ${level.toUpperCase()}
+                                                            </button>`
+                                                        );
+                                                    })()
+                                                }
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("[", "](#text=search)");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Text Search
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("[", '](#query=document.querySelector("#page1"))');
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    JS Path
+                                                </button>
+                                            </div>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
                                             </svg>
                                         </button>
                                         <button
@@ -2247,6 +2579,33 @@ Be careful with this action!
                                                         d="M2 15V9a4 4 0 0 1 4-4h12a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4Z"
                                                     />
                                                 </g>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick=${() => {
+                                                copyElementSelector()
+                                                    .then(() => {
+                                                        // Show success feedback
+                                                        const button = document.querySelector('[title="Copy Element Selector"]');
+                                                        if (button) {
+                                                            const originalHTML = button.innerHTML;
+                                                            showCopySuccess(button, originalHTML);
+                                                        }
+                                                    })
+                                                    .catch((err) => {
+                                                        console.error("Error copying element selector:", err);
+                                                    });
+                                            }}
+                                            title="Copy Element Selector"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 23 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path fill="currentColor" d="M5.523 4.75a.75.75 0 0 0-.75.75v1.625a.75.75 0 0 1-1.5 0V5.5a2.25 2.25 0 0 1 2.25-2.25h1.625a.75.75 0 0 1 0 1.5zM9.648 4a.75.75 0 0 1 .75-.75h3.25a.75.75 0 1 1 0 1.5h-3.25a.75.75 0 0 1-.75-.75m6.5 0a.75.75 0 0 1 .75-.75h1.625a2.25 2.25 0 0 1 2.25 2.25v1.625a.75.75 0 1 1-1.5 0V5.5a.75.75 0 0 0-.75-.75h-1.625a.75.75 0 0 1-.75-.75M4.023 9.625a.75.75 0 0 1 .75.75v3.25a.75.75 0 0 1-1.5 0v-3.25a.75.75 0 0 1 .75-.75m16 0a.75.75 0 0 1 .75.75v3.25a.75.75 0 0 1-.724.75l-.748-.546a.8.8 0 0 1-.028-.204v-3.25a.75.75 0 0 1 .75-.75M12.127 20.65l-.151-1.4h-1.578a.75.75 0 0 0 0 1.5h1.742zm-8.104-4.525a.75.75 0 0 1 .75.75V18.5c0 .414.336.75.75.75h1.625a.75.75 0 0 1 0 1.5H5.523a2.25 2.25 0 0 1-2.25-2.25v-1.625a.75.75 0 0 1 .75-.75"/><path fill="currentColor" fill-rule="evenodd" d="M13.01 11.726a.75.75 0 0 1 .818.044l6.525 4.767a.75.75 0 0 1-.305 1.343l-2.364.438l1.259 2.181a.75.75 0 0 1-1.3.75l-1.259-2.181l-1.562 1.829a.75.75 0 0 1-1.316-.407l-.866-8.034a.75.75 0 0 1 .37-.73m1.8 6.874l.778-.91a2.25 2.25 0 0 1 1.3-.75l1.176-.218l-3.75-2.74z" clip-rule="evenodd"/>
                                             </svg>
                                         </button>
                                     </div>

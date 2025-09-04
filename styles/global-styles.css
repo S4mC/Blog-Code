@@ -76,8 +76,7 @@
     /* Variables comunes para todos los temas */
     --border-radius: 8px;
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1),
-        0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
 
     --spacing-xs: 4px;
     --spacing-sm: 8px;
@@ -89,8 +88,8 @@
     --header-height: 60px;
 
     /* Fuente personalizada Ubuntu */
-    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Oxygen, Cantarell, "Helvetica Neue", sans-serif;
+    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Cantarell,
+        "Helvetica Neue", sans-serif;
 }
 
 /* Transitions between pages */
@@ -709,9 +708,7 @@ body {
     left: -350px;
     max-width: 350px;
     width: 100%;
-    height: calc(
-        100% - var(--header-height)
-    ); /* Ajustado para que no cubra el header */
+    height: calc(100% - var(--header-height)); /* Ajustado para que no cubra el header */
     background: var(--bg-color);
     color: white;
     overflow-y: auto;
@@ -966,8 +963,7 @@ details {
     border-radius: 12px;
     margin: 16px 0;
     overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     backdrop-filter: blur(10px);
     position: relative;
@@ -982,8 +978,7 @@ details:hover {
 details[open] {
     border-color: #58a6ff;
     background: linear-gradient(135deg, #1c2128 0%, #21262d 100%);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 summary {
@@ -1056,12 +1051,7 @@ details::after {
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent
-    );
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
 }
 
 /* Loading effect during animation */
@@ -1139,7 +1129,6 @@ details::after {
 .sidebar-component .section-item.active {
     color: #ffffff;
 }
-
 
 /* Estilos para los encabezados H4-H6 en la barra lateral */
 .sidebar-component .subitems {
@@ -1321,6 +1310,26 @@ details::after {
         transform: scale(1);
     }
 }
+
+/* Highlight target link with momentary zoom */
+.target-highlight {
+    position: relative;
+    animation: targetZoom 1s ease-out;
+}
+
+@keyframes targetZoom {
+    0% {
+        transform: scale(1);
+    }
+    40% {
+        transform: scale(0.85);
+        background-color: #454545;
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 
 /* Delete header tittle in small screens */
 @media (max-width: 440px) {
