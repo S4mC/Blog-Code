@@ -1,4 +1,4 @@
-function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,n=!1,o="",s=[],i=[],t=[],a=new Map;const c=e.split(`
+function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processBalancedDelimiters(e,t){let s=e;const{findPattern:i,openChar:a,closeChar:r,processMatch:c,shouldProcess:l=()=>!0}=t,o=[];let n;for(;(n=i.exec(e))!==null;){const t={fullMatch:n,start:n.index,...n.groups||{}};let s=1,i=n.index+n[0].length,c=-1;for(;i<e.length&&s>0;){const t=e[i];if(t===a)s++;else if(t===r&&(s--,s===0)){c=i;break}i++}c!==-1&&(t.end=c+1,t.content=e.substring(n.index+n[0].length,c),l(t)&&o.push(t))}return o.reverse().forEach(t=>{const n=c(t,e);n!==null&&(s=s.substring(0,t.start)+n+s.substring(t.end))}),s}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,n=!1,o="",s=[],i=[],t=[],a=new Map;const c=e.split(`
 `);for(let e of c){const l=e.trim();if(l.startsWith("```")){if(n){n=!1;const e=`CODE_BLOCK_${r++}_BLOCK_CODE`;a.set(e,{language:o,code:s.join(`
 `)}),t.push(e)}else n=!0,o=l.slice(3).trim(),s=[];continue}if(n)s.push(e);else if(e.startsWith("## ")||e.startsWith("### ")||e.startsWith("#### ")||e.startsWith("##### ")||e.startsWith("###### ")){let n=processInlineCodeBlocks(e.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(n),t.push(e)}else e.startsWith("#t ")?t.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?t.push(`<rawhtml>${e}</rawhtml>`):t.push(e)}return[t.join(`
 `),a,i]}function processMarkdownBlocks(e){const n=e.split(`
@@ -10,13 +10,13 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
                         </svg>`,c=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>`;t.push(`<div class="iframe-container"><iframe src="${a}" frameborder="0" allowfullscreen ${i}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${r}</span><span class="contract-icon" style="display: none;">${c}</span></button></div>`)}else t.push(o)}return t.join(`
-`)}export function renderMarkdown(e){const c=new marked.Renderer;c.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`};let r=0,i=0,o={};c.heading=function(e){let t="";if(e.depth===2)t=`section-${r}`,r++,i=0,o={};else if(e.depth===3){const e=Math.max(0,r-1);t=`section-${e}-item-${i}`,i++,o[`${e}-${i-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,r-1),s=Math.max(0,i-1),e=`${n}-${s}`;o[e]===0[0]&&(o[e]=0),t=`section-${n}-item-${s}-subitem-${o[e]}`,o[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let d=new Map,l=new Map,u=[],n="";[n,d,u]=processCodeBlocksAndTitles(e),n=n.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
+`)}export function renderMarkdown(e){const c=new marked.Renderer;c.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`};let r=0,a=0,o={};c.heading=function(e){let t="";if(e.depth===2)t=`section-${r}`,r++,a=0,o={};else if(e.depth===3){const e=Math.max(0,r-1);t=`section-${e}-item-${a}`,a++,o[`${e}-${a-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,r-1),s=Math.max(0,a-1),e=`${n}-${s}`;o[e]===0[0]&&(o[e]=0),t=`section-${n}-item-${s}-subitem-${o[e]}`,o[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let d=new Map,l=new Map,u=[],n="";[n,d,u]=processCodeBlocksAndTitles(e),n=n.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
 
 ${n}
 
-`}),[n,l]=processInlineCodeBlocks(n,l);const h=processMarkdownBlocks(n);n=h,marked.setOptions({breaks:!0,gfm:!0,renderer:c,headerIds:!0,mangle:!1});let s=marked.parse(n),a="";s=s.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
+`}),[n,l]=processInlineCodeBlocks(n,l),n=processBalancedDelimiters(n,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const h=processMarkdownBlocks(n);n=h,marked.setOptions({breaks:!0,gfm:!0,renderer:c,headerIds:!0,mangle:!1});let s=marked.parse(n),i="";s=s.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
-        </span>`);for(const[e,{language:t,code:n}]of l){const o=escapeHtml(n),i=new RegExp(e,"g");s=s.replace(i,`<code class="language-${t}">${o}</code>`)}let t=1;for(const[i,{language:e,code:o}]of d){let n="";if(e.startsWith("svgcontainer")){let s=obtainAttributes(e);n=`<div
+        </span>`);for(const[e,{language:t,code:n}]of l){const o=escapeHtml(n),i=new RegExp(e,"g");s=s.replace(i,`<code class="language-${t}">${o}</code>`)}let t=1;for(const[a,{language:e,code:o}]of d){let n="";if(e.startsWith("svgcontainer")){let s=obtainAttributes(e);n=`<div
                 id="SVGiewer${t}"
                 class="SVG-viewer"
                 ${s}
@@ -26,7 +26,7 @@ ${n}
                 <svg id="zoom-out${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34A10 10 0 1 1 2 12l.005-.324A10 10 0 0 1 17 3.34M16.5 11.5H8.5a0.5 0.5 0 0 0-0.5 0.5v1a0.5 0.5 0 0 0 0.5 0.5h8a0.5 0.5 0 0 0 0.5-0.5v-1a0.5 0.5 0 0 0-0.5-0.5"/></svg>
                 <svg id="reset_zoom${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34a10 10 0 1 1-14.995 8.984L2 12l.005-.324A10 10 0 0 1 17 3.34m-6.489 5.8a1 1 0 0 0-1.218 1.567L10.585 12l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 13.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 12l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 10.585l-1.293-1.292l-.094-.083z"/></svg>
             </button>${o.replace("<svg ",`<svg id='page${t}'`)}</div>
-            `,a+=`
+            `,i+=`
                 if (document.getElementById("page${t}")){
                 window.zoomContainer${t} = svgPanZoom("#page${t}");
                     
@@ -74,7 +74,7 @@ ${n}
                             });
                             window.zoomContainer${t} = svgPanZoom("#page${t}");
                             center_svg${t}();
-                        }, 280); // 280ms después de que termine
+                        }, 280); // 280ms after it finishes
                     });
                     
                     proper_height${t}();
@@ -118,7 +118,7 @@ ${n}
                     <path d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
                     <path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-            </button>`;n=`<div class="code-block-wrapper">${s}<pre><code class="language-${e}">${t}</code></pre></div>`}const r=new RegExp(`(<br>\\s*)?${i}(\\s*<br>)?`,"g");s=s.replace(r,n)}return t>1&&(a+=`
+            </button>`;n=`<div class="code-block-wrapper">${s}<pre><code class="language-${e}">${t}</code></pre></div>`}const r=new RegExp(`(<br>\\s*)?${a}(\\s*<br>)?`,"g");s=s.replace(r,n)}return t>1&&(i+=`
         //Center SVG inside SVG-viewer
         document.querySelectorAll('.SVG-viewer').forEach((viewer) => {
             const viewerId = viewer.id;
@@ -148,38 +148,153 @@ ${n}
                     zoomContainer.center();
                 }
             }
-        });
-        
-        /* Hacer que se desplaze lentamente */
+        });`),i+=`
+        /* Make it scroll slowly with special functionalities */
         document.querySelectorAll("a").forEach((link) => {
             link.addEventListener("click", function (e) {
                 const href = this.getAttribute("href") || this.getAttribute("xlink:href");
                 
-                // Solo procesar si es un enlace interno (empieza con #)
+                // Only process if it's an internal link (starts with #)
                 if (href && href.startsWith("#")) {
-                    e.preventDefault(); // evita el salto instantáneo
+                    e.preventDefault(); // prevents instant jump
 
-                    const targetId = href.substring(1); // substring quita el "#"
-                    const target = document.getElementById(targetId);
+                    let target = null;
+                    const entryContent = document.querySelector('.entry-content');
+                    let targetId = href.substring(1); // substring removes the "#"
+                    
+                    targetId = decodeURIComponent(targetId);
+                    
+                    // Check if it's a special link with parameters
+                    if (targetId.includes('=')) {
+                        
+                        // Use indexOf to properly handle values with spaces or special characters
+                        const equalIndex = targetId.indexOf('=');
+                        const type = targetId.substring(0, equalIndex);
+                        const value = targetId.substring(equalIndex + 1);
+                        
+                        if (type === 'h' && !isNaN(value)) {
+                            // Search for the specified h{number} (e.g. #h=1 searches for the first h1)
+                            const headingLevel = parseInt(value);
+                            if (headingLevel >= 1 && headingLevel <= 6) {
+                                const headings = entryContent ? 
+                                    entryContent.querySelectorAll(\`h\${headingLevel}\`) : 
+                                    document.querySelectorAll(\`h\${headingLevel}\`);
+                                if (headings.length > 0) {
+                                    target = headings[0];
+                                }
+                            }
+                        } else if (type.match(/^h[1-6]$/)) {
+                            // Search by position or by text in the specified h type
+                            const headingLevel = parseInt(type.substring(1));
+                            
+                            if (headingLevel >= 1 && headingLevel <= 6) {
+                                const headings = entryContent ? 
+                                    entryContent.querySelectorAll(\`h\${headingLevel}\`) : 
+                                    document.querySelectorAll(\`h\${headingLevel}\`);
+                                
+                                if (!isNaN(value)) {
+                                    // Search by position (e.g. #h2=3 searches for the third h2)
+                                    const elementIndex = parseInt(value) - 1; // Convert to 0-based index
+                                    if (elementIndex >= 0 && headings.length > elementIndex) {
+                                        target = headings[elementIndex];
+                                    }
+                                } else {
+                                    // Search by text (e.g. #h2=Introduction searches for the first h2 containing "Introduction")
+                                    const searchText = decodeURIComponent(value);
+                                    target = Array.from(headings).find(heading => 
+                                        heading.textContent.toLowerCase().includes(searchText.toLowerCase())
+                                    );
+                                }
+                            }
+                        } else if (type === 'text') {
+                            const searchText = decodeURIComponent(value);
+                            const searchArea = entryContent || document;
+
+                            // Search directly in all elements
+                            const allElements = searchArea.querySelectorAll('*');
+                            target = Array.from(allElements).find(element => 
+                                element.textContent.includes(searchText)
+                            );
+                        } else if (type === 'query') {
+                            // Execute custom querySelector (e.g. #query=document.querySelector("selector"))
+                            try {
+                                const queryString = decodeURIComponent(value);
+                                // Evaluate the query safely
+                                target = eval(queryString);
+                            } catch (error) {
+                                console.warn('Error executing query selector:', error);
+                                target = null;
+                            }
+                        }
+                    } else {
+                        // Normal search by ID
+                        target = document.getElementById(targetId);
+                    }
 
                     if (target) {
-                        const rect = target.getBoundingClientRect();
-                        const scrollTop =
-                            window.pageYOffset || document.documentElement.scrollTop;
-                        const offset =
-                            rect.top +
-                            scrollTop -
-                            window.innerHeight / 2 +
-                            rect.height / 2;
+                        const container = document.getElementsByClassName('entry-content')[0];
+                        if (container) {
+                            const containerRect = container.getBoundingClientRect();
+                            const targetRect = target.getBoundingClientRect();
+                            
+                            // Calculate the relative position of target within the container
+                            const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+                            
+                            // Calculate offset to center in the container
+                            const offset = relativeTop - container.clientHeight / 2 + targetRect.height / 2;
+                            
+                            container.scrollTo({
+                                top: Math.max(0, offset),
+                                behavior: 'smooth'
+                            });
+                        }
+                        
+                        // Add highlighting animation to the target element
+                        if (window.isHighlighting == target) {
+                            return; // Do nothing if already animating
+                        }
+                        window.isHighlighting = target;
 
-                        window.scrollTo({
-                            top: offset,
-                            behavior: "smooth",
-                        });
+                        setTimeout(() => {
+                            // Clear previous animations
+                            document.querySelectorAll('.target-highlight').forEach(el => {
+                                el.classList.remove('target-highlight');
+                                // Restore original display if it was changed
+                                if (el.dataset.originalDisplay) {
+                                    el.style.display = el.dataset.originalDisplay;
+                                    delete el.dataset.originalDisplay;
+                                }
+                            });
+                            
+                            // Check if element is inline or computed inline
+                            const computedStyle = window.getComputedStyle(target);
+                            const isInline = computedStyle.display === 'inline';
+                            
+                            // Store original display and temporarily change to inline-block if needed
+                            if (isInline) {
+                                target.dataset.originalDisplay = computedStyle.display;
+                                target.style.display = 'inline-block';
+                            }
+                            
+                            // Add highlighting class
+                            target.classList.add('target-highlight');
+                            
+                            // Remove class after animation
+                            window.highlightTargetTimeoutOut = setTimeout(() => {
+                                target.classList.remove('target-highlight');
+                                // Restore original display if it was changed
+                                if (target.dataset.originalDisplay) {
+                                    target.style.display = target.dataset.originalDisplay;
+                                    delete target.dataset.originalDisplay;
+                                }
+                                window.isHighlighting = false;
+                            }, 1100);
+                        }, 300); // Reduced from 500ms to 300ms to be faster
                     }
                 }
             });
-        });`),a+=`
+        });
+    `,i+=`
         // Remover listener anterior del documento si existe
         if (window.detailsClickHandler) {
             document.removeEventListener('click', window.detailsClickHandler);
@@ -199,7 +314,7 @@ ${n}
             e.preventDefault();
             
             if (details.open) {
-                // Cerrar con animación
+                // Close with animation
                 contentWrapper.classList.add('animating');
                 contentWrapper.classList.remove('opening');
                 
@@ -208,7 +323,7 @@ ${n}
                     contentWrapper.classList.remove('animating');
                 }, 400);
             } else {
-                // Abrir con animación
+                // Open with animation
                 details.open = true;
                 contentWrapper.classList.add('animating');
                 
@@ -231,8 +346,8 @@ ${n}
             const contentWrapper = details.querySelector('.content-wrapper-details');
             contentWrapper.classList.add('opening');
         });
-    `,a+=`
-    // Limpiar event listeners anteriores si existen
+    `,i+=`
+    // Clean previous event listeners if they exist
     if (window.floatEventListeners) {
         if (window.floatEventListeners.triggerClick) {
             window.floatEventListeners.triggerClick.forEach(item => {
@@ -263,14 +378,14 @@ ${n}
             
             if (!floatContainer) return;
             
-            // Si el contenedor ya está visible, lo cerramos
+            // If the container is already visible, we close it
             if (floatContainer.classList.contains('visible')) {
                 floatContainer.classList.remove('visible');
                 window.floatEventListeners.activeFloats.delete(floatId);
                 return;
             }
             
-            // Cerrar todos los contenedores flotantes que estén abiertos
+            // Close all floating containers that are open
             document.querySelectorAll('.float-container.visible').forEach(container => {
                 container.classList.remove('visible');
                 const openFloatId = container.id.replace('float-', '');
@@ -288,7 +403,7 @@ ${n}
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
             
-            // Calcular posición
+            // Calculate position
             let left = triggerRect.left + window.scrollX;
             let top = triggerRect.bottom + window.scrollY + 10;
             
@@ -347,13 +462,13 @@ ${n}
     document.addEventListener('keydown', documentKeydownHandler);
     window.floatEventListeners.documentKeydown = documentKeydownHandler;
     
-    // Método global para cerrar todos los elementos flotantes
+    // Global method to close all floating elements
     window.closeAllFloats = function() {
         document.querySelectorAll('.float-container.visible').forEach(container => {
             container.classList.remove('visible');
         });
         window.floatEventListeners.activeFloats.clear();
-    };`,[s,u,a]}export function showCopySuccess(e,t){e.innerHTML=`
+    };`,[s,u,i]}export function showCopySuccess(e,t){e.innerHTML=`
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
