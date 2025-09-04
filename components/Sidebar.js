@@ -393,7 +393,7 @@ class SidebarClass {
             
             // En pantallas grandes, mostrar sidebar automáticamente
             if (isLargeScreen && !sidebar.classList.contains('open')) {
-                this.open();
+                if (document.body.dataset.openSidebarResize !== "false") { this.open(); }
             } 
             // En pantallas pequeñas, ocultar sidebar si está abierta
             else if (!isLargeScreen && sidebar.classList.contains('open')) {

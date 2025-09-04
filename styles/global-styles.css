@@ -129,6 +129,7 @@
 * {
     margin: 0;
     padding: 0;
+    outline: none;
     box-sizing: border-box;
 }
 
@@ -856,6 +857,7 @@ body {
 .sidebar-component .collapse-icon {
     font-size: 12px;
     transition: transform 0.3s ease;
+    user-select: none;
 }
 
 .sidebar-component .section.expanded .collapse-icon {
@@ -1299,6 +1301,12 @@ details::after {
     color: var(--text-color);
 }
 
+/* Highlight target link with momentary zoom */
+.target-highlight {
+    position: relative;
+    animation: targetZoom 1s ease-out;
+}
+
 @keyframes pulse {
     0% {
         transform: scale(1);
@@ -1309,12 +1317,6 @@ details::after {
     100% {
         transform: scale(1);
     }
-}
-
-/* Highlight target link with momentary zoom */
-.target-highlight {
-    position: relative;
-    animation: targetZoom 1s ease-out;
 }
 
 @keyframes targetZoom {
