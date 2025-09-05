@@ -3,21 +3,21 @@
     .sidebar-component {
         display: grid; /* By default on big screens show sidebar */
         width: 300px;
-        position: sticky; /* Sticky position para seguir el scroll */
-        top: 52px; /* Considerando el header */
-        height: calc(100vh - 52px); /* Altura completa menos el header */
-        align-self: start; /* Asegura que se adhiera a la parte superior */
+        position: sticky; /* Sticky position to follow scroll */
+        top: 52px; /* Considering the header */
+        height: calc(100vh - 52px); /* Full height minus the header */
+        align-self: start; /* Ensures it sticks to the top */
     }
     
-    /* Añadir scrollbar al contenido cuando sea necesario */
+    /* Add scrollbar to content when needed */
     .sidebar-component .sidebar-content {
-        max-height: calc(100vh - 120px); /* Altura ajustable según el header y otros elementos */
-        overflow-y: auto; /* Añade scrollbar vertical cuando el contenido excede la altura */
+        max-height: calc(100vh - 120px); /* Adjustable height according to header and other elements */
+        overflow-y: auto; /* Add vertical scrollbar when content exceeds height */
         scrollbar-width: thin; /* Firefox */
         scrollbar-color: var(--border-color) transparent; /* Firefox */
     }
     
-    /* Estilo de scrollbar para Chrome, Edge, Safari */
+    /* Scrollbar style for Chrome, Edge, Safari */
     .sidebar-component .sidebar-content::-webkit-scrollbar {
         width: 6px;
     }
@@ -39,14 +39,14 @@
         margin: 0 0;
         padding: 0 0;
         grid-template-columns: auto 1fr;
-        align-items: start; /* Alinea los elementos desde el inicio */
+        align-items: start; /* Align elements from the start */
     }
 
     /* If the sidebar is closed */
     .sidebar-component:not(.open) {
         left: -300px;
         width: 0;
-        position: relative; /* Cambia a posición relativa cuando está cerrada */
+        position: relative; /* Change to relative position when closed */
         top: 0;
     }
 
@@ -71,19 +71,19 @@
     .sidebar-component {
         /* By default on small screens do not show sidebar */
         display: none;
-        height: calc(100vh - 51.6px); /* Altura completa menos el header */
-        position: fixed; /* Para móviles usamos fixed en vez de sticky */
-        top: 51.6px; /* Considerando el header */
+        height: calc(100vh - 51.6px); /* Full height minus the header */
+        position: fixed; /* For mobile we use fixed instead of sticky */
+        top: 51.6px; /* Considering the header */
         left: 0;
-        z-index: 100; /* Asegurar que esté por encima del contenido */
-        width: 80%; /* Ancho para móviles */
+        z-index: 100; /* Ensure it's above the content */
+        width: 80%; /* Width for mobile */
         max-width: 300px;
-        overflow: hidden; /* Para contener el sidebar-content con scrollbar */
+        overflow: hidden; /* To contain the sidebar-content with scrollbar */
     }
 
     .sidebar-overlay {
-        top: 51.6px; /* Ajustado para que comience debajo del header */
-        height: calc(100vh - 51.6px); /* Ajustado para que no cubra el header */
+        top: 51.6px; /* Adjusted to start below the header */
+        height: calc(100vh - 51.6px); /* Adjusted to not cover the header */
     }
     
     .sidebar-component.open {
@@ -96,7 +96,7 @@
         width: 0;
     }
     
-    /* Añadir scrollbar al contenido en dispositivos móviles */
+    /* Add scrollbar to content on mobile devices */
     .sidebar-component .sidebar-content {
         max-height: calc(100vh - 120px);
         overflow-y: auto;
@@ -104,7 +104,7 @@
         scrollbar-color: var(--border-color) transparent;
     }
     
-    /* Estilo de scrollbar para Chrome, Edge, Safari en móviles */
+    /* Scrollbar style for Chrome, Edge, Safari on mobile */
     .sidebar-component .sidebar-content::-webkit-scrollbar {
         width: 4px;
     }
@@ -118,15 +118,15 @@
 /* Media query for small screens */
 @media (max-width: 768px) {
     .sidebar-component, .sidebar-overlay {
-        height: calc(100vh - 38.7px); /* Altura completa menos el header */
-        top: 38.7px; /* Considerando el header */
+        height: calc(100vh - 38.7px); /* Full height minus the header */
+        top: 38.7px; /* Considering the header */
     }
 }
 
 /* Media query for super small screens */
 @media (max-width: 440px) {
     .sidebar-component, .sidebar-overlay {
-        height: calc(100vh - 34.7px); /* Altura completa menos el header */
-        top: 34.7px; /* Considerando el header */
+        height: calc(100vh - 34.7px); /* Full height minus the header */
+        top: 34.7px; /* Considering the header */
     }
 }

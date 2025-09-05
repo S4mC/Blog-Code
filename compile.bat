@@ -13,11 +13,14 @@ set DIST=docs
 :: Define which subfolders will be minified (space-separated)
 set FOLDERS=components styles .
 
+:: Define individual files to be minified (space-separated, with relative paths)
+set INDIVIDUAL_FILES=cdn/prism/prism_vsc.css
+
 :: Define which subfolders/files should be copied without minifying (space-separated)
 set COPY_ONLY=cdn posts public search.json
 
 :: Define excluded js, html, and css files (just filenames, space-separated)
-set EXCLUDE=nothing.html
+set EXCLUDE=
 
 :: ================================
 :: Prepare destination
@@ -34,9 +37,10 @@ echo Processing files from "%SRC%" into "%DIST%"...
 :: ================================
 :: Copy-only folders/files
 :: ================================
+echo.
+echo --- Copying ---
 for %%d in (%COPY_ONLY%) do (
-    echo.
-    echo --- Copying %%d ---
+    echo ^> Copying %%d
     if exist "%SRC%\%%d\" (
         :: If it's a folder
         xcopy /E /I /Y "%SRC%\%%d" "%DIST%\%%d" >nul
@@ -58,30 +62,56 @@ for %%d in (%FOLDERS%) do (
     :: Create subfolder inside dist if it doesn't exist
     if not exist "%DIST%\%%d" mkdir "%DIST%\%%d"
 
-    :: Process CSS
-    for %%f in ("%SRC%\%%d\*.css") do (
-        call :checkExclude "%%~nxf"
+    :: Process CSS (only in the specific directory, not subdirectories)
+    for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.css" 2^>nul') do (
+        call :checkExclude "%%f"
         if "!SKIP!"=="0" (
-            echo Minifying %%~nxf
-            minify.exe "%%f" -o "%DIST%\%%d\%%~nf.css"
+            echo ^> Minifying %%f
+            minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
+        ) else (
+            echo ^> Skipping %%f ^(excluded^)
         )
     )
 
-    :: Process JS
-    for %%f in ("%SRC%\%%d\*.js") do (
-        call :checkExclude "%%~nxf"
+    :: Process JS (only in the specific directory, not subdirectories)  
+    for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.js" 2^>nul') do (
+        call :checkExclude "%%f"
         if "!SKIP!"=="0" (
-            echo Minifying %%~nxf
-            minify.exe "%%f" -o "%DIST%\%%d\%%~nf.js"
+            echo ^> Minifying %%f
+            minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
+        ) else (
+            echo ^> Skipping %%f ^(excluded^)
         )
     )
 
-    :: Process HTML
-    for %%f in ("%SRC%\%%d\*.html") do (
-        call :checkExclude "%%~nxf"
+    :: Process HTML (only in the specific directory, not subdirectories)
+    for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.html" 2^>nul') do (
+        call :checkExclude "%%f"
         if "!SKIP!"=="0" (
-            echo Minifying %%~nxf
-            minify.exe "%%f" -o "%DIST%\%%d\%%~nf.html"
+            echo ^> Minifying %%f
+            minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
+        ) else (
+            echo ^> Skipping %%f ^(excluded^)
+        )
+    )
+)
+
+:: ================================
+:: Process individual files for minification
+:: ================================
+if defined INDIVIDUAL_FILES (
+    echo.
+    echo --- Minifying individual files ---
+    for %%f in (%INDIVIDUAL_FILES%) do (
+        if exist "%SRC%\%%f" (
+            :: Create directory structure if needed
+            for %%p in ("%DIST%\%%f") do if not exist "%%~dpp" mkdir "%%~dpp"
+            
+            :: Simple minification without exclusion check for individual files
+            echo ^> Minifying %%f
+            minify.exe "%SRC%\%%f" -o "%DIST%\%%f"
+        ) else (
+            echo ^> File not found: %%f
         )
     )
 )
@@ -99,7 +129,9 @@ exit /b
 :: ================================
 :checkExclude
 set "SKIP=0"
-for %%x in (%EXCLUDE%) do (
-    if /I "%~1"=="%%x" set "SKIP=1"
+if defined EXCLUDE (
+    for %%x in (%EXCLUDE%) do (
+        if /I "%~1"=="%%x" set "SKIP=1"
+    )
 )
 exit /b

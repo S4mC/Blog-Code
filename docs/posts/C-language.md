@@ -93,3 +93,24 @@ int main() {
 }
 ```
 
+## Conditionals
+The if condition in c is exactly the same as in javascript:
+```c
+#include <stdio.h>
+
+int main() {
+    int nota = 15;
+    if (nota >= 18) {
+        printf("Excellent");
+    } else if (nota >= 11) {
+        printf("Approved");
+    } else {
+        printf("Disapproved");
+    }
+    return 0;
+}
+```
+
+### Ternary Operator
+A shorthand for simple if ... else statements, exactly the same as in javascript:
+ javascript`variable = condition ? value_if_true: value_if_false;`

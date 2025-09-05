@@ -1,4 +1,4 @@
-/* Estilos base para el layout */
+/* Base styles for layout */
 html,
 body {
     height: 100vh;
@@ -31,7 +31,7 @@ body {
     border: none;
 }
 
-/* Fuerza el color del texto en el menú de autocompletado de Monaco */
+/* Force text color in Monaco autocompletion menu */
 
 .markdown-preview {
     height: 100%;
@@ -40,7 +40,7 @@ body {
     background-color: var(--bg-color);
 }
 
-/* Estilos para el scrollbar de la vista previa */
+/* Preview scrollbar styles */
 .markdown-preview::-webkit-scrollbar {
     width: 6px;
 }
@@ -82,7 +82,7 @@ body {
 
 .editor-actions button.primary {
     background-color: var(--primary-color);
-    color: white;
+    color: var(--text-color);
     border-color: var(--primary-color);
 }
 
@@ -140,14 +140,14 @@ body {
 
 .editor-toolbar button.active {
     background-color: var(--bg-hover);
-    color: white;
+    color: var(--text-color);
     border-color: var(--secondary-color);
 }
 
 .editor-toolbar button.selecting {
-    /* Styles for the Js copy path selection button */
+    /* Styles for the JS copy path selection button */
     background-color: var(--primary-color);
-    color: white;
+    color: var(--text-color);
     border-color: var(--primary-color);
 }
 
@@ -206,7 +206,7 @@ body {
     color: var(--text-color);
 }
 
-/* Estilos para el sistema de pestañas verticales */
+/* Vertical tabs system styles */
 .editor-tabs-vertical {
     max-height: 300px;
     overflow-y: auto;
@@ -255,7 +255,7 @@ body {
 
 .editor-tab-vertical.active {
     background-color: var(--bg-hover);
-    color: white;
+    color: var(--text-color);
     border-left-color: var(--secondary-color);
     font-weight: bold;
 }
@@ -286,8 +286,8 @@ body {
 }
 
 .editor-tab-vertical-close:hover {
-    background-color: rgba(255, 0, 0, 0.2);
-    color: #ff3333;
+    background-color: var(--editor-close-hover-bg);
+    color: var(--editor-close-hover-color);
 }
 .menu-content {
     position: absolute;
@@ -364,7 +364,7 @@ body {
     min-height: 500px;
 }
 
-/* Nuevos estilos para el selector de tabla tipo Excel */
+/* New styles for Excel-type table selector */
 .table-grid-selector {
     padding: 8px;
     max-width: 320px;
