@@ -2,6 +2,7 @@
 @media (min-width: 1024px) {
     .sidebar-component {
         display: grid; /* By default on big screens show sidebar */
+        background-color: transparent;
         width: 300px;
         position: sticky; /* Sticky position to follow scroll */
         top: 52px; /* Considering the header */

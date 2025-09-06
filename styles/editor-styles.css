@@ -438,3 +438,7 @@ body {
 .markdown-preview {
     scrollbar-width: thin;
 }
+
+[data-open-sidebar-resize="false"] .main-container::before, [data-open-sidebar-resize="false"] .main-container::after {
+    display: none;
+}
