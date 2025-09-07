@@ -206,10 +206,7 @@ function processMarkdownBlocks(markdownContent) {
     const lines = markdownContent.split("\n");
     let processedLines = [];
     
-    // Stack to keep track of nested blocks
-    let blockStack = [];
-
-    function processNestedBlocks(startIndex) {
+    function processNestedBlocks(startIndex, processContent = true) {
         let i = startIndex;
         let blockContent = [];
         let nestedLevel = 0;
@@ -256,8 +253,11 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push(nestedProcessed);
-            
+            processedLines.push("");
+            for (const line of nestedProcessed.split("\n")) {
+                processedLines.push(line);
+            }
+            processedLines.push("");
             i = endIndex;
             processedLines.push("</div>");
             processedLines.push("");
@@ -277,7 +277,11 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push(nestedProcessed);
+            processedLines.push("");
+            for (const line of nestedProcessed.split("\n")) {
+                processedLines.push(line);
+            }
+            processedLines.push("");
             
             i = endIndex;
             processedLines.push("</div>");
@@ -298,7 +302,11 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push(nestedProcessed);
+            processedLines.push("");
+            for (const line of nestedProcessed.split("\n")) {
+                processedLines.push(line);
+            }
+            processedLines.push("");
             
             i = endIndex;
             processedLines.push("</div>");
@@ -321,7 +329,11 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push(nestedProcessed);
+            processedLines.push("");
+            for (const line of nestedProcessed.split("\n")) {
+                processedLines.push(line);
+            }
+            processedLines.push("");
             
             i = endIndex;
             processedLines.push("</div> </div> </details>");
@@ -497,9 +509,10 @@ export function renderMarkdown(markdownContent) {
 
     // Restore code blocks
     let numberSVGcontainer = 1;
+    let numberLottieContainer = 1;
     for (const [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
-        if (language.startsWith("svgcontainer")) {
+        if (language.startsWith("svg")) {
             let attributes = obtainAttributes(language);
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
@@ -507,9 +520,9 @@ export function renderMarkdown(markdownContent) {
                 ${attributes}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0;">
-                <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M4.929 4.929A10 10 0 1 1 19.07 19.07A10 10 0 0 1 4.93 4.93zM13 9a1 1 0 1 0-2 0v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2z"/></svg>
-                <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34A10 10 0 1 1 2 12l.005-.324A10 10 0 0 1 17 3.34M16.5 11.5H8.5a0.5 0.5 0 0 0-0.5 0.5v1a0.5 0.5 0 0 0 0.5 0.5h8a0.5 0.5 0 0 0 0.5-0.5v-1a0.5 0.5 0 0 0-0.5-0.5"/></svg>
-                <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34a10 10 0 1 1-14.995 8.984L2 12l.005-.324A10 10 0 0 1 17 3.34m-6.489 5.8a1 1 0 0 0-1.218 1.567L10.585 12l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 13.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 12l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 10.585l-1.293-1.292l-.094-.083z"/></svg>
+                <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
+                <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
+                <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
             </button>${code.replace("<svg ", `<svg id='page${numberSVGcontainer}'`)}</div>
             `;
 
@@ -603,6 +616,142 @@ export function renderMarkdown(markdownContent) {
                 }`;
 
             numberSVGcontainer += 1;
+        } else if (language.startsWith("animation")) {
+            let attributes = obtainAttributes(language);
+            // Extract the animation path from the code content
+            const animationPath = code.trim();
+            
+            codeHtml = `<div class="animation-wrapper">
+                <div
+                    id="animationContainer${numberLottieContainer}"
+                    class="animation-container"
+                    ${attributes}
+                ></div>
+                <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
+                    <svg id="playPauseBtn${numberLottieContainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
+                    <svg id="resetBtn${numberLottieContainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
+            </div>`;
+
+            finalJS += `
+                // Use setTimeout to ensure DOM elements are ready
+                setTimeout(() => {
+                    if (document.getElementById("animationContainer${numberLottieContainer}") && typeof bodymovin !== 'undefined'){
+                        const animationContainer${numberLottieContainer} = document.getElementById('animationContainer${numberLottieContainer}');
+                        
+                        // Always clean up existing animation if it exists
+                        if (window.lottieAnimation${numberLottieContainer}) {
+                            try {
+                                window.lottieAnimation${numberLottieContainer}.destroy();
+                            } catch (e) {
+                                console.warn('Error destroying animation:', e);
+                            }
+                            window.lottieAnimation${numberLottieContainer} = null;
+                        }
+                        
+                        // Clean up event listeners
+                        if (window.lottieEventListeners && window.lottieEventListeners[${numberLottieContainer}]) {
+                            const listeners = window.lottieEventListeners[${numberLottieContainer}];
+                            const playBtn = document.getElementById('playPauseBtn${numberLottieContainer}');
+                            const resetBtn = document.getElementById('resetBtn${numberLottieContainer}');
+                            if (playBtn) playBtn.removeEventListener('click', listeners.playPause);
+                            if (resetBtn) resetBtn.removeEventListener('click', listeners.reset);
+                        }
+                        
+                        // Create fresh animation
+                        window.lottieAnimation${numberLottieContainer} = bodymovin.loadAnimation({
+                            container: animationContainer${numberLottieContainer},
+                            renderer: 'svg',
+                            loop: false,
+                            autoplay: false,
+                            path: '${animationPath}'
+                        });
+                        
+                        // Initialize states
+                        if (!window.lottieStates) window.lottieStates = {};
+                        window.lottieStates[${numberLottieContainer}] = {
+                            isPlaying: false,
+                            isStarting: true
+                        };
+                        
+                        // Get button references (with additional wait if needed)
+                        const playPauseBtn = document.getElementById('playPauseBtn${numberLottieContainer}');
+                        const resetBtn = document.getElementById('resetBtn${numberLottieContainer}');
+                        
+                        // Only proceed if buttons exist
+                        if (!playPauseBtn || !resetBtn) {
+                            console.warn('Animation buttons not found for container ${numberLottieContainer}');
+                            return;
+                        }
+                        
+                        // Control functions
+                        const togglePlayPause = () => {
+                            const state = window.lottieStates[${numberLottieContainer}];
+                            const animation = window.lottieAnimation${numberLottieContainer};
+                            if (!animation || !state || !playPauseBtn) return;
+                            
+                            if (state.isStarting) animation.stop();
+                            
+                            if (state.isPlaying) {
+                                animation.pause();
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                                state.isPlaying = false;
+                            } else {
+                                animation.play();
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+                                state.isPlaying = true;
+                            }
+                            state.isStarting = false;
+                        };
+                        
+                        const resetAnimation = () => {
+                            const state = window.lottieStates[${numberLottieContainer}];
+                            const animation = window.lottieAnimation${numberLottieContainer};
+                            if (!animation || !state || !playPauseBtn) return;
+                            
+                            animation.stop();
+                            animation.goToAndStop(0);
+                            playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                            state.isPlaying = false;
+                            state.isStarting = true;
+                        };
+                        
+                        // Event handlers
+                        const playHandler = (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            togglePlayPause();
+                        };
+                        
+                        const resetHandler = (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            resetAnimation();
+                        };
+                        
+                        // Set up event listeners
+                        if (!window.lottieEventListeners) window.lottieEventListeners = {};
+                        window.lottieEventListeners[${numberLottieContainer}] = {
+                            playPause: playHandler,
+                            reset: resetHandler
+                        };
+                        
+                        playPauseBtn.addEventListener('click', playHandler);
+                        resetBtn.addEventListener('click', resetHandler);
+                        
+                        // Animation events
+                        window.lottieAnimation${numberLottieContainer}.addEventListener('complete', () => {
+                            const state = window.lottieStates[${numberLottieContainer}];
+                            if (state && playPauseBtn) {
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                                state.isPlaying = false;
+                                state.isStarting = true;
+                            }
+                        });
+                    }
+                }, 50);`;
+
+            numberLottieContainer += 1;
         } else {
             // Escape the content to display it as text
             const escapedCode = escapeHtml(code);
@@ -909,30 +1058,39 @@ export function renderMarkdown(markdownContent) {
             
             // Mostrar el contenedor
             floatContainer.classList.add('visible');
+            void floatContainer.offsetWidth; // reflow force before measuring
             window.floatEventListeners.activeFloats.add(floatId);
             
-            // Posicionar el contenedor flotante cerca del trigger
             const triggerRect = this.getBoundingClientRect();
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
+            const parentRect = floatContainer.offsetParent.getBoundingClientRect();
+
+            let left = triggerRect.left - parentRect.left;
+            let top  = triggerRect.bottom - parentRect.top + 10;
+
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
-            
-            // Calculate position
-            let left = triggerRect.left + window.scrollX;
-            let top = triggerRect.bottom + window.scrollY + 10;
-            
-            // Ajustar si se sale de la pantalla
-            if (left + floatWidth > windowWidth - 20) {
-                left = windowWidth - floatWidth - 20;
+            const parentWidth = floatContainer.offsetParent.clientWidth;
+            const parentHeight = floatContainer.offsetParent.clientHeight;
+
+            // Ajustar horizontal
+            if (left + floatWidth > parentWidth - 10) {
+                left = parentWidth - floatWidth - 10;
             }
-            
-            if (top + floatHeight > window.scrollY + windowHeight - 20) {
-                top = triggerRect.top + window.scrollY - floatHeight - 10;
+            if (left < 0) {
+                left = 0;
             }
-            
-            floatContainer.style.left = left + 'px';
-            floatContainer.style.top = top + 'px';
+
+            // Ajustar vertical
+            if (top + floatHeight > parentHeight - 10) {
+                // si no cabe debajo, colócalo arriba del trigger
+                top = triggerRect.top - parentRect.top - floatHeight - 10;
+            }
+            if (top < 0) {
+                top = 0;
+            }
+
+            floatContainer.style.left = left + "px";
+            floatContainer.style.top = top + "px";
         };
         
         trigger.addEventListener('click', clickHandler);

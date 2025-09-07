@@ -11,6 +11,7 @@
         <link rel="stylesheet" href="cdn/prism/prism_vsc.css" />
         <link rel="stylesheet" href="cdn/monaco/editor.main.min.css" />
         <script src="cdn/prism/prism.js"></script>
+        <script src="cdn/bodymovin/lottie.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
         <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
         <script src="cdn/monaco/vs/loader.js"></script>
@@ -110,7 +111,7 @@ content
 
 ### SVG Container
 
-\`\`\`svgcontainer style="height:15em;"
+\`\`\`svg style="height:15em;"
 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 21q-.825 0-1.412-.587T1 19V5q0-.825.588-1.412T3 3h18q.825 0 1.413.588T23 5v14q0 .825-.587 1.413T21 21zm4-4h2V7H5v2h2zm4.5 0h2l1.75-3.175L17 17h2l-2.75-5L19 7h-2l-1.75 3.175L13.5 7h-2l2.75 5z"/></svg>
 \`\`\`
 
@@ -2286,7 +2287,7 @@ Be careful with this action!
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    '\n```svgcontainer style="height:15em;"\n',
+                                                    '\n```svg style="height:15em;"\n',
                                                     "\n```\n"
                                                 )}
                                             title="SVG Container"
@@ -2305,6 +2306,23 @@ Be careful with this action!
                                                     stroke-width="2"
                                                     d="M21 8h-2a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2v-4h-1M7 8H4a1 1 0 0 0-1 1v2a1 1 0 0 0 1 1h2a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3m7-8l1.5 8h1L14 8"
                                                 />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick=${() =>
+                                                insertText(
+                                                    '\n```animation style="height:15em;"\npublic/bodymovin.json',
+                                                    "\n```\n"
+                                                )}
+                                            title="Animation Container"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                            >
+                                                <path fill="currentColor" d="M4 2h10v2H4v10H2V4c0-1.11.89-2 2-2m4 4h10v2H8v10H6V8c0-1.11.89-2 2-2m4 4h8c1.11 0 2 .89 2 2v8c0 1.11-.89 2-2 2h-8c-1.11 0-2-.89-2-2v-8c0-1.11.89-2 2-2m2 2v8l6-4z"/>
                                             </svg>
                                         </button>
                                         <button

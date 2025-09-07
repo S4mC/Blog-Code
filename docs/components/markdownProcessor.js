@@ -1,32 +1,40 @@
 function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processBalancedDelimiters(e,t){let s=e;const{findPattern:i,openChar:a,closeChar:r,processMatch:c,shouldProcess:l=()=>!0}=t,o=[];let n;for(;(n=i.exec(e))!==null;){const t={fullMatch:n,start:n.index,...n.groups||{}};let s=1,i=n.index+n[0].length,c=-1;for(;i<e.length&&s>0;){const t=e[i];if(t===a)s++;else if(t===r&&(s--,s===0)){c=i;break}i++}c!==-1&&(t.end=c+1,t.content=e.substring(n.index+n[0].length,c),l(t)&&o.push(t))}return o.reverse().forEach(t=>{const n=c(t,e);n!==null&&(s=s.substring(0,t.start)+n+s.substring(t.end))}),s}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,n=!1,o="",s=[],i=[],t=[],a=new Map;const c=e.split(`
 `);for(let e of c){const l=e.trim();if(l.startsWith("```")){if(n){n=!1;const e=`CODE_BLOCK_${r++}_BLOCK_CODE`;a.set(e,{language:o,code:s.join(`
 `)}),t.push(e)}else n=!0,o=l.slice(3).trim(),s=[];continue}if(n)s.push(e);else if(e.startsWith("## ")||e.startsWith("### ")||e.startsWith("#### ")||e.startsWith("##### ")||e.startsWith("###### ")){let n=processInlineCodeBlocks(e.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(n),t.push(e)}else e.startsWith("#t ")?t.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?t.push(`<rawhtml>${e}</rawhtml>`):t.push(e)}return[t.join(`
-`),a,i]}function processMarkdownBlocks(e){const n=e.split(`
-`);let t=[];function s(e){for(t.push(""),e++;e<n.length&&n[e].trim()!==":::";)t.push(n[e]),e++;return t.push(""),e}for(let e=0;e<n.length;e++){const o=n[e];if(o.trim().startsWith(":::float-")){const n=o.trim().substring(":::float-".length);t.push(""),t.push(`<div class="float-container" id="float-${n}"><button class="float-close">×</button>`),e=s(e),t.push("</div>"),t.push("")}else if(o.trim().startsWith(":::note"))t.push('<div class="note-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'),t.push("<span>Note</span>"),t.push("</div>"),t.push('<div class="callout-content">'),e=s(e),t.push("</div>"),t.push("</div>");else if(o.trim().startsWith(":::warning"))t.push('<div class="warning-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'),t.push("<span>Warning</span>"),t.push("</div>"),t.push('<div class="callout-content">'),e=s(e),t.push("</div>"),t.push("</div>");else if(o.trim().startsWith(":::details")){let n=o.trim().replace(":::details","").trim(),i=!1;n.startsWith("-open ")&&(n=n.replace("-open ",""),i=!0),t.push(`<details${i?" open":""}>
-                            <summary>${n}</summary>
+`),a,i]}function processMarkdownBlocks(e){const s=e.split(`
+`);let t=[];function n(e){let n=e,o=[],i=0;for(;n<s.length;){const e=s[n],t=e.trim();if(t===":::"){if(i===0)break;i--,o.push(e)}else t.startsWith(":::")?(i++,o.push(e)):o.push(e);n++}return[o,n]}for(let e=0;e<s.length;e++){const i=s[e],o=i.trim();if(o.startsWith(":::float-")){const s=o.substring(":::float-".length);t.push(""),t.push(`<div class="float-container" id="float-${s}"><button class="float-close">×</button>`);const[i,a]=n(e+1),r=processMarkdownBlocks(i.join(`
+`));t.push("");for(const e of r.split(`
+`))t.push(e);t.push(""),e=a,t.push("</div>"),t.push("")}else if(o.startsWith(":::note")){t.push('<div class="note-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'),t.push("<span>Note</span>"),t.push("</div>"),t.push('<div class="callout-content">');const[s,o]=n(e+1),i=processMarkdownBlocks(s.join(`
+`));t.push("");for(const e of i.split(`
+`))t.push(e);t.push(""),e=o,t.push("</div>"),t.push("</div>")}else if(o.startsWith(":::warning")){t.push('<div class="warning-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'),t.push("<span>Warning</span>"),t.push("</div>"),t.push('<div class="callout-content">');const[s,o]=n(e+1),i=processMarkdownBlocks(s.join(`
+`));t.push("");for(const e of i.split(`
+`))t.push(e);t.push(""),e=o,t.push("</div>"),t.push("</div>")}else if(o.startsWith(":::details")){let s=o.replace(":::details","").trim(),i=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),i=!0),t.push(`<details${i?" open":""}>
+                            <summary>${s}</summary>
                             <div class="content-wrapper-details">
-                                <div class="contentDetails">`),e=s(e),t.push("</div> </div> </details>"),t.push("")}else if(o.trim().startsWith(":::iframe")){let i=obtainAttributes(o),s=[];for(e++;e<n.length&&n[e].trim()!==":::";)s.push(n[e]),e++;const a=s.join("").trim(),r=`<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <div class="contentDetails">`);const[a,r]=n(e+1),c=processMarkdownBlocks(a.join(`
+`));t.push("");for(const e of c.split(`
+`))t.push(e);t.push(""),e=r,t.push("</div> </div> </details>"),t.push("")}else if(o.startsWith(":::iframe")){let s=obtainAttributes(i);const[o,a]=n(e+1),r=o.join("").trim();e=a;const c=`<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fill="currentColor" d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
-                        </svg>`,c=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        </svg>`,l=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>`;t.push(`<div class="iframe-container"><iframe src="${a}" frameborder="0" allowfullscreen ${i}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${r}</span><span class="contract-icon" style="display: none;">${c}</span></button></div>`)}else t.push(o)}return t.join(`
-`)}export function renderMarkdown(e){const c=new marked.Renderer;c.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`};let r=0,a=0,o={};c.heading=function(e){let t="";if(e.depth===2)t=`section-${r}`,r++,a=0,o={};else if(e.depth===3){const e=Math.max(0,r-1);t=`section-${e}-item-${a}`,a++,o[`${e}-${a-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,r-1),s=Math.max(0,a-1),e=`${n}-${s}`;o[e]===0[0]&&(o[e]=0),t=`section-${n}-item-${s}-subitem-${o[e]}`,o[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let d=new Map,l=new Map,u=[],n="";[n,d,u]=processCodeBlocksAndTitles(e),n=n.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
+                        </svg>`;t.push(`<div class="iframe-container"><iframe src="${r}" frameborder="0" allowfullscreen ${s}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${c}</span><span class="contract-icon" style="display: none;">${l}</span></button></div>`)}else t.push(i)}return t.join(`
+`)}export function renderMarkdown(e){const d=new marked.Renderer;d.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`};let c=0,r=0,a={};d.heading=function(e){let t="";if(e.depth===2)t=`section-${c}`,c++,r=0,a={};else if(e.depth===3){const e=Math.max(0,c-1);t=`section-${e}-item-${r}`,r++,a[`${e}-${r-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,c-1),s=Math.max(0,r-1),e=`${n}-${s}`;a[e]===0[0]&&(a[e]=0),t=`section-${n}-item-${s}-subitem-${a[e]}`,a[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let h=new Map,l=new Map,u=[],s="";[s,h,u]=processCodeBlocksAndTitles(e),s=s.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
 
 ${n}
 
-`}),[n,l]=processInlineCodeBlocks(n,l),n=processBalancedDelimiters(n,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const h=processMarkdownBlocks(n);n=h,marked.setOptions({breaks:!0,gfm:!0,renderer:c,headerIds:!0,mangle:!1});let s=marked.parse(n),i="";s=s.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
+`}),[s,l]=processInlineCodeBlocks(s,l),s=processBalancedDelimiters(s,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const m=processMarkdownBlocks(s);s=m,marked.setOptions({breaks:!0,gfm:!0,renderer:d,headerIds:!0,mangle:!1});let i=marked.parse(s),o="";i=i.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
-        </span>`);for(const[e,{language:t,code:n}]of l){const o=escapeHtml(n),i=new RegExp(e,"g");s=s.replace(i,`<code class="language-${t}">${o}</code>`)}let t=1;for(const[a,{language:e,code:o}]of d){let n="";if(e.startsWith("svgcontainer")){let s=obtainAttributes(e);n=`<div
+        </span>`);for(const[e,{language:t,code:n}]of l){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let t=1,n=1;for(const[r,{language:e,code:a}]of h){let s="";if(e.startsWith("svg")){let n=obtainAttributes(e);s=`<div
                 id="SVGiewer${t}"
                 class="SVG-viewer"
-                ${s}
+                ${n}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0;">
-                <svg id="zoom-in${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M4.929 4.929A10 10 0 1 1 19.07 19.07A10 10 0 0 1 4.93 4.93zM13 9a1 1 0 1 0-2 0v2H9a1 1 0 1 0 0 2h2v2a1 1 0 1 0 2 0v-2h2a1 1 0 1 0 0-2h-2z"/></svg>
-                <svg id="zoom-out${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34A10 10 0 1 1 2 12l.005-.324A10 10 0 0 1 17 3.34M16.5 11.5H8.5a0.5 0.5 0 0 0-0.5 0.5v1a0.5 0.5 0 0 0 0.5 0.5h8a0.5 0.5 0 0 0 0.5-0.5v-1a0.5 0.5 0 0 0-0.5-0.5"/></svg>
-                <svg id="reset_zoom${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17 3.34a10 10 0 1 1-14.995 8.984L2 12l.005-.324A10 10 0 0 1 17 3.34m-6.489 5.8a1 1 0 0 0-1.218 1.567L10.585 12l-1.292 1.293l-.083.094a1 1 0 0 0 1.497 1.32L12 13.415l1.293 1.292l.094.083a1 1 0 0 0 1.32-1.497L13.415 12l1.292-1.293l.083-.094a1 1 0 0 0-1.497-1.32L12 10.585l-1.293-1.292l-.094-.083z"/></svg>
-            </button>${o.replace("<svg ",`<svg id='page${t}'`)}</div>
-            `,i+=`
+                <svg id="zoom-in${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
+                <svg id="zoom-out${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
+                <svg id="reset_zoom${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
+            </button>${a.replace("<svg ",`<svg id='page${t}'`)}</div>
+            `,o+=`
                 if (document.getElementById("page${t}")){
                 window.zoomContainer${t} = svgPanZoom("#page${t}");
                     
@@ -113,12 +121,138 @@ ${n}
                     });
                     
                     center_svg${t}();
-                }`,t+=1}else{const t=escapeHtml(o),s=`<button class="code-copy-button">
+                }`,t+=1}else if(e.startsWith("animation")){let t=obtainAttributes(e);const i=a.trim();s=`<div class="animation-wrapper">
+                <div
+                    id="animationContainer${n}"
+                    class="animation-container"
+                    ${t}
+                ></div>
+                <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
+                    <svg id="playPauseBtn${n}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
+                    <svg id="resetBtn${n}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+                </button>
+            </div>`,o+=`
+                // Use setTimeout to ensure DOM elements are ready
+                setTimeout(() => {
+                    if (document.getElementById("animationContainer${n}") && typeof bodymovin !== 'undefined'){
+                        const animationContainer${n} = document.getElementById('animationContainer${n}');
+                        
+                        // Always clean up existing animation if it exists
+                        if (window.lottieAnimation${n}) {
+                            try {
+                                window.lottieAnimation${n}.destroy();
+                            } catch (e) {
+                                console.warn('Error destroying animation:', e);
+                            }
+                            window.lottieAnimation${n} = null;
+                        }
+                        
+                        // Clean up event listeners
+                        if (window.lottieEventListeners && window.lottieEventListeners[${n}]) {
+                            const listeners = window.lottieEventListeners[${n}];
+                            const playBtn = document.getElementById('playPauseBtn${n}');
+                            const resetBtn = document.getElementById('resetBtn${n}');
+                            if (playBtn) playBtn.removeEventListener('click', listeners.playPause);
+                            if (resetBtn) resetBtn.removeEventListener('click', listeners.reset);
+                        }
+                        
+                        // Create fresh animation
+                        window.lottieAnimation${n} = bodymovin.loadAnimation({
+                            container: animationContainer${n},
+                            renderer: 'svg',
+                            loop: false,
+                            autoplay: false,
+                            path: '${i}'
+                        });
+                        
+                        // Initialize states
+                        if (!window.lottieStates) window.lottieStates = {};
+                        window.lottieStates[${n}] = {
+                            isPlaying: false,
+                            isStarting: true
+                        };
+                        
+                        // Get button references (with additional wait if needed)
+                        const playPauseBtn = document.getElementById('playPauseBtn${n}');
+                        const resetBtn = document.getElementById('resetBtn${n}');
+                        
+                        // Only proceed if buttons exist
+                        if (!playPauseBtn || !resetBtn) {
+                            console.warn('Animation buttons not found for container ${n}');
+                            return;
+                        }
+                        
+                        // Control functions
+                        const togglePlayPause = () => {
+                            const state = window.lottieStates[${n}];
+                            const animation = window.lottieAnimation${n};
+                            if (!animation || !state || !playPauseBtn) return;
+                            
+                            if (state.isStarting) animation.stop();
+                            
+                            if (state.isPlaying) {
+                                animation.pause();
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                                state.isPlaying = false;
+                            } else {
+                                animation.play();
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M6 19h4V5H6v14zm8-14v14h4V5h-4z');
+                                state.isPlaying = true;
+                            }
+                            state.isStarting = false;
+                        };
+                        
+                        const resetAnimation = () => {
+                            const state = window.lottieStates[${n}];
+                            const animation = window.lottieAnimation${n};
+                            if (!animation || !state || !playPauseBtn) return;
+                            
+                            animation.stop();
+                            animation.goToAndStop(0);
+                            playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                            state.isPlaying = false;
+                            state.isStarting = true;
+                        };
+                        
+                        // Event handlers
+                        const playHandler = (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            togglePlayPause();
+                        };
+                        
+                        const resetHandler = (ev) => {
+                            ev.preventDefault();
+                            ev.stopPropagation();
+                            resetAnimation();
+                        };
+                        
+                        // Set up event listeners
+                        if (!window.lottieEventListeners) window.lottieEventListeners = {};
+                        window.lottieEventListeners[${n}] = {
+                            playPause: playHandler,
+                            reset: resetHandler
+                        };
+                        
+                        playPauseBtn.addEventListener('click', playHandler);
+                        resetBtn.addEventListener('click', resetHandler);
+                        
+                        // Animation events
+                        window.lottieAnimation${n}.addEventListener('complete', () => {
+                            const state = window.lottieStates[${n}];
+                            if (state && playPauseBtn) {
+                                playPauseBtn.querySelector('path').setAttribute('d', 'M8 5v14l11-7z');
+                                state.isPlaying = false;
+                                state.isStarting = true;
+                            }
+                        });
+                    }
+                }, 50);`,n+=1}else{const t=escapeHtml(a),n=`<button class="code-copy-button">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
                     <path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-            </button>`;n=`<div class="code-block-wrapper">${s}<pre><code class="language-${e}">${t}</code></pre></div>`}const r=new RegExp(`(<br>\\s*)?${a}(\\s*<br>)?`,"g");s=s.replace(r,n)}return t>1&&(i+=`
+            </button>`;s=`<div class="code-block-wrapper">${n}<pre><code class="language-${e}">${t}</code></pre></div>`}const c=new RegExp(`(<br>\\s*)?${r}(\\s*<br>)?`,"g");i=i.replace(c,s)}return t>1&&(o+=`
         //Center SVG inside SVG-viewer
         document.querySelectorAll('.SVG-viewer').forEach((viewer) => {
             const viewerId = viewer.id;
@@ -148,7 +282,7 @@ ${n}
                     zoomContainer.center();
                 }
             }
-        });`),i+=`
+        });`),o+=`
         /* Make it scroll slowly with special functionalities */
         document.querySelectorAll("a").forEach((link) => {
             link.addEventListener("click", function (e) {
@@ -294,7 +428,7 @@ ${n}
                 }
             });
         });
-    `,i+=`
+    `,o+=`
         // Remover listener anterior del documento si existe
         if (window.detailsClickHandler) {
             document.removeEventListener('click', window.detailsClickHandler);
@@ -346,7 +480,7 @@ ${n}
             const contentWrapper = details.querySelector('.content-wrapper-details');
             contentWrapper.classList.add('opening');
         });
-    `,i+=`
+    `,o+=`
     // Clean previous event listeners if they exist
     if (window.floatEventListeners) {
         if (window.floatEventListeners.triggerClick) {
@@ -394,30 +528,39 @@ ${n}
             
             // Mostrar el contenedor
             floatContainer.classList.add('visible');
+            void floatContainer.offsetWidth; // reflow force before measuring
             window.floatEventListeners.activeFloats.add(floatId);
             
-            // Posicionar el contenedor flotante cerca del trigger
             const triggerRect = this.getBoundingClientRect();
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
+            const parentRect = floatContainer.offsetParent.getBoundingClientRect();
+
+            let left = triggerRect.left - parentRect.left;
+            let top  = triggerRect.bottom - parentRect.top + 10;
+
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
-            
-            // Calculate position
-            let left = triggerRect.left + window.scrollX;
-            let top = triggerRect.bottom + window.scrollY + 10;
-            
-            // Ajustar si se sale de la pantalla
-            if (left + floatWidth > windowWidth - 20) {
-                left = windowWidth - floatWidth - 20;
+            const parentWidth = floatContainer.offsetParent.clientWidth;
+            const parentHeight = floatContainer.offsetParent.clientHeight;
+
+            // Ajustar horizontal
+            if (left + floatWidth > parentWidth - 10) {
+                left = parentWidth - floatWidth - 10;
             }
-            
-            if (top + floatHeight > window.scrollY + windowHeight - 20) {
-                top = triggerRect.top + window.scrollY - floatHeight - 10;
+            if (left < 0) {
+                left = 0;
             }
-            
-            floatContainer.style.left = left + 'px';
-            floatContainer.style.top = top + 'px';
+
+            // Ajustar vertical
+            if (top + floatHeight > parentHeight - 10) {
+                // si no cabe debajo, colócalo arriba del trigger
+                top = triggerRect.top - parentRect.top - floatHeight - 10;
+            }
+            if (top < 0) {
+                top = 0;
+            }
+
+            floatContainer.style.left = left + "px";
+            floatContainer.style.top = top + "px";
         };
         
         trigger.addEventListener('click', clickHandler);
@@ -468,7 +611,7 @@ ${n}
             container.classList.remove('visible');
         });
         window.floatEventListeners.activeFloats.clear();
-    };`,[s,u,i]}export function showCopySuccess(e,t){e.innerHTML=`
+    };`,[i,u,o]}export function showCopySuccess(e,t){e.innerHTML=`
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
