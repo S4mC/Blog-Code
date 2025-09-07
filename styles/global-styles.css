@@ -1300,7 +1300,7 @@ summary::before {
     transition: transform 0.3s ease;
 }
 
-details[open] summary::before {
+details[open]>summary::before {
     transform: rotate(225deg);
 }
 

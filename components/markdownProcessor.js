@@ -205,34 +205,64 @@ function processMarkdownBlocks(markdownContent) {
     // Process the content line by line
     const lines = markdownContent.split("\n");
     let processedLines = [];
+    
+    // Stack to keep track of nested blocks
+    let blockStack = [];
 
-    function skipToEnd(i) {
-        // Wait until the end of the block
-        processedLines.push("");
-        i++;
-        while (i < lines.length && lines[i].trim() !== ":::") {
-            processedLines.push(lines[i]);
+    function processNestedBlocks(startIndex) {
+        let i = startIndex;
+        let blockContent = [];
+        let nestedLevel = 0;
+        
+        while (i < lines.length) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+            
+            // Check if this line starts a new block
+            if (trimmedLine === ":::") {
+                if (nestedLevel === 0) {
+                    // This closes our current block
+                    break;
+                } else {
+                    // This closes a nested block
+                    nestedLevel--;
+                    blockContent.push(line);
+                }
+            } else if (trimmedLine.startsWith(":::")) {
+                nestedLevel++;
+                blockContent.push(line);
+            } else {
+                blockContent.push(line);
+            }
             i++;
         }
-        processedLines.push("");
-        return i;
+        
+        return [blockContent, i];
     }
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        const trimmedLine = line.trim();
 
-        if (line.trim().startsWith(":::float-")) {
-            const floatId = line.trim().substring(":::float-".length);
+        if (trimmedLine.startsWith(":::float-")) {
+            const floatId = trimmedLine.substring(":::float-".length);
             processedLines.push("");
             processedLines.push(
                 `<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`
             );
 
-            i = skipToEnd(i);
-
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Recursively process the content inside the block
+            const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+            processedLines.push(nestedProcessed);
+            
+            i = endIndex;
             processedLines.push("</div>");
             processedLines.push("");
-        } else if (line.trim().startsWith(":::note")) {
+            
+        } else if (trimmedLine.startsWith(":::note")) {
             processedLines.push('<div class="note-callout">');
             processedLines.push('<div class="callout-header">');
             processedLines.push(
@@ -242,11 +272,18 @@ function processMarkdownBlocks(markdownContent) {
             processedLines.push("</div>");
             processedLines.push('<div class="callout-content">');
 
-            i = skipToEnd(i);
-
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Recursively process the content inside the block
+            const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+            processedLines.push(nestedProcessed);
+            
+            i = endIndex;
             processedLines.push("</div>");
             processedLines.push("</div>");
-        } else if (line.trim().startsWith(":::warning")) {
+            
+        } else if (trimmedLine.startsWith(":::warning")) {
             processedLines.push('<div class="warning-callout">');
             processedLines.push('<div class="callout-header">');
             processedLines.push(
@@ -256,12 +293,19 @@ function processMarkdownBlocks(markdownContent) {
             processedLines.push("</div>");
             processedLines.push('<div class="callout-content">');
 
-            i = skipToEnd(i);
-
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Recursively process the content inside the block
+            const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+            processedLines.push(nestedProcessed);
+            
+            i = endIndex;
             processedLines.push("</div>");
             processedLines.push("</div>");
-        } else if (line.trim().startsWith(":::details")) {
-            let nameSummary = line.trim().replace(":::details", "").trim();
+            
+        } else if (trimmedLine.startsWith(":::details")) {
+            let nameSummary = trimmedLine.replace(":::details", "").trim();
             let openDefault = false;
             if (nameSummary.startsWith("-open ")) {
                 nameSummary = nameSummary.replace("-open ", "");
@@ -272,21 +316,26 @@ function processMarkdownBlocks(markdownContent) {
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);
 
-            i = skipToEnd(i);
-
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Recursively process the content inside the block
+            const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+            processedLines.push(nestedProcessed);
+            
+            i = endIndex;
             processedLines.push("</div> </div> </details>");
             processedLines.push("");
-        } else if (line.trim().startsWith(":::iframe")) {
+            
+        } else if (trimmedLine.startsWith(":::iframe")) {
             let attributes = obtainAttributes(line);
 
-            let iframeContent = [];
-            i++;
-            while (i < lines.length && lines[i].trim() !== ":::") {
-                iframeContent.push(lines[i]); // Put the content in the iframe, not the processed content
-                i++;
-            }
-
-            const url = iframeContent.join("").trim();
+            // Process nested content for iframe
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            const url = blockContent.join("").trim();
+            
+            i = endIndex;
+            
             const expandIcon = `<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fill="currentColor" d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
                         </svg>`;
