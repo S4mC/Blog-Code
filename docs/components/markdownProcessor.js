@@ -121,11 +121,11 @@ ${n}
                     });
                     
                     center_svg${t}();
-                }`,t+=1}else if(e.startsWith("animation")){let t=obtainAttributes(e);const i=a.trim();s=`<div class="animation-wrapper">
+                }`,t+=1}else if(e.startsWith("animation")){let i=obtainAttributes(e),t=e.split(" ")[0].split("-");const r=a.trim();s=`<div class="animation-wrapper">
                 <div
                     id="animationContainer${n}"
                     class="animation-container"
-                    ${t}
+                    ${i}
                 ></div>
                 <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
                     <svg id="playPauseBtn${n}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
@@ -160,16 +160,16 @@ ${n}
                         window.lottieAnimation${n} = bodymovin.loadAnimation({
                             container: animationContainer${n},
                             renderer: 'svg',
-                            loop: false,
-                            autoplay: false,
-                            path: '${i}'
+                            loop: ${t.includes("loop")?"true":"false"},
+                            autoplay: ${t.includes("autoplay")?"true":"false"},
+                            path: '${r}',
                         });
                         
                         // Initialize states
                         if (!window.lottieStates) window.lottieStates = {};
                         window.lottieStates[${n}] = {
                             isPlaying: false,
-                            isStarting: true
+                            isStarting: true,
                         };
                         
                         // Get button references (with additional wait if needed)
@@ -551,10 +551,11 @@ ${n}
             }
 
             // Ajustar vertical
-            if (top + floatHeight > parentHeight - 10) {
+            if (triggerRect.y + floatHeight > window.innerHeight - 40) {
                 // si no cabe debajo, colócalo arriba del trigger
                 top = triggerRect.top - parentRect.top - floatHeight - 10;
             }
+
             if (top < 0) {
                 top = 0;
             }

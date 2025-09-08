@@ -23,11 +23,11 @@
     --header-bg-rgb: 4, 5, 6;
 
     /* Article gradient overlay */
-    --article-gradient-start: rgba(165, 193, 79, 0.22);
-    --article-gradient-mid: rgba(165, 193, 79, 0.13);
+    --article-gradient-start: rgba(170, 202, 73, 0.22);
+    --article-gradient-mid: rgba(165, 193, 79, 0.145);
     --article-gradient-end: transparent;
 
-    --article-box-bg: rgba(255, 255, 255, 0.2);
+    --article-box-bg: rgba(255, 255, 255, 0.226);
 
     /* Editor specific colors */
     --editor-close-hover-bg: rgba(255, 0, 0, 0.2);

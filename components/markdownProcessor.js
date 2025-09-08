@@ -619,6 +619,8 @@ export function renderMarkdown(markdownContent) {
         } else if (language.startsWith("animation")) {
             let attributes = obtainAttributes(language);
             // Extract the animation path from the code content
+            let config = language.split(' ')[0].split('-');
+
             const animationPath = code.trim();
             
             codeHtml = `<div class="animation-wrapper">
@@ -662,16 +664,16 @@ export function renderMarkdown(markdownContent) {
                         window.lottieAnimation${numberLottieContainer} = bodymovin.loadAnimation({
                             container: animationContainer${numberLottieContainer},
                             renderer: 'svg',
-                            loop: false,
-                            autoplay: false,
-                            path: '${animationPath}'
+                            loop: ${config.includes('loop') ? 'true' : 'false'},
+                            autoplay: ${config.includes('autoplay') ? 'true' : 'false'},
+                            path: '${animationPath}',
                         });
                         
                         // Initialize states
                         if (!window.lottieStates) window.lottieStates = {};
                         window.lottieStates[${numberLottieContainer}] = {
                             isPlaying: false,
-                            isStarting: true
+                            isStarting: true,
                         };
                         
                         // Get button references (with additional wait if needed)
@@ -1081,10 +1083,11 @@ export function renderMarkdown(markdownContent) {
             }
 
             // Ajustar vertical
-            if (top + floatHeight > parentHeight - 10) {
+            if (triggerRect.y + floatHeight > window.innerHeight - 40) {
                 // si no cabe debajo, colócalo arriba del trigger
                 top = triggerRect.top - parentRect.top - floatHeight - 10;
             }
+
             if (top < 0) {
                 top = 0;
             }
