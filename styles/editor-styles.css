@@ -442,3 +442,293 @@ body {
 [data-open-sidebar-resize="false"] .main-container::before, [data-open-sidebar-resize="false"] .main-container::after {
     display: none;
 }
+
+/* Configuration Line Button Styles */
+.config-line-button {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 2px 6px;
+    display: inline-flex;
+    float: left;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.config-line-button:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.config-line-button svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
+}
+
+.config-line-button:hover svg {
+    transform: rotate(90deg);
+}
+
+.config-line-button.hidden {
+    display: none;
+}
+
+/* Configuration Assistant Styles */
+.config-assistant {
+    position: fixed;
+    left: 20px;
+    bottom: 60px;
+    width: 320px;
+    max-height: 400px;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.config-assistant.hidden {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+}
+
+.config-assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.config-assistant-header h4 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.config-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    transition: background-color 0.15s ease;
+}
+
+.config-close:hover {
+    background-color: var(--hover-color);
+    color: var(--text-primary);
+}
+
+.config-content {
+    padding: 16px;
+    max-height: 320px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.config-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.config-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.config-content::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 6px;
+}
+
+.config-section {
+    margin-bottom: 16px;
+}
+
+.config-section:last-child {
+    margin-bottom: 0;
+}
+
+.config-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.config-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.config-option {
+    padding: 6px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.config-option:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.config-option.active {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+
+.config-option.custom-option {
+    position: relative;
+    padding-right: 25px;
+    border-style: dashed;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.config-option.custom-option:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.config-option.custom-option::after {
+    content: "✎";
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.config-option.custom-option:hover::after {
+    opacity: 1;
+}
+
+.config-option .remove-option {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1;
+}
+
+.config-option .remove-option:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.config-custom-input {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.config-custom-input input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-color);
+    color: var(--text-primary);
+    font-size: 11px;
+}
+
+.config-custom-input button {
+    padding: 6px 12px;
+    background: var(--primary-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.config-custom-input button:hover {
+    background: var(--primary-color-hover);
+}
+
+.config-preview {
+    margin-top: 12px;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: monospace;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+.config-apply {
+    margin-top: 12px;
+    width: 100%;
+    padding: 8px;
+    background: var(--success-color);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.config-apply:hover {
+    background: var(--success-color-hover);
+}
+
+.config-apply:disabled {
+    background: var(--border-color);
+    cursor: not-allowed;
+}
+
+.config-info {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    padding: 8px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    border-left: 3px solid var(--primary-color);
+}

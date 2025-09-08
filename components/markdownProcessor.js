@@ -312,6 +312,121 @@ function processMarkdownBlocks(markdownContent) {
             processedLines.push("</div>");
             processedLines.push("</div>");
             
+        } else if (trimmedLine.startsWith(":::grid")) {
+            // Extract grid configuration from the line
+            const gridConfig = trimmedLine.substring(":::grid".length).trim();
+            let gridClasses = "markdown-grid";
+            let gridStyles = "";
+            
+            // Parse grid configuration
+            if (gridConfig) {
+                // Support for columns (e.g., :::grid cols-2, :::grid cols-3, etc.)
+                const colsMatch = gridConfig.match(/cols-(\d+)/);
+                if (colsMatch) {
+                    const cols = parseInt(colsMatch[1]);
+                    gridClasses += ` grid-cols-${cols}`;
+                    gridStyles += `grid-template-columns: repeat(${cols}, 1fr); `;
+                }
+                
+                // Support for gap (e.g., :::grid gap-4, :::grid gap-large, etc.)
+                const gapMatch = gridConfig.match(/gap-(\w+)/);
+                if (gapMatch) {
+                    const gap = gapMatch[1];
+                    gridClasses += ` gap-${gap}`;
+                    // Convert common gap values to CSS
+                    gridStyles += `gap: ${gap*0.5}rem; `;
+                }
+                
+                // Support for responsive behavior
+                if (gridConfig.includes('responsive')) {
+                    gridClasses += " responsive-grid";
+                }
+                
+                // Support for auto-fit
+                if (gridConfig.includes('auto-fit')) {
+                    const minWidthMatch = gridConfig.match(/min-(\d+)/);
+                    const minWidth = minWidthMatch ? minWidthMatch[1] + 'px' : '250px';
+                    gridStyles += `grid-template-columns: repeat(auto-fit, minmax(${minWidth}, 1fr)); `;
+                }
+                
+                // Support for custom style attribute
+                const styleMatch = gridConfig.match(/style="([^"]+)"/);
+                if (styleMatch) {
+                    const customStyles = styleMatch[1];
+                    gridStyles += `${customStyles}${customStyles.endsWith(';') ? ' ' : '; '}`;
+                }
+            } else {
+                // Default configuration
+                gridStyles += "grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; ";
+                gridClasses += " responsive-grid";
+            }
+
+            processedLines.push(`<div class="${gridClasses}" style="display: grid; ${gridStyles}">`);
+
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Split the content into grid items
+            // Each item is separated by a line starting with "---" or by empty lines followed by content
+            const gridItems = [];
+            let currentItem = [];
+            let inItem = false;
+            
+            for (let j = 0; j < blockContent.length; j++) {
+                const line = blockContent[j];
+                const trimmed = line.trim();
+                
+                if (trimmed === "---" || trimmed.startsWith("--- ")) {
+                    // Save current item if it has content
+                    if (currentItem.length > 0) {
+                        gridItems.push(currentItem.join("\n"));
+                        currentItem = [];
+                    }
+                    inItem = true;
+                } else if (trimmed === "" && !inItem) {
+                    // Skip empty lines before starting an item
+                    continue;
+                } else {
+                    if (!inItem && trimmed !== "") {
+                        // Start new item if we encounter content
+                        inItem = true;
+                    }
+                    if (inItem) {
+                        currentItem.push(line);
+                    }
+                }
+            }
+            
+            // Add the last item
+            if (currentItem.length > 0) {
+                gridItems.push(currentItem.join("\n"));
+            }
+            
+            // If no explicit items found, treat the whole content as one item per paragraph
+            if (gridItems.length === 0) {
+                const paragraphs = blockContent.join("\n").split(/\n\s*\n/);
+                gridItems.push(...paragraphs.filter(p => p.trim()));
+            }
+            
+            // Process each grid item
+            gridItems.forEach((item, index) => {
+                const itemClass = gridConfig.includes('equal-height') ? 'grid-item equal-height' : 'grid-item';
+                processedLines.push(`<div class="${itemClass}">`);
+                
+                // Recursively process the content inside each grid item
+                const itemProcessed = processMarkdownBlocks(item.trim());
+                processedLines.push("");
+                for (const line of itemProcessed.split("\n")) {
+                    processedLines.push(line);
+                }
+                processedLines.push("");
+                
+                processedLines.push("</div>");
+            });
+            
+            i = endIndex;
+            processedLines.push("</div>");
+            
         } else if (trimmedLine.startsWith(":::details")) {
             let nameSummary = trimmedLine.replace(":::details", "").trim();
             let openDefault = false;
@@ -619,7 +734,7 @@ export function renderMarkdown(markdownContent) {
         } else if (language.startsWith("animation")) {
             let attributes = obtainAttributes(language);
             // Extract the animation path from the code content
-            let config = language.split(' ')[0].split('-');
+            let config = language.split(' ');
 
             const animationPath = code.trim();
             
@@ -664,8 +779,8 @@ export function renderMarkdown(markdownContent) {
                         window.lottieAnimation${numberLottieContainer} = bodymovin.loadAnimation({
                             container: animationContainer${numberLottieContainer},
                             renderer: 'svg',
-                            loop: ${config.includes('loop') ? 'true' : 'false'},
-                            autoplay: ${config.includes('autoplay') ? 'true' : 'false'},
+                            loop: ${config.includes('-loop') ? 'true' : 'false'},
+                            autoplay: ${config.includes('-autoplay') ? 'true' : 'false'},
                             path: '${animationPath}',
                         });
                         

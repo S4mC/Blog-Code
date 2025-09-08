@@ -1398,6 +1398,115 @@ details::after {
     margin-bottom: 0;
 }
 
+/* Grid Layout Styles */
+.markdown-grid {
+    margin: 1.5rem 0;
+    width: 100%;
+}
+
+.markdown-grid .grid-item {
+    padding: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--card-background, rgba(255, 255, 255, 0.05));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.markdown-grid .grid-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Equal height grid items */
+.markdown-grid .grid-item.equal-height {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.markdown-grid .grid-item.equal-height > *:last-child {
+    margin-top: auto;
+}
+
+/* Responsive grid behavior */
+.markdown-grid.responsive-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* Specific column classes */
+.markdown-grid.grid-cols-1 {
+    grid-template-columns: 1fr;
+}
+
+.markdown-grid.grid-cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.markdown-grid.grid-cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.markdown-grid.grid-cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.markdown-grid.grid-cols-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.markdown-grid.grid-cols-6 {
+    grid-template-columns: repeat(6, 1fr);
+}
+
+/* Gap classes */
+.markdown-grid.gap-small,
+.markdown-grid.gap-1 {
+    gap: 0.5rem;
+}
+
+.markdown-grid.gap-medium,
+.markdown-grid.gap-2 {
+    gap: 1rem;
+}
+
+.markdown-grid.gap-large,
+.markdown-grid.gap-4 {
+    gap: 1.5rem;
+}
+
+.markdown-grid.gap-xl,
+.markdown-grid.gap-6 {
+    gap: 2rem;
+}
+
+/* Responsive behavior for smaller screens */
+@media (max-width: 768px) {
+    .markdown-grid.grid-cols-3,
+    .markdown-grid.grid-cols-4,
+    .markdown-grid.grid-cols-5,
+    .markdown-grid.grid-cols-6 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .markdown-grid .grid-item {
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .markdown-grid.grid-cols-2,
+    .markdown-grid.grid-cols-3,
+    .markdown-grid.grid-cols-4,
+    .markdown-grid.grid-cols-5,
+    .markdown-grid.grid-cols-6 {
+        grid-template-columns: 1fr;
+    }
+    
+    .markdown-grid .grid-item {
+        padding: 0.5rem;
+    }
+}
+
 /* ScrollSpy styles */
 .sidebar-component .section-header.active .section-title,
 .sidebar-component .section-item.active {
