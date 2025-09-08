@@ -8,7 +8,11 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
 `));t.push("");for(const e of i.split(`
 `))t.push(e);t.push(""),e=o,t.push("</div>"),t.push("</div>")}else if(o.startsWith(":::warning")){t.push('<div class="warning-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'),t.push("<span>Warning</span>"),t.push("</div>"),t.push('<div class="callout-content">');const[s,o]=n(e+1),i=processMarkdownBlocks(s.join(`
 `));t.push("");for(const e of i.split(`
-`))t.push(e);t.push(""),e=o,t.push("</div>"),t.push("</div>")}else if(o.startsWith(":::details")){let s=o.replace(":::details","").trim(),i=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),i=!0),t.push(`<details${i?" open":""}>
+`))t.push(e);t.push(""),e=o,t.push("</div>"),t.push("</div>")}else if(o.startsWith(":::grid")){const s=o.substring(":::grid".length).trim();let r="markdown-grid",i="";if(s){{const e=s.match(/cols-(\d+)/);if(e){const t=parseInt(e[1]);r+=` grid-cols-${t}`,i+=`grid-template-columns: repeat(${t}, 1fr); `}const t=s.match(/gap-(\w+)/);if(t){const e=t[1];r+=` gap-${e}`,i+=`gap: ${e*.5}rem; `}if(s.includes("responsive")&&(r+=" responsive-grid"),s.includes("auto-fit")){const e=s.match(/min-(\d+)/),t=e?e[1]+"px":"250px";i+=`grid-template-columns: repeat(auto-fit, minmax(${t}, 1fr)); `}const n=s.match(/style="([^"]+)"/);if(n){const e=n[1];i+=`${e}${e.endsWith(";")?" ":"; "}`}}}else i+="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; ",r+=" responsive-grid";t.push(`<div class="${r}" style="display: grid; ${i}">`);const[d,u]=n(e+1),c=[];let a=[],l=!1;for(let t=0;t<d.length;t++){const n=d[t],e=n.trim();if(e==="---"||e.startsWith("--- "))a.length>0&&(c.push(a.join(`
+`)),a=[]),l=!0;else if(e===""&&!l)continue;else!l&&e!==""&&(l=!0),l&&a.push(n)}if(a.length>0&&c.push(a.join(`
+`)),c.length===0){const e=d.join(`
+`).split(/\n\s*\n/);c.push(...e.filter(e=>e.trim()))}c.forEach((e)=>{const o=s.includes("equal-height")?"grid-item equal-height":"grid-item";t.push(`<div class="${o}">`);const i=processMarkdownBlocks(e.trim());t.push("");for(const e of i.split(`
+`))t.push(e);t.push(""),t.push("</div>")}),e=u,t.push("</div>")}else if(o.startsWith(":::details")){let s=o.replace(":::details","").trim(),i=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),i=!0),t.push(`<details${i?" open":""}>
                             <summary>${s}</summary>
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);const[a,r]=n(e+1),c=processMarkdownBlocks(a.join(`
@@ -121,7 +125,7 @@ ${n}
                     });
                     
                     center_svg${t}();
-                }`,t+=1}else if(e.startsWith("animation")){let i=obtainAttributes(e),t=e.split(" ")[0].split("-");const r=a.trim();s=`<div class="animation-wrapper">
+                }`,t+=1}else if(e.startsWith("animation")){let i=obtainAttributes(e),t=e.split(" ");const r=a.trim();s=`<div class="animation-wrapper">
                 <div
                     id="animationContainer${n}"
                     class="animation-container"
@@ -160,8 +164,8 @@ ${n}
                         window.lottieAnimation${n} = bodymovin.loadAnimation({
                             container: animationContainer${n},
                             renderer: 'svg',
-                            loop: ${t.includes("loop")?"true":"false"},
-                            autoplay: ${t.includes("autoplay")?"true":"false"},
+                            loop: ${t.includes("-loop")?"true":"false"},
+                            autoplay: ${t.includes("-autoplay")?"true":"false"},
                             path: '${r}',
                         });
                         
