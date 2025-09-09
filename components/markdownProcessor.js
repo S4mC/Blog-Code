@@ -435,7 +435,7 @@ function processMarkdownBlocks(markdownContent) {
                 openDefault = true;
             }
             processedLines.push(`<details${openDefault ? " open" : ""}>
-                            <summary>${nameSummary}</summary>
+                            <summary><p>${nameSummary}</p></summary>
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);
 

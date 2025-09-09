@@ -14,7 +14,7 @@ set DIST=docs
 set FOLDERS=components styles .
 
 :: Define individual files to be minified (space-separated, with relative paths)
-set INDIVIDUAL_FILES=cdn/prism/prism_vsc.css
+set INDIVIDUAL_FILES=cdn/prism/prism_vsc.css cdn/SVGpanzoom/svg-pan-zoom.js
 
 :: Define which subfolders/files should be copied without minifying (space-separated)
 set COPY_ONLY=cdn posts public search.json

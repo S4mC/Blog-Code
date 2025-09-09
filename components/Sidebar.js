@@ -498,6 +498,7 @@ class SidebarClass {
         // Only activate the overlay on small screens
         if (window.innerWidth < 1024 && overlay) {
             overlay.classList.add('active');
+            window.document.body.style.overflow = "hidden";
         }
 
         // Refresh the content with the timeout so that display = 'grid' takes effect before opening the sidebar
@@ -509,6 +510,7 @@ class SidebarClass {
     close() {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('sidebarOverlay');
+        window.document.body.style.overflow = "auto";
         
         if (sidebar) sidebar.classList.remove('open');
         if (overlay) overlay.classList.remove('active');

@@ -166,18 +166,14 @@ body {
 .editor-content {
     flex: 1;
     border: 1px solid var(--border-color);
-    display: flex;
-    gap: var(--spacing-md);
+    display: grid;
+    grid-template-columns: 1fr;
     min-height: 0;
     overflow: hidden;
 }
 
-.editor-content.right {
-    flex-direction: row;
-}
-
-.editor-content.bottom {
-    flex-direction: column;
+.editor-content.bottom .markdown-preview {
+    width: 100% !important;
 }
 
 .editor-content.preview-hidden .markdown-preview {
@@ -190,8 +186,45 @@ body {
 
 .editor-content:not(.preview-hidden) .monaco-editor-container,
 .editor-content:not(.preview-hidden) .markdown-preview {
-    flex: 1;
     min-width: 0;
+}
+
+.editor-content.right:not(.preview-hidden) .monaco-editor-container,
+.editor-content.right:not(.preview-hidden) .markdown-preview {
+    position: relative;
+    width: 100%;
+}
+
+/* Resize handle for right preview */
+.editor-content.right:not(.preview-hidden) .markdown-preview::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 0;
+    width: 10px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+    transition: background-color 0.2s ease;
+}
+
+.editor-content.right:not(.preview-hidden) .markdown-preview:hover::before,
+body.resizing .editor-content.right:not(.preview-hidden) .markdown-preview::before {
+    background-color: var(--primary-color);
+    opacity: 0.3;
+}
+
+/* Vertical line that appears during resizing */
+body.resizing .editor-content.right:not(.preview-hidden) .markdown-preview::after {
+    content: '';
+    position: absolute;
+    left: -2px;
+    top: 0;
+    width: 4px;
+    height: 100%;
+    background-color: var(--primary-color);
+    z-index: 11;
+    opacity: 0.7;
 }
 
 .editor-menu {
@@ -348,16 +381,7 @@ body {
 .copy-button:hover {
     color: var(--primary-color);
 }
-.editor-content {
-    display: flex;
-    gap: 1rem;
-}
-.editor-content.right {
-    flex-direction: row;
-}
-.editor-content.bottom {
-    flex-direction: column;
-}
+
 .monaco-editor-container,
 .markdown-preview {
     flex: 1;

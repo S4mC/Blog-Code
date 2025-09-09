@@ -13,7 +13,7 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
 `)),c.length===0){const e=d.join(`
 `).split(/\n\s*\n/);c.push(...e.filter(e=>e.trim()))}c.forEach((e)=>{const o=s.includes("equal-height")?"grid-item equal-height":"grid-item";t.push(`<div class="${o}">`);const i=processMarkdownBlocks(e.trim());t.push("");for(const e of i.split(`
 `))t.push(e);t.push(""),t.push("</div>")}),e=u,t.push("</div>")}else if(o.startsWith(":::details")){let s=o.replace(":::details","").trim(),i=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),i=!0),t.push(`<details${i?" open":""}>
-                            <summary>${s}</summary>
+                            <summary><p>${s}</p></summary>
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);const[a,r]=n(e+1),c=processMarkdownBlocks(a.join(`
 `));t.push("");for(const e of c.split(`

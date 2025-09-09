@@ -13,7 +13,7 @@
         <script src="cdn/prism/prism.js"></script>
         <script src="cdn/bodymovin/lottie.js"></script>
         <script src="cdn/marked/marked.umd.js"></script>
-        <script src="cdn/SVGpanzoom/svg-pan-zoom.min.js"></script>
+        <script src="cdn/SVGpanzoom/svg-pan-zoom.js"></script>
         <script src="cdn/monaco/vs/loader.js"></script>
         <script type="importmap">
             {
@@ -210,6 +210,12 @@ Be careful with this action!
                 const [previewPosition, setPreviewPosition] = useState(
                     savedPreviewPosition === "bottom" ? "bottom" : "right"
                 );
+                
+                // Estado para las proporciones del grid
+                const [gridRatio, setGridRatio] = useState(
+                    localStorage.getItem("editorGridRatio") || "1fr 1fr"
+                );
+                const [isResizing, setIsResizing] = useState(false);
 
                 // State to track element selection mode
                 const [isElementSelectionActive, setIsElementSelectionActive] = useState(false);
@@ -242,6 +248,103 @@ Be careful with this action!
                         }, 100);
                     }
                 }, [showPreview, preview]);
+                
+                // Efecto para manejar el redimensionamiento de la vista previa
+                useEffect(() => {
+                    const handleMouseMove = (e) => {
+                        if (!isResizing || previewPosition !== "right") return;
+                        
+                        // Contenedor principal
+                        const editorContainer = document.querySelector('.editor-content');
+                        if (!editorContainer) return;
+                        
+                        // Calcular el ancho como fracción del contenedor padre
+                        const containerRect = editorContainer.getBoundingClientRect();
+                        const editorWidth = containerRect.width;
+                        
+                        // Calcular la posición relativa del mouse dentro del contenedor
+                        const mouseX = e.clientX - containerRect.left;
+                        
+                        // Asegurar límites razonables (20% a 80%)
+                        const limitedX = Math.min(Math.max(mouseX, editorWidth * 0.2), editorWidth * 0.8);
+                        
+                        // Calcular la proporción para grid-template-columns
+                        // Usar proporciones relativas para que sea más preciso
+                        const ratio = limitedX / editorWidth;
+                        const leftFr = ratio;
+                        const rightFr = 1 - ratio;
+                        const newRatio = `${leftFr}fr ${rightFr}fr`;
+                        setGridRatio(newRatio);
+                        
+                        // Aplicar directamente para evitar retraso en la UI
+                        if (editorContainer) {
+                            editorContainer.style.gridTemplateColumns = newRatio;
+                        }
+                        
+                        // Optimizar re-rendering evitando actualizaciones de estado frecuentes
+                        e.preventDefault();
+                    };
+                    
+                    const handleMouseUp = () => {
+                        if (isResizing) {
+                            setIsResizing(false);
+                            // Guardar en localStorage
+                            localStorage.setItem("editorGridRatio", gridRatio);
+                            // Remover la clase de resizing del body
+                            document.body.classList.remove('resizing');
+                        }
+                    };
+                    
+                    if (isResizing) {
+                        document.addEventListener('mousemove', handleMouseMove);
+                        document.addEventListener('mouseup', handleMouseUp);
+                        // Agregar clase al body para indicar que estamos redimensionando
+                        document.body.classList.add('resizing');
+                        // Cambiar el cursor en todo el documento durante el redimensionamiento
+                        document.body.style.cursor = 'col-resize';
+                    } else {
+                        // Restaurar el cursor cuando no estamos redimensionando
+                        document.body.style.cursor = '';
+                    }
+                    
+                    return () => {
+                        document.removeEventListener('mousemove', handleMouseMove);
+                        document.removeEventListener('mouseup', handleMouseUp);
+                        // Asegurarnos de limpiar las clases y estilos si el componente se desmonta
+                        document.body.classList.remove('resizing');
+                        document.body.style.cursor = '';
+                    };
+                }, [isResizing, previewPosition, gridRatio]);
+                
+                // Efecto para agregar eventos de mouse al redimensionador
+                useEffect(() => {
+                    const initResizer = () => {
+                        const previewElement = document.querySelector('.markdown-preview[data-resize="preview"]');
+                        if (!previewElement) return;
+                        
+                        const handleMouseDown = (e) => {
+                            // Verificar si estamos en el área del redimensionador
+                            const rect = previewElement.getBoundingClientRect();
+                            if (previewPosition === "right" && Math.abs(e.clientX - rect.left) <= 10) {
+                                setIsResizing(true);
+                                e.preventDefault();
+                            }
+                        };
+                        
+                        previewElement.addEventListener('mousedown', handleMouseDown);
+                        
+                        return () => {
+                            previewElement.removeEventListener('mousedown', handleMouseDown);
+                        };
+                    };
+                    
+                    // Dar tiempo para que el DOM se actualice
+                    const timerId = setTimeout(initResizer, 100);
+                    
+                    return () => {
+                        clearTimeout(timerId);
+                    };
+                }, [previewPosition, showPreview]);
 
                 // Efecto para controlar la alerta al cerrar o navegar fuera de la página
                 useEffect(() => {
@@ -2705,6 +2808,18 @@ Be careful with this action!
                                                 const newPosition =
                                                     previewPosition === "right" ? "bottom" : "right";
                                                 setPreviewPosition(newPosition);
+                                                
+                                                // Si cambia a posición derecha, restaurar proporciones guardadas
+                                                if (newPosition === "right") {
+                                                    setTimeout(() => {
+                                                        const editorContent = document.querySelector('.editor-content');
+                                                        if (editorContent) {
+                                                            const savedRatio = localStorage.getItem("editorGridRatio") || "1fr 1fr";
+                                                            editorContent.style.gridTemplateColumns = savedRatio;
+                                                        }
+                                                    }, 0);
+                                                }
+                                                
                                                 try {
                                                     localStorage.setItem(
                                                         "editorPreviewPosition",
@@ -2773,6 +2888,7 @@ Be careful with this action!
                                     class="editor-content ${previewPosition} ${!showPreview
                                         ? "preview-hidden"
                                         : ""}"
+                                    style="${previewPosition === 'right' && showPreview ? `grid-template-columns: ${gridRatio};` : ''}"
                                 >
                                     <div
                                         ref=${containerRef}
@@ -2784,6 +2900,7 @@ Be careful with this action!
                                     />
                                     <div
                                         class="markdown-preview entry-content"
+                                        data-resize="preview"
                                         dangerouslySetInnerHTML=${{
                                             __html: preview,
                                         }}
