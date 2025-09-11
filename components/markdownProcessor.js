@@ -179,10 +179,13 @@ function processCodeBlocksAndTitles(text) {
         if (inCodeBlock) {
             currentCode.push(line);
         } else {
+            // We use lineTrim because in quotes the > avoid correct detection of headers
+            let lineTrim = line.replace(/</g, "").replace(/>/g, "").trim();
+            
             // If we're not in a code block, process titles and part of html
-            if (line.startsWith("## ") || line.startsWith("### ") || line.startsWith("#### ") || line.startsWith("##### ") || line.startsWith("###### ")) {
+            if (lineTrim.startsWith("## ") || lineTrim.startsWith("### ") || lineTrim.startsWith("#### ") || lineTrim.startsWith("##### ") || lineTrim.startsWith("###### ")) {
                 let textHeader = processInlineCodeBlocks(
-                    line.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
+                    lineTrim.replace(/</g, "&lt;").replace(/>/g, "&gt;"),
                     [],
                     true
                 )[0];
@@ -191,7 +194,7 @@ function processCodeBlocksAndTitles(text) {
             } else if (line.startsWith("#t ")) {
                 protectedContent.push(`<plain>${line.substring(3)}</plain>`);
             } else if (line.startsWith("<")) {
-                protectedContent.push(`<rawhtml>${line}</rawhtml>`);
+                protectedContent.push(`${line}`);
             } else {
                 protectedContent.push(line);
             }
@@ -1260,6 +1263,39 @@ export function renderMarkdown(markdownContent) {
         });
         window.floatEventListeners.activeFloats.clear();
     };`;
+
+    // Ensure scripts inside .entry-content are executed, this must be at the end beause it can go wrong and break other script below
+    finalJS += `
+    // Select the first element with class "entry-content"
+    const entryContent = document.querySelector('.entry-content');
+
+    if (entryContent) {
+        // Select all <script> elements within that element
+        const scripts = entryContent.querySelectorAll('script');
+
+        scripts.forEach(oldScript => {
+            try {
+                // Create a new script element to execute
+                const newScript = document.createElement('script');
+
+                // Copy attributes (e.g., src, type, etc.)
+                Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy inline content if it exists
+                if (oldScript.textContent) {
+                newScript.textContent = oldScript.textContent;
+                }
+
+                // Replace the old <script> with the new one (this triggers execution)
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            } catch (err) {
+                console.log("Error executing script:", err, oldScript);
+            }
+        });
+    }
+    `;
 
     return [finalHtml, sidebarContent, finalJS];
 }

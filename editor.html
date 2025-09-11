@@ -323,7 +323,7 @@ Be careful with this action!
                         if (!previewElement) return;
                         
                         const handleMouseDown = (e) => {
-                            // Verificar si estamos en el área del redimensionador
+                            // Check if we are in the resizer area
                             const rect = previewElement.getBoundingClientRect();
                             if (previewPosition === "right" && Math.abs(e.clientX - rect.left) <= 10) {
                                 setIsResizing(true);
@@ -405,7 +405,7 @@ Be careful with this action!
                             // Hacer el editor disponible globalmente para el sistema de asistencia
                             window.currentEditor = editorRef.current;
 
-                            // Añadir el manejador para teclas
+                            // Add key handler
                             editorRef.current.addAction({
                                 id: "extend-list",
                                 label: "Extend List",
@@ -414,7 +414,7 @@ Be careful with this action!
                                 keybindingContext: null,
                                 contextMenuGroupId: "navigation",
                                 contextMenuOrder: 1.5,
-                                // Método que se ejecutará
+                                // Method that will be executed
                                 run: function (ed) {
                                     const editor = editorRef.current;
                                     const selection = editor.getSelection();
@@ -794,6 +794,656 @@ Be careful with this action!
 
                     editor.focus();
                 };
+                
+                // Grid Creator Modal
+                function openGridCreator() {
+                    // Create modal container if it doesn't exist
+                    let modalContainer = document.getElementById('grid-creator-modal');
+                    if (!modalContainer) {
+                        modalContainer = document.createElement('div');
+                        modalContainer.id = 'grid-creator-modal';
+                        modalContainer.className = 'modal-container';
+                        document.body.appendChild(modalContainer);
+                    }
+                    
+                    // Set modal content
+                    modalContainer.innerHTML = `
+                        <div class="modal-content grid-creator-content">
+                            <div class="modal-header">
+                                <h3>Grid Creator</h3>
+                                <span class="close-modal" onclick="document.getElementById('grid-creator-modal').style.display = 'none'">&times;</span>
+                            </div>
+                            <div class="modal-body">
+                                <div class="grid-options-container">
+                                    <div class="grid-type-selector">
+                                        <label for="grid-type">Grid Type:</label>
+                                        <select id="grid-type" onchange="updateGridPreview()">
+                                            <option value="simple">Simple Grid</option>
+                                            <option value="responsive">Responsive Grid</option>
+                                            <option value="visual">Visual Grid</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="grid-params">
+                                        <div class="param-group" id="simple-grid-params">
+                                            <div class="param-row">
+                                                <label for="grid-columns">Columns:</label>
+                                                <input type="number" id="grid-columns" min="1" max="12" value="2" onchange="updateGridPreview()">
+                                            </div>
+                                            <div class="param-row">
+                                                <label for="grid-gap">Gap:</label>
+                                                <select id="grid-gap" onchange="updateGridPreview()">
+                                                    <option value="1">Small (0.5rem)</option>
+                                                    <option value="2" selected>Medium (1rem)</option>
+                                                    <option value="4">Large (2rem)</option>
+                                                </select>
+                                            </div>
+                                            <div class="param-row">
+                                                <label for="grid-items">Items:</label>
+                                                <input type="number" id="grid-items" min="1" max="12" value="2" onchange="updateGridPreview()">
+                                            </div>
+                                            <div class="param-row">
+                                                <label>
+                                                    <input type="checkbox" id="grid-equal-height" onchange="updateGridPreview()">
+                                                    Equal height elements
+                                                </label>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="param-group" id="visual-grid-params" style="display: none;">
+                                            <div class="param-row">
+                                                <label for="visual-grid-columns">Columns:</label>
+                                                <input type="number" id="visual-grid-columns" min="1" max="12" value="5" onchange="regenerateVisualGrid()">
+                                            </div>
+                                            <div class="param-row">
+                                                <label for="visual-grid-rows">Rows:</label>
+                                                <input type="number" id="visual-grid-rows" min="1" max="12" value="5" onchange="regenerateVisualGrid()">
+                                            </div>
+                                            <div class="param-row">
+                                                <label for="visual-grid-gap">Gap (px):</label>
+                                                <input type="number" id="visual-grid-gap" min="0" max="50" value="8" onchange="updateVisualGridGap()">
+                                            </div>
+
+                                            <div class="visual-grid-designer-container">
+                                                <h4>Visual Design</h4>
+                                                <p>Click and drag to define a grid element.</p>
+                                                <div id="visual-grid-designer"></div>
+                                                <div class="visual-grid-tools">
+                                                    <button type="button" onclick="addGridArea()">+ Add Area</button>
+                                                    <button type="button" onclick="resetGridAreas()">Reset</button>
+                                                </div>
+                                                <div id="grid-areas-list" class="grid-areas-list">
+                                                    <!-- Areas will be added dynamically -->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid-preview-container">
+                                    <h4>Preview:</h4>
+                                    <div id="grid-preview"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button onclick="document.getElementById('grid-creator-modal').style.display = 'none'" class="btn-cancel">Cancel</button>
+                                <button onclick="insertGridToEditor()" class="btn-insert">Insert Grid</button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Show modal
+                    modalContainer.style.display = 'flex';
+                    
+                    // Variables para el grid visual
+                    window.gridAreas = [];
+                    window.gridAreaCounter = 1;
+                    window.isDrawing = false;
+                    window.startCell = null;
+                    window.currentArea = null;
+                    
+                    // Define grid creator functions in global scope
+                    window.updateGridPreview = function() {
+                        console.log("Updating preview");
+                        const gridType = document.getElementById('grid-type').value;
+                        const previewEl = document.getElementById('grid-preview');
+                        
+                        // Hide all parameter groups
+                        document.querySelectorAll('.param-group').forEach(el => {
+                            el.style.display = 'none';
+                        });
+                        
+                        // Show relevant parameter group
+                        if (gridType === 'visual') {
+                            document.getElementById('visual-grid-params').style.display = 'flex';
+                            setTimeout(() => regenerateVisualGrid(), 100);
+                            
+                        } else if (gridType === 'advanced' || gridType === 'dashboard') {
+                            document.getElementById('advanced-grid-params').style.display = 'flex';
+                        } else {
+                            document.getElementById('simple-grid-params').style.display = 'flex';
+                        }
+                        
+                        // Generate preview HTML based on selected options
+                        let previewHTML = '<div class="preview-grid" style="';
+                        
+                        if (gridType === 'simple' || gridType === 'responsive') {
+                            const columns = document.getElementById('grid-columns').value;
+                            const gap = document.getElementById('grid-gap').value;
+                            const items = document.getElementById('grid-items').value;
+                            
+                            previewHTML += `grid-template-columns: repeat(${columns}, 1fr); gap: ${gap * 0.5}rem;">`;
+                            
+                            for (let i = 0; i < items; i++) {
+                                previewHTML += `<div class="preview-grid-item">Elemento ${i + 1}</div>`;
+                            }
+                        }
+                        
+                        previewHTML += '</div>';
+                        previewEl.innerHTML = previewHTML;
+                    };
+                    
+                    window.insertGridToEditor = function() {
+                        const gridType = document.getElementById('grid-type').value;
+                        let gridMarkdown = "";
+                        
+                        if (gridType === 'visual') {
+                            // Create an advanced grid based on user-drawn areas
+                            const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
+                            const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
+                            const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                            
+                            // Create unique ID for this grid
+                            const gridId = 'grid_' + Date.now();
+                            
+                            // Start with an advanced grid
+                            gridMarkdown += `<div id="${gridId}" class="visual-grid">\n`;
+                            
+                            // Add divs for each area with unique IDs
+                            gridAreas.forEach((area, index) => {
+                                gridMarkdown += `<div id="${gridId}_area${index+1}">\n${area.name}\n</div>\n`;
+                            });
+                            
+                            gridMarkdown += "</div>\n";
+                            gridMarkdown += "\n<style>\n";
+                            gridMarkdown += `\t#${gridId} {\n`;
+                            gridMarkdown += `\t\tdisplay: grid;\n`;
+                            gridMarkdown += `\t\tgrid-template-columns: repeat(${columns}, 1fr);\n`;
+                            gridMarkdown += `\t\tgrid-template-rows: repeat(${rows}, 1fr);\n`;
+                            gridMarkdown += `\t\tgap: ${gap}px;\n`;
+                            gridMarkdown += `\t\tmin-height: 400px;\n`;
+                            gridMarkdown += "\t}\n";
+                            
+                            // Define the style for each area using IDs
+                            gridAreas.forEach((area, index) => {
+                                gridMarkdown += `\t#${gridId}_area${index+1} {\n`;
+                                gridMarkdown += `\t\tgrid-column: ${area.startX + 1} / ${area.endX + 2};\n`;
+                                gridMarkdown += `\t\tgrid-row: ${area.startY + 1} / ${area.endY + 2};\n`;
+                                gridMarkdown += `\t\tbackground-color: var(--card-background);\n`;
+                                gridMarkdown += `\t\tborder: 1px solid var(--border-color);\n`;
+                                gridMarkdown += `\t\tpadding: 1rem;\n`;
+                                gridMarkdown += `\t\tborder-radius: 8px;\n`;
+                                gridMarkdown += "\t}\n";
+                            });
+                            
+                            gridMarkdown += "</style>\n";
+                        }
+                        else if (gridType === 'simple' || gridType === 'responsive') {
+                            const columns = document.getElementById('grid-columns').value;
+                            const gap = document.getElementById('grid-gap').value;
+                            const items = document.getElementById('grid-items').value;
+                            const equalHeight = document.getElementById('grid-equal-height').checked;
+                            
+                            let gridConfig = `cols-${columns} gap-${gap}`;
+                            if (gridType === 'responsive') gridConfig += ' responsive';
+                            if (equalHeight) gridConfig += ' equal-height';
+                            
+                            gridMarkdown = `\n:::grid ${gridConfig}\n`;
+                            
+                            // Generate placeholder content for each item
+                            for (let i = 0; i < items; i++) {
+                                if (i > 0) gridMarkdown += "\n---\n\n";
+                                gridMarkdown += `### Elemento ${i + 1}\n\nContenido para elemento ${i + 1}. Reemplaza con tu propio contenido.\n`;
+                            }
+                            
+                            gridMarkdown += "\n:::\n";
+                        }
+                        
+                        // Insertar el grid markdown en el editor
+                        insertText(gridMarkdown, "");
+                        
+                        // Cerrar el modal
+                        document.getElementById('grid-creator-modal').style.display = 'none';
+                    };
+                    
+                    // Variables y event listeners para el grid visual
+                    let isDrawing = false;
+                    let currentArea = null;
+                    let startCell = null;
+                    let gridAreas = [];
+                    let gridAreaCounter = 1;
+
+                    // Añadir el event listener para mouseup a nivel del documento
+                    document.addEventListener('mouseup', function(e) {
+                        if (isDrawing) {
+                            endDrawing(e);
+                        }
+                    });
+
+                    // Funciones para el grid visual
+                    window.regenerateVisualGrid = function() {
+                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
+                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
+                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                        
+                        const designerEl = document.getElementById('visual-grid-designer');
+                        if (!designerEl) return;
+                        
+                        // Limpia el diseñador
+                        designerEl.innerHTML = '';
+                        
+                        // Configura el grid
+                        designerEl.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+                        designerEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+                        designerEl.style.gap = `${gap}px`;
+                        
+                        // Create grid cells
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < columns; x++) {
+                                const cell = document.createElement('div');
+                                cell.className = 'grid-cell';
+                                cell.dataset.x = x;
+                                cell.dataset.y = y;
+                                
+                                // Events for drawing areas
+                                cell.addEventListener('mousedown', startDrawing);
+                                cell.addEventListener('mousemove', continueDrawing);
+                                
+                                designerEl.appendChild(cell);
+                            }
+                        }
+                        
+                        // Redraw existing areas
+                        redrawGridAreas();
+                        updateVisualGridPreview();
+                    };
+                    
+                    window.startDrawing = function(e) {
+                        if (e.button !== 0) return; // Left button only
+                        
+                        isDrawing = true;
+                        const cell = e.target;
+                        startCell = {
+                            x: parseInt(cell.dataset.x),
+                            y: parseInt(cell.dataset.y)
+                        };
+                        
+                        // Inicializar la última celda conocida
+                        lastKnownCell = startCell;
+                        
+                        // Create a temporary area to display while drawing
+                        currentArea = document.createElement('div');
+                        currentArea.className = 'grid-area drawing';
+                        currentArea.innerHTML = `Area ${gridAreaCounter}`;
+                        document.getElementById('visual-grid-designer').appendChild(currentArea);
+                        
+                        updateCurrentArea(startCell, startCell);
+                    };
+                    
+                    window.continueDrawing = function(e) {
+                        if (!isDrawing || !currentArea) return;
+                        
+                        const cell = e.target;
+                        if (cell.className !== 'grid-cell') return;
+                        
+                        const currentCell = {
+                            x: parseInt(cell.dataset.x),
+                            y: parseInt(cell.dataset.y)
+                        };
+                        
+                        // Actualizar la última celda conocida
+                        lastKnownCell = currentCell;
+                        
+                        updateCurrentArea(startCell, currentCell);
+                    };
+                    
+                    let lastKnownCell = null;
+
+                    window.endDrawing = function(e) {
+                        if (!isDrawing || !currentArea) return;
+                        
+                        // Si no tenemos una última celda conocida, cancelar
+                        if (!lastKnownCell) {
+                            if (currentArea) {
+                                currentArea.remove();
+                                currentArea = null;
+                            }
+                            isDrawing = false;
+                            return;
+                        }
+                        
+                        const endCell = {
+                            x: lastKnownCell.x,
+                            y: lastKnownCell.y
+                        };
+                        
+                        // Calculate the final area
+                        const startX = Math.min(startCell.x, endCell.x);
+                        const startY = Math.min(startCell.y, endCell.y);
+                        const endX = Math.max(startCell.x, endCell.x);
+                        const endY = Math.max(startCell.y, endCell.y);
+                        
+                        // Add the area to the list
+                        const newArea = {
+                            id: `area-${gridAreaCounter}`,
+                            name: `Area ${gridAreaCounter}`,
+                            startX,
+                            startY,
+                            endX,
+                            endY,
+                            color: getRandomColor()
+                        };
+                        
+                        gridAreas.push(newArea);
+                        gridAreaCounter++;
+                        
+                        // Remove the temporary area
+                        if (currentArea) {
+                            currentArea.remove();
+                            currentArea = null;
+                        }
+                        
+                        // Redraw all areas
+                        redrawGridAreas();
+                        updateGridAreasList();
+                        updateVisualGridPreview();
+                        
+                        isDrawing = false;
+                    };
+                    
+                    window.updateCurrentArea = function(start, end) {
+                        if (!currentArea) return;
+                        
+                        const designerEl = document.getElementById('visual-grid-designer');
+                        const cells = designerEl.querySelectorAll('.grid-cell');
+                        const cellSize = cells[0].getBoundingClientRect();
+                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                        
+                        const startX = Math.min(start.x, end.x);
+                        const startY = Math.min(start.y, end.y);
+                        const endX = Math.max(start.x, end.x);
+                        const endY = Math.max(start.y, end.y);
+                        
+                        // Calcular tamaño y posición
+                        const width = (endX - startX + 1) * cellSize.width + (endX - startX) * gap;
+                        const height = (endY - startY + 1) * cellSize.height + (endY - startY) * gap;
+                        
+                        // Encontrar la primera celda para posicionar correctamente
+                        const firstCell = designerEl.querySelector(`.grid-cell[data-x="${startX}"][data-y="${startY}"]`);
+                        const firstCellRect = firstCell.getBoundingClientRect();
+                        const designerRect = designerEl.getBoundingClientRect();
+                        
+                        // Ajustar posición relativa al contenedor
+                        const left = firstCellRect.left - designerRect.left;
+                        const top = firstCellRect.top - designerRect.top;
+                        
+                        // Aplicar estilo
+                        currentArea.style.left = `${left}px`;
+                        currentArea.style.top = `${top}px`;
+                        currentArea.style.width = `${width}px`;
+                        currentArea.style.height = `${height}px`;
+                    };
+                    
+                    window.redrawGridAreas = function() {
+                        // Remove all existing areas
+                        const designerEl = document.getElementById('visual-grid-designer');
+                        if (!designerEl) return;
+                        
+                        designerEl.querySelectorAll('.grid-area:not(.drawing)').forEach(el => el.remove());
+                        
+                        // Draw each area
+                        gridAreas.forEach(area => {
+                            const areaEl = document.createElement('div');
+                            areaEl.className = 'grid-area';
+                            areaEl.id = area.id;
+                            areaEl.innerHTML = area.name;
+                            areaEl.style.backgroundColor = area.color || 'rgba(0, 122, 204, 0.4)';
+                            
+                            // Add button to remove
+                            const removeBtn = document.createElement('div');
+                            removeBtn.className = 'remove-area';
+                            removeBtn.innerHTML = '×';
+                            removeBtn.onclick = (e) => {
+                                e.stopPropagation();
+                                removeGridArea(area.id);
+                            };
+                            areaEl.appendChild(removeBtn);
+                            
+                            designerEl.appendChild(areaEl);
+                            
+                            // Position the area correctly
+                            positionGridArea(areaEl, area);
+                        });
+                    };
+                    
+                    window.positionGridArea = function(areaEl, area) {
+                        const designerEl = document.getElementById('visual-grid-designer');
+                        const cells = designerEl.querySelectorAll('.grid-cell');
+                        if (cells.length === 0) return;
+                        
+                        const cellSize = cells[0].getBoundingClientRect();
+                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                        
+                        // Encontrar la primera celda para posicionar correctamente
+                        const firstCell = designerEl.querySelector(`.grid-cell[data-x="${area.startX}"][data-y="${area.startY}"]`);
+                        if (!firstCell) return;
+                        
+                        const firstCellRect = firstCell.getBoundingClientRect();
+                        const designerRect = designerEl.getBoundingClientRect();
+                        
+                        // Calcular tamaño
+                        const width = (area.endX - area.startX + 1) * cellSize.width + (area.endX - area.startX) * gap;
+                        const height = (area.endY - area.startY + 1) * cellSize.height + (area.endY - area.startY) * gap;
+                        
+                        // Ajustar posición relativa al contenedor
+                        const left = firstCellRect.left - designerRect.left;
+                        const top = firstCellRect.top - designerRect.top;
+                        
+                        // Aplicar estilo
+                        areaEl.style.left = `${left}px`;
+                        areaEl.style.top = `${top}px`;
+                        areaEl.style.width = `${width}px`;
+                        areaEl.style.height = `${height}px`;
+                    };
+                    
+                    window.updateGridAreasList = function() {
+                        const listEl = document.getElementById('grid-areas-list');
+                        if (!listEl) return;
+                        
+                        // Clear the list
+                        listEl.innerHTML = '';
+                        
+                        // Add each area to the list
+                        gridAreas.forEach(area => {
+                            const itemEl = document.createElement('div');
+                            itemEl.className = 'grid-area-item';
+                            
+                            const info = document.createElement('span');
+                            info.textContent = `${area.name}: (${area.startX+1},${area.startY+1}) a (${area.endX+1},${area.endY+1})`;
+                            
+                            const removeBtn = document.createElement('button');
+                            removeBtn.textContent = 'Remove';
+                            removeBtn.onclick = () => removeGridArea(area.id);
+                            
+                            itemEl.appendChild(info);
+                            itemEl.appendChild(removeBtn);
+                            listEl.appendChild(itemEl);
+                        });
+                    };
+                    
+                    window.removeGridArea = function(id) {
+                        // Remove the area from the list
+                        gridAreas = gridAreas.filter(area => area.id !== id);
+                        
+                        // Redraw and update the list
+                        redrawGridAreas();
+                        updateGridAreasList();
+                        updateVisualGridPreview();
+                    };
+                    
+                    window.resetGridAreas = function() {
+                        // Confirm before deleting all areas
+                        if (gridAreas.length > 0 && confirm('Are you sure you want to delete all areas?')) {
+                            gridAreas = [];
+                            gridAreaCounter = 1;
+                            redrawGridAreas();
+                            updateGridAreasList();
+                            updateVisualGridPreview();
+                        }
+                    };
+                    
+                    window.addGridArea = function() {
+                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
+                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
+                        
+                        // Create a default area in an available position
+                        let startX = 0, startY = 0;
+                        let found = false;
+                        
+                        // Find an available cell
+                        outerLoop:
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < columns; x++) {
+                                // Comprobar si esta celda ya está ocupada
+                                const isOccupied = gridAreas.some(area => 
+                                    x >= area.startX && x <= area.endX && 
+                                    y >= area.startY && y <= area.endY
+                                );
+                                
+                                if (!isOccupied) {
+                                    startX = x;
+                                    startY = y;
+                                    found = true;
+                                    break outerLoop;
+                                }
+                            }
+                        }
+                        
+                        if (!found) {
+                            alert('There\'s no space available for a new area. Delete an existing area or resize the grid.');
+                            return;
+                        }
+                        
+                        // Crear el área con tamaño 1x1
+                        const newArea = {
+                            id: `area-${gridAreaCounter}`,
+                            name: `Área ${gridAreaCounter}`,
+                            startX,
+                            startY,
+                            endX: startX,
+                            endY: startY,
+                            color: getRandomColor()
+                        };
+                        
+                        gridAreas.push(newArea);
+                        gridAreaCounter++;
+                        
+                        // Actualizar la interfaz
+                        redrawGridAreas();
+                        updateGridAreasList();
+                        updateVisualGridPreview();
+                    };
+                    
+                    window.updateVisualGridGap = function() {
+                        const designerEl = document.getElementById('visual-grid-designer');
+                        if (!designerEl) return;
+                        
+                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                        designerEl.style.gap = `${gap}px`;
+                        
+                        // Actualizar posición de todas las áreas
+                        redrawGridAreas();
+                        updateVisualGridPreview();
+                    };
+                    
+                    window.updateVisualGridPreview = function() {
+                        const previewEl = document.getElementById('grid-preview');
+                        if (!previewEl) return;
+                        
+                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
+                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
+                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+                        
+                        let previewHTML = `<div class="preview-grid" style="grid-template-columns: repeat(${columns}, 1fr); grid-template-rows: repeat(${rows}, 1fr); gap: ${gap}px;">`;
+                        
+                        // Create a 2D array to represent the grid
+                        const gridMap = Array(rows).fill().map(() => Array(columns).fill(null));
+                        
+                        // Mark areas in the map
+                        gridAreas.forEach((area, index) => {
+                            for (let y = area.startY; y <= area.endY; y++) {
+                                for (let x = area.startX; x <= area.endX; x++) {
+                                    if (y >= 0 && y < rows && x >= 0 && x < columns) {
+                                        gridMap[y][x] = index;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Create elements for each grid area
+                        gridAreas.forEach((area, index) => {
+                            const style = `
+                                grid-column: ${area.startX + 1} / ${area.endX + 2};
+                                grid-row: ${area.startY + 1} / ${area.endY + 2};
+                                background-color: var(--card-background);
+                                border: 1px solid var(--border-color);
+                            `;
+                            
+                            previewHTML += `<div class="preview-grid-item" style="${style}">${area.name}</div>`;
+                        });
+                        
+                        // Add empty cells where no areas are defined
+                        for (let y = 0; y < rows; y++) {
+                            for (let x = 0; x < columns; x++) {
+                                if (gridMap[y][x] === null) {
+                                    const style = `
+                                        grid-column: ${x + 1} / ${x + 2};
+                                        grid-row: ${y + 1} / ${y + 2};
+                                        opacity: 0.3;
+                                    `;
+                                    
+                                    previewHTML += `<div class="preview-grid-item" style="${style}"></div>`;
+                                }
+                            }
+                        }
+                        
+                        previewHTML += '</div>';
+                        previewEl.innerHTML = previewHTML;
+                    };
+                    
+                    window.getRandomColor = function() {
+                        // Lista de colores semitransparentes predefinidos
+                        const colors = [
+                            'rgba(25, 118, 210, 0.6)',   // Azul
+                            'rgba(56, 142, 60, 0.6)',    // Verde
+                            'rgba(211, 47, 47, 0.6)',    // Rojo
+                            'rgba(245, 124, 0, 0.6)',    // Naranja
+                            'rgba(123, 31, 162, 0.6)',   // Púrpura
+                            'rgba(0, 151, 167, 0.6)',    // Cian
+                            'rgba(81, 45, 168, 0.6)',    // Índigo
+                            'rgba(230, 74, 25, 0.6)',    // Naranja oscuro
+                        ];
+                        
+                        return colors[Math.floor(Math.random() * colors.length)];
+                    };
+                    
+                    // Inicializar la vista previa después de definir las funciones
+                    setTimeout(() => {
+                        if (document.getElementById('grid-type')) {
+                            updateGridPreview();
+                        }
+                    }, 100);
+                }
 
                 const handleSave = () => {
                     const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
@@ -2454,18 +3104,15 @@ Be careful with this action!
                                             </svg>
                                         </button>
                                         <button
-                                            onClick=${() =>
-                                                insertText(
-                                                    "\n:::grid cols-2 gap-1\n### Feature A\n- Point 1\n- Point 2\n- Point 3\n\n---\n\n### Feature B\n- Point A\n- Point B\n- Point C\n",
-                                                    "\n:::\n"
-                                                )}
-                                            title="Collapsible Element"
+                                            onClick=${() => openGridCreator()}
+                                            title="Grid Creator"
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 width="18"
                                                 height="18"
                                                 viewBox="0 0 25 18"
+                                                style="pointer-events: none;"
                                             >
                                                 <g fill="none" fill-rule="evenodd"><path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z"/><path fill="currentColor" d="M19 11a2 2 0 0 1 1.995 1.85L21 13v6a2 2 0 0 1-1.85 1.995L19 21h-4a2 2 0 0 1-1.995-1.85L13 19v-6a2 2 0 0 1 1.85-1.995L15 11zM9 15a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm10-2h-4v6h4zM9 17H5v2h4zM9 3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2H5v6h4zm10-2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2h-4v2h4z"/></g>
                                             </svg>
@@ -2983,6 +3630,11 @@ Be careful with this action!
                     title: 'Grid Configuration',
                     sections: [
                         {
+                            title: 'Type',
+                            type: 'options',
+                            options: ['grid-simple', 'grid-responsive', 'grid-advanced', 'grid-dashboard']
+                        },
+                        {
                             title: 'Columns',
                             type: 'options',
                             options: ['cols-1', 'cols-2', 'cols-3', 'cols-4', 'cols-5', 'cols-6']
@@ -3008,6 +3660,11 @@ Be careful with this action!
                             type: 'custom',
                             placeholder: 'background: #f0f0f0; padding: 1rem;',
                             pattern: 'style="{value}"'
+                        },
+                        {
+                            title: 'Information',
+                            type: 'info',
+                            info: 'Use grid-advanced or grid-dashboard for custom layouts with HTML and CSS.'
                         }
                     ]
                 },

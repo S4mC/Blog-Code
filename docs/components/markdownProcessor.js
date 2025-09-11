@@ -1,6 +1,6 @@
 function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processBalancedDelimiters(e,t){let s=e;const{findPattern:i,openChar:a,closeChar:r,processMatch:c,shouldProcess:l=()=>!0}=t,o=[];let n;for(;(n=i.exec(e))!==null;){const t={fullMatch:n,start:n.index,...n.groups||{}};let s=1,i=n.index+n[0].length,c=-1;for(;i<e.length&&s>0;){const t=e[i];if(t===a)s++;else if(t===r&&(s--,s===0)){c=i;break}i++}c!==-1&&(t.end=c+1,t.content=e.substring(n.index+n[0].length,c),l(t)&&o.push(t))}return o.reverse().forEach(t=>{const n=c(t,e);n!==null&&(s=s.substring(0,t.start)+n+s.substring(t.end))}),s}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,n=!1,o="",s=[],i=[],t=[],a=new Map;const c=e.split(`
 `);for(let e of c){const l=e.trim();if(l.startsWith("```")){if(n){n=!1;const e=`CODE_BLOCK_${r++}_BLOCK_CODE`;a.set(e,{language:o,code:s.join(`
-`)}),t.push(e)}else n=!0,o=l.slice(3).trim(),s=[];continue}if(n)s.push(e);else if(e.startsWith("## ")||e.startsWith("### ")||e.startsWith("#### ")||e.startsWith("##### ")||e.startsWith("###### ")){let n=processInlineCodeBlocks(e.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(n),t.push(e)}else e.startsWith("#t ")?t.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?t.push(`<rawhtml>${e}</rawhtml>`):t.push(e)}return[t.join(`
+`)}),t.push(e)}else n=!0,o=l.slice(3).trim(),s=[];continue}if(n)s.push(e);else{let n=e.replace(/</g,"").replace(/>/g,"").trim();if(n.startsWith("## ")||n.startsWith("### ")||n.startsWith("#### ")||n.startsWith("##### ")||n.startsWith("###### ")){let s=processInlineCodeBlocks(n.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(s),t.push(e)}else e.startsWith("#t ")?t.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?t.push(`${e}`):t.push(e)}}return[t.join(`
 `),a,i]}function processMarkdownBlocks(e){const s=e.split(`
 `);let t=[];function n(e){let n=e,o=[],i=0;for(;n<s.length;){const e=s[n],t=e.trim();if(t===":::"){if(i===0)break;i--,o.push(e)}else t.startsWith(":::")?(i++,o.push(e)):o.push(e);n++}return[o,n]}for(let e=0;e<s.length;e++){const i=s[e],o=i.trim();if(o.startsWith(":::float-")){const s=o.substring(":::float-".length);t.push(""),t.push(`<div class="float-container" id="float-${s}"><button class="float-close">×</button>`);const[i,a]=n(e+1),r=processMarkdownBlocks(i.join(`
 `));t.push("");for(const e of r.split(`
@@ -616,7 +616,37 @@ ${n}
             container.classList.remove('visible');
         });
         window.floatEventListeners.activeFloats.clear();
-    };`,[i,u,o]}export function showCopySuccess(e,t){e.innerHTML=`
+    };`,o+=`
+    // Select the first element with class "entry-content"
+    const entryContent = document.querySelector('.entry-content');
+
+    if (entryContent) {
+        // Select all <script> elements within that element
+        const scripts = entryContent.querySelectorAll('script');
+
+        scripts.forEach(oldScript => {
+            try {
+                // Create a new script element to execute
+                const newScript = document.createElement('script');
+
+                // Copy attributes (e.g., src, type, etc.)
+                Array.from(oldScript.attributes).forEach(attr => {
+                newScript.setAttribute(attr.name, attr.value);
+                });
+
+                // Copy inline content if it exists
+                if (oldScript.textContent) {
+                newScript.textContent = oldScript.textContent;
+                }
+
+                // Replace the old <script> with the new one (this triggers execution)
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            } catch (err) {
+                console.log("Error executing script:", err, oldScript);
+            }
+        });
+    }
+    `,[i,u,o]}export function showCopySuccess(e,t){e.innerHTML=`
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
