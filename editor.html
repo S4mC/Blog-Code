@@ -160,8 +160,6 @@ Be careful with this action!
                     window.location.href = `./post.html?path=${encodeURIComponent(entry.path)}`;
                 };
 
-                const [isContentModified, setIsContentModified] = useState(false);
-
                 // Estado para manejar las pestañas
                 // Función auxiliar para generar IDs numéricos secuenciales
                 const getNextTabId = (existingTabs) => {
@@ -213,7 +211,7 @@ Be careful with this action!
                 
                 // Estado para las proporciones del grid
                 const [gridRatio, setGridRatio] = useState(
-                    localStorage.getItem("editorGridRatio") || "1fr 1fr"
+                    localStorage.getItem("editorGridRatio") || "1fr 0fr 1fr"
                 );
                 const [isResizing, setIsResizing] = useState(false);
 
@@ -273,7 +271,7 @@ Be careful with this action!
                         const ratio = limitedX / editorWidth;
                         const leftFr = ratio;
                         const rightFr = 1 - ratio;
-                        const newRatio = `${leftFr}fr ${rightFr}fr`;
+                        const newRatio = `${leftFr}fr 0fr ${rightFr}fr`;
                         setGridRatio(newRatio);
                         
                         // Aplicar directamente para evitar retraso en la UI
@@ -319,22 +317,23 @@ Be careful with this action!
                 // Efecto para agregar eventos de mouse al redimensionador
                 useEffect(() => {
                     const initResizer = () => {
-                        const previewElement = document.querySelector('.markdown-preview[data-resize="preview"]');
-                        if (!previewElement) return;
-                        
+                        const resizeElement = document.querySelector('.editor-content #resize-handle');
+                        if (!resizeElement) return;
+                        console.log(resizeElement);
                         const handleMouseDown = (e) => {
+                            console.log(e);
                             // Check if we are in the resizer area
-                            const rect = previewElement.getBoundingClientRect();
-                            if (previewPosition === "right" && Math.abs(e.clientX - rect.left) <= 10) {
+                            const rect = resizeElement.getBoundingClientRect();
+                            if (previewPosition === "right") {
                                 setIsResizing(true);
                                 e.preventDefault();
                             }
                         };
                         
-                        previewElement.addEventListener('mousedown', handleMouseDown);
+                        resizeElement.addEventListener('mousedown', handleMouseDown);
                         
                         return () => {
-                            previewElement.removeEventListener('mousedown', handleMouseDown);
+                            resizeElement.removeEventListener('mousedown', handleMouseDown);
                         };
                     };
                     
@@ -345,40 +344,6 @@ Be careful with this action!
                         clearTimeout(timerId);
                     };
                 }, [previewPosition, showPreview]);
-
-                // Efecto para controlar la alerta al cerrar o navegar fuera de la página
-                useEffect(() => {
-                    const handleBeforeUnload = (e) => {
-                        if (isContentModified) {
-                            // Intentar guardar una última vez en localStorage
-                            try {
-                                if (editorRef.current && window.activeTabId) {
-                                    const content = editorRef.current.getValue();
-
-                                    // Actualizar la pestaña activa con el contenido actual
-                                    updateTabContent(window.activeTabId, content);
-
-                                    // Guardar todas las pestañas en localStorage
-                                    localStorage.setItem("editorTabs", JSON.stringify(tabs));
-                                    // Si se guarda correctamente, no mostramos alerta
-                                    return;
-                                }
-                            } catch (error) {
-                                // Si falla el guardado, mostramos la alerta
-                                e.preventDefault();
-                                e.returnValue =
-                                    "No se pudieron guardar los cambios automáticamente. ¿Seguro que quieres salir?";
-                                return e.returnValue;
-                            }
-                        }
-                    };
-
-                    window.addEventListener("beforeunload", handleBeforeUnload);
-
-                    return () => {
-                        window.removeEventListener("beforeunload", handleBeforeUnload);
-                    };
-                }, [isContentModified]);
 
                 useEffect(() => {
                     if (!editorRef.current) {
@@ -401,6 +366,12 @@ Be careful with this action!
                                 automaticLayout: true,
                                 smoothScrolling: true,
                             });
+                            
+                            // Restaurar el estado de la vista (scroll, cursor, etc) si existe
+                            const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
+                            if (activeTab && activeTab.viewState) {
+                                editorRef.current.restoreViewState(activeTab.viewState);
+                            }
 
                             // Hacer el editor disponible globalmente para el sistema de asistencia
                             window.currentEditor = editorRef.current;
@@ -551,7 +522,6 @@ Be careful with this action!
                             editorRef.current.onDidChangeModelContent(() => {
                                 const content = editorRef.current.getValue();
                                 setMarkdown(content);
-                                setIsContentModified(true);
                             });
 
                             // Sistema de asistencia de configuración
@@ -561,6 +531,45 @@ Be careful with this action!
 
                             // Inicializar sistema de asistencia
                             initializeConfigAssistant();
+
+                            // Manejar el evento beforeunload para guardar tabs en localStorage
+                            const handleBeforeUnload = (e) => {
+                                // Intentar guardar una última vez en localStorage
+                                try {
+                                    if (editorRef.current && window.activeTabId) {
+                                        const content = editorRef.current.getValue();
+
+                                        // Actualizar la pestaña activa con el contenido actual
+                                        const tabsSave = tabs.map((tab) => {
+                                            if (parseInt(tab.id) !== parseInt(window.activeTabId)) return tab;
+
+                                            tab.viewState = editorRef.current.saveViewState();
+
+                                            const tabTitle = extractTitleFromMarkdown(content);
+
+                                            return {
+                                                ...tab,
+                                                content: content,
+                                                title: tabTitle,
+                                                isModified: true,
+                                            };
+                                        });
+
+                                        // Guardar todas las pestañas en localStorage
+                                        localStorage.setItem("editorTabs", JSON.stringify(tabsSave));
+                                        // Si se guarda correctamente, no mostramos alerta
+                                        return;
+                                    }
+                                } catch (error) {
+                                    // Si falla el guardado, mostramos la alerta
+                                    e.preventDefault();
+                                    e.returnValue =
+                                        "No se pudieron guardar los cambios automáticamente. ¿Seguro que quieres salir?";
+                                    return e.returnValue;
+                                }
+                            };
+
+                            window.addEventListener("beforeunload", handleBeforeUnload);
                         });
                     }
                 }, []);
@@ -585,10 +594,15 @@ Be careful with this action!
                     if (activeTab && editorRef.current.getModel()) {
                         const currentContent = editorRef.current.getValue();
 
-                        if (currentContent !== activeTab.content) {
-                            editorRef.current.setValue(activeTab.content || "");
-                            setMarkdown(activeTab.content || "");
-                            setIsContentModified(!!activeTab.isModified);
+                        const oldModel = editorRef.current.getModel();
+                        if (oldModel) oldModel.dispose(); // limpia historial y estado interno
+
+                        const newModel = monaco.editor.createModel(activeTab.content, "markdown");
+                        setMarkdown(activeTab.content || "");
+
+                        editorRef.current.setModel(newModel);
+                        if (activeTab.viewState) {
+                            editorRef.current.restoreViewState(activeTab.viewState);
                         }
                     }
 
@@ -639,7 +653,8 @@ Be careful with this action!
                     // Guardar contenido actual antes de cambiar
                     if (editorRef.current && activeTabId !== null) {
                         const currentContent = editorRef.current.getValue();
-                        updateTabContent(numericActiveTabId, currentContent);
+
+                        updateTabContent(numericActiveTabId, currentContent, true);
                     }
 
                     // Cambiar a la nueva pestaña
@@ -650,16 +665,16 @@ Be careful with this action!
                 };
 
                 // Función para actualizar el contenido de una pestaña
-                const updateTabContent = (tabId, newContent) => {
+                const updateTabContent = (tabId, newContent, viewState = false) => {
                     const numericTabId = parseInt(tabId);
 
                     setTabs((prevTabs) =>
                         prevTabs.map((tab) => {
                             if (parseInt(tab.id) !== numericTabId) return tab;
 
-                            // Solo actualiza si realmente cambió el contenido
-                            if (tab.content === newContent) {
-                                return tab; // sin cambios
+                            // Se actualiza el viewState, si se envia el parámetro
+                            if (viewState) {
+                                tab.viewState = editorRef.current.saveViewState();
                             }
 
                             const tabTitle = extractTitleFromMarkdown(newContent);
@@ -1475,12 +1490,8 @@ Be careful with this action!
                                 )
                             );
                         }
-
-                        setIsContentModified(false); // Marcamos el contenido como guardado
                     } catch (e) {
                         console.warn("No se pudo guardar en localStorage:", e);
-                        // Aún así marcamos como guardado porque se guardó como archivo
-                        setIsContentModified(false);
                     }
                 };
 
@@ -3461,7 +3472,7 @@ Be careful with this action!
                                                     setTimeout(() => {
                                                         const editorContent = document.querySelector('.editor-content');
                                                         if (editorContent) {
-                                                            const savedRatio = localStorage.getItem("editorGridRatio") || "1fr 1fr";
+                                                            const savedRatio = localStorage.getItem("editorGridRatio") || "1fr 0fr 1fr";
                                                             editorContent.style.gridTemplateColumns = savedRatio;
                                                         }
                                                     }, 0);
@@ -3545,6 +3556,7 @@ Be careful with this action!
                                             : "flex"};"
                                         value=${markdown}
                                     />
+                                    <div id="resize-handle"></div>
                                     <div
                                         class="markdown-preview entry-content"
                                         data-resize="preview"

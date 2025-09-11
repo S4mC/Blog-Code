@@ -196,35 +196,16 @@ body {
 }
 
 /* Resize handle for right preview */
-.editor-content.right:not(.preview-hidden) .markdown-preview::before {
-    content: "";
-    position: absolute;
-    left: -5px;
-    top: 0;
-    width: 10px;
+.editor-content.right:not(.preview-hidden) #resize-handle {
+    display: block;
+    width: 5px;
     height: 100%;
     cursor: col-resize;
-    z-index: 10;
-    transition: background-color 0.2s ease;
-}
-
-.editor-content.right:not(.preview-hidden) .markdown-preview:hover::before,
-body.resizing .editor-content.right:not(.preview-hidden) .markdown-preview::before {
-    background-color: var(--primary-color);
-    opacity: 0.3;
 }
 
 /* Vertical line that appears during resizing */
-body.resizing .editor-content.right:not(.preview-hidden) .markdown-preview::after {
-    content: "";
-    position: absolute;
-    left: -2px;
-    top: 0;
-    width: 4px;
-    height: 100%;
+body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     background-color: var(--primary-color);
-    z-index: 11;
-    opacity: 0.7;
 }
 
 .editor-menu {
