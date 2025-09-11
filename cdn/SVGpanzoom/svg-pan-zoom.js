@@ -1426,35 +1426,109 @@
                         var currentDistance = this.getTouchDistance(evt.touches[0], evt.touches[1]);
                         
                         if (!this.pinchMidpoint) {
-                            this.pinchMidpoint = this.getTouchMidpoint(evt.touches[0], evt.touches[1]);
+                            // Initialization of pinch-zoom
                             this.pinchStartDistance = currentDistance;
+                            this.pinchMidpoint = this.getTouchMidpoint(evt.touches[0], evt.touches[1]);
+
+                            // Save initial finger positions in screen coordinates
+                            this.initialTouch1 = {
+                                x: evt.touches[0].clientX,
+                                y: evt.touches[0].clientY
+                            };
+                            this.initialTouch2 = {
+                                x: evt.touches[1].clientX,
+                                y: evt.touches[1].clientY
+                            };
+                            
+                            // We transform screen points to SVG coordinates
+                            var touch1Screen = SvgUtils.createSVGPoint(
+                                this.svg,
+                                evt.touches[0].clientX,
+                                evt.touches[0].clientY
+                            );
+                            
+                            var touch2Screen = SvgUtils.createSVGPoint(
+                                this.svg,
+                                evt.touches[1].clientX,
+                                evt.touches[1].clientY
+                            );
+                            
+                            // We transform screen points to SVG coordinates
+                            this.initialCorner1 = touch1Screen.matrixTransform(this.svg.getScreenCTM().inverse());
+                            this.initialCorner2 = touch2Screen.matrixTransform(this.svg.getScreenCTM().inverse());
+                            
+                            // We save the initial CTM for reference
+                            this.initialPinchCTM = this.viewport.getCTM();
+                            
+                            // Save values ​​for the pan (scroll)
+                            this.firstEventCTM = this.viewport.getCTM();
+                            this.stateOrigin = SvgUtils.getEventPoint(evt, this.svg).matrixTransform(
+                                this.firstEventCTM.inverse()
+                            );
                         }
                         
                         if (this.pinchStartDistance > 0 && currentDistance > 0) {
+                            // We calculate the new scale factor based on the distance between the fingers
                             var zoomFactor = currentDistance / this.pinchStartDistance;
                             
-                            if (this.state === "pan" && this.options.panEnabled) {
-                                var point = SvgUtils.getEventPoint(
-                                        evt,
-                                        this.svg
-                                    ).matrixTransform(this.firstEventCTM.inverse()),
-                                    viewportCTM = this.firstEventCTM.translate(
-                                        point.x - this.stateOrigin.x,
-                                        point.y - this.stateOrigin.y
-                                    );
-
+                            var currentMidpoint = this.getTouchMidpoint(evt.touches[0], evt.touches[1]);
+                            
+                            // We calculate the change in the midpoint for panning
+                            var deltaX = currentMidpoint.x - this.pinchMidpoint.x;
+                            var deltaY = currentMidpoint.y - this.pinchMidpoint.y;
+                            
+                            // We apply panning first using the viewport
+                            if (this.options.panEnabled) {
+                                var viewportCTM = this.viewport.getCTM();
+                                viewportCTM.e += deltaX;
+                                viewportCTM.f += deltaY;
                                 this.viewport.setCTM(viewportCTM);
                             }
                             
-                            var midPoint = SvgUtils.createSVGPoint(
+                            // We transform screen points to SVG coordinates to define the updated box
+                            var touch1Screen = SvgUtils.createSVGPoint(
                                 this.svg,
-                                this.pinchMidpoint.x,
-                                this.pinchMidpoint.y
+                                evt.touches[0].clientX,
+                                evt.touches[0].clientY
                             );
                             
-                            this.zoomAtPoint(zoomFactor, midPoint);
+                            var touch2Screen = SvgUtils.createSVGPoint(
+                                this.svg,
+                                evt.touches[1].clientX,
+                                evt.touches[1].clientY
+                            );
                             
+                            // We transform screen points to SVG coordinates
+                            var currentCorner1 = touch1Screen.matrixTransform(this.svg.getScreenCTM().inverse());
+                            var currentCorner2 = touch2Screen.matrixTransform(this.svg.getScreenCTM().inverse());
+                            
+                            // We calculate the center of the box in SVG coordinates
+                            var boxCenterX = (currentCorner1.x + currentCorner2.x) / 2;
+                            var boxCenterY = (currentCorner1.y + currentCorner2.y) / 2;
+                            var boxCenterPoint = SvgUtils.createSVGPoint(this.svg, boxCenterX, boxCenterY);
+                            
+                            // We apply zoom centered on the midpoint of the current box
+                            var oldCTM = this.viewport.getCTM();
+                            
+                            // We convert the center point to viewport-relative coordinates
+                            var relativePoint = boxCenterPoint.matrixTransform(oldCTM.inverse());
+                            
+                            // We create the modifier matrix for the zoom
+                            var modifier = this.svg.createSVGMatrix()
+                                .translate(relativePoint.x, relativePoint.y)
+                                .scale(zoomFactor)
+                                .translate(-relativePoint.x, -relativePoint.y);
+                            
+                            // Apply zoom
+                            var newCTM = oldCTM.multiply(modifier);
+                            
+                            // We apply the new CTM to the viewport
+                            this.viewport.setCTM(newCTM);
+                            
+                            // We update for the next cycle
                             this.pinchStartDistance = currentDistance;
+                            this.pinchMidpoint = currentMidpoint;
+                            this.firstEventCTM = this.viewport.getCTM();
 
                             this.firstEventCTM = this.viewport.getCTM(); // Saves states for correct panning when zooming
                             this.stateOrigin = SvgUtils.getEventPoint(evt, this.svg).matrixTransform(
@@ -1466,6 +1540,11 @@
                     } else if (evt.touches && evt.touches.length === 1) {
                         this.pinchStartDistance = 0;
                         this.pinchMidpoint = null;
+                        this.initialCorner1 = null;
+                        this.initialCorner2 = null;
+                        this.initialPinchCTM = null;
+                        this.initialTouch1 = null;
+                        this.initialTouch2 = null;
                     }
                 };
 
@@ -1505,6 +1584,11 @@
                     // Reset pinch zoom variables on touch end
                     this.pinchStartDistance = 0;
                     this.pinchMidpoint = null;
+                    this.initialCorner1 = null;
+                    this.initialCorner2 = null;
+                    this.initialPinchCTM = null;
+                    this.initialTouch1 = null;
+                    this.initialTouch2 = null;
                 };
 
                 /**
@@ -1639,6 +1723,11 @@
                     this.lastDistance = 0;
                     this.pinchStartDistance = 0;
                     this.pinchMidpoint = null;
+                    this.initialCorner1 = null;
+                    this.initialCorner2 = null;
+                    this.initialPinchCTM = null;
+                    this.initialTouch1 = null;
+                    this.initialTouch2 = null;
 
                     // Destroy custom event handlers
                     // eslint-disable-next-line eqeqeq
