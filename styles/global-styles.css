@@ -628,6 +628,7 @@ body {
 
 .entry-content li {
     color: var(--text-secondary);
+    margin-top: 5px;
 }
 
 .entry-content a {

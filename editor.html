@@ -319,9 +319,7 @@ Be careful with this action!
                     const initResizer = () => {
                         const resizeElement = document.querySelector('.editor-content #resize-handle');
                         if (!resizeElement) return;
-                        console.log(resizeElement);
                         const handleMouseDown = (e) => {
-                            console.log(e);
                             // Check if we are in the resizer area
                             const rect = resizeElement.getBoundingClientRect();
                             if (previewPosition === "right") {
@@ -2566,6 +2564,77 @@ Be careful with this action!
                                                         />
                                                     </svg>
                                                     Numbered list
+                                                </button>
+                                            </div>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
+                                        </button>
+                                        <button
+                                            class="editor-menu"
+                                            style="padding-left: 4px;"
+                                            onClick=${(e) => {
+                                                // Solo actuar si el click fue directamente en el botón principal (no en los hijos)
+                                                if (e.target === e.currentTarget) {
+                                                    const menu =
+                                                        e.currentTarget.querySelector(".menu-content");
+                                                    const isVisible = menu.style.display === "block";
+                                                    menu.style.display = isVisible ? "none" : "block";
+
+                                                    if (!isVisible) {
+                                                        const closeMenu = (event) => {
+                                                            if (
+                                                                !menu.contains(event.target) &&
+                                                                !e.target.contains(event.target)
+                                                            ) {
+                                                                menu.style.display = "none";
+                                                                document.removeEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                );
+                                                            }
+                                                        };
+                                                        setTimeout(
+                                                            () =>
+                                                                document.addEventListener(
+                                                                    "click",
+                                                                    closeMenu
+                                                                ),
+                                                            0
+                                                        );
+                                                    }
+                                                }
+                                            }}
+                                            title="Space"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 6h10m-10 6h10m-10 6h10M5 19V5m0 14l-2-2.5M5 19l2-2.5M5 5L3 7m2-2l2 2"/></svg>
+                                            <div class="menu-content" style="display: none;">
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(h=10px)", "");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Vertical space
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(w=10px)", "");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                >
+                                                    Horizontal space
                                                 </button>
                                             </div>
                                             <svg

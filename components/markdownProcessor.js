@@ -561,8 +561,20 @@ export function renderMarkdown(markdownContent) {
     // Protect inline code with language prefix
     [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(processedMarkdown, inlineCodeBlocks);
 
+    // Process spacing elements like (w=1em)
+    // Process width spacing elements
+    processedMarkdown = processedMarkdown.replace(/\(w=(\d*\.?\d+)(px|em|rem|lh)\)/g, (match, size, unit) => {
+        return `<div style="width: ${size}${unit}"></div>`;
+    });
+    
+    // Process height spacing elements
+    processedMarkdown = processedMarkdown.replace(/\(h=(\d*\.?\d+)(px|em|rem|lh)\)/g, (match, size, unit) => {
+        return `<div style="height: ${size}${unit}"></div>`;
+    });
+    
     // Handle links that might have spaces in the href that Marked.js doesn't parse correctly
     // Using the generic balanced delimiter processor
+    // Process internal links that need encoding
     processedMarkdown = processBalancedDelimiters(processedMarkdown, {
         findPattern: /\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,
         openChar: '(',
