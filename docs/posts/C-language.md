@@ -13,20 +13,26 @@ Use c`#define Name Value` to create symbolic constants or macros (text substitut
 
 ### Librarys
 Use c`#include <libraryName.h>` to include a standar library in the program (.h for header file).
-:::details Use⠀ c`#include "myfile.h"`⠀to include a library of files in your program.
+:::details Use c`#include "myfile.h"` to include a library of files in your program.
  This library can have declarations (functions, structures, macros, etc.), but definitions (the code for the functions) must be in a file with the same name, but with a .c extension.
 :::
 
 - `<stdio.h>`: Acronym of *standard input-output header* contains all the basic input and output tools in C, both for working with the console and with files.
 
 #### c`<stdio.h>`:
-- c`printf("content"); // print formatted`:⠀It print data in a specific format to the console.
-- c`scanf("%d", &x); // scan formatted`:⠀Gets data from the console in the address parameter in a specific format.
+- c`printf("content"); // print formatted`:
+It print data in a specific format to the console. 
+For floating-point numbers (float or double), you can print a certain number of decimal places with the syntax:
+```c
+printf("%.3f", num); // 3 decimal places
+printf("%.2lf", num); // 2 decimal places
+```
+- (h=8px) c`scanf("%d", &x); // scan formatted`: Gets data from the console in the address parameter in a specific format.
 
 #### c`<math.h>`:
-- c`double result = pow(n,2); // power`:⠀It has two arguments and returns the value of the first argument raised to the second argument.
-- c`double result = sqrt(n); // square root`:⠀It calculates the square root of a variable.
-- c`double logarithm = log(n)/log(base); // logarithm`⠀It calculates the logarithm of a variable.
+- c`double result = pow(n,2); // power`: It has two arguments and returns the value of the first argument raised to the second argument.
+- c`double result = sqrt(n); // square root`: It calculates the square root of a variable.
+- c`double logarithm = log(n)/log(base); // logarithm` It calculates the logarithm of a variable.
 
 ## Main
 In standard C, every executable program must have a **main function**, because it is the entry point of the program.
@@ -55,7 +61,7 @@ You can use two types of comments.
 
 ### Get the memory address where a variable is stored
 
-You can use & on variables or objects that take up memory to get that memory address
+You can use c`&` on variables or objects that take up memory to get that memory address
 ```c
 #include <stdio.h>
 
@@ -76,7 +82,7 @@ Casting is the process of explicitly converting a value from one data type to an
 
 ```c
 int x = 10;
-double y = (double) x; // converts int 10 to double 10.0
+double y = (double)x; // converts int 10 to double 10.0
 ```
 
 For example, in this code it is necessary to have a casting to obtain a suitable result:
@@ -114,3 +120,16 @@ int main() {
 ### Ternary Operator
 A shorthand for simple if ... else statements, exactly the same as in javascript:
  javascript`variable = condition ? value_if_true: value_if_false;`
+
+(h=8px)
+
+## Arithmetic operators
+Used for basic math operations
+```c
+int a = 5 + 3;  // addition
+int a = 10 - 7; // subtraction
+int a = 4 * 3;  // multiplication
+float b = 10.0 / 3; // division
+int a = 10 % 3; // modulus (remainder)
+```
+
