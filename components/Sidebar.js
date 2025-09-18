@@ -388,16 +388,24 @@ class SidebarClass {
         if (overlay) overlay.addEventListener('click', () => this.close());
         
         // Manejar cambios de tamaño de ventana
+        let lastWidth = window.innerWidth;
+
         window.addEventListener('resize', () => {
-            const isLargeScreen = window.innerWidth >= 1024;
-            
-            // En pantallas grandes, mostrar sidebar automáticamente
-            if (isLargeScreen && !sidebar.classList.contains('open')) {
-                if (document.body.dataset.openSidebarResize !== "false") { this.open(); }
-            } 
-            // En pantallas pequeñas, ocultar sidebar si está abierta
-            else if (!isLargeScreen && sidebar.classList.contains('open')) {
-                this.close();
+            const currentWidth = window.innerWidth;
+
+            // Solo ejecutar si el cambio es en el ancho de la página
+            if (currentWidth !== lastWidth) {
+                lastWidth = currentWidth;
+                const isLargeScreen = currentWidth >= 1024;
+
+                // En pantallas grandes, mostrar sidebar automáticamente
+                if (isLargeScreen && !sidebar.classList.contains('open')) {
+                    if (document.body.dataset.openSidebarResize !== "false") { this.open(); }
+                } 
+                // En pantallas pequeñas, ocultar sidebar si está abierta
+                else if (!isLargeScreen && sidebar.classList.contains('open')) {
+                    this.close();
+                }
             }
         });
 

@@ -952,6 +952,7 @@ blockquote h1, blockquote h2, blockquote h3, blockquote h4, blockquote h5, block
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 49;
+    height: 100vh;
 }
 
 /* Desktop search results */
