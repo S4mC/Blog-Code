@@ -1,22 +1,22 @@
 import { html } from "htm/preact";
 
-// Variable para mantener una referencia a la instancia activa
+// Variable to maintain a reference to the active instance
 let sidebarInstance = null;
 
-// Función para inicializar la sidebar
+// Function to initialize the sidebar
 export function initSidebar(data) {
-    // Si ya existe una instancia, actualizar los datos
+    // If an instance already exists, update the data
     if (sidebarInstance) {
         sidebarInstance.updateData(data);
         return sidebarInstance;
     }
     
-    // Verificar que los elementos existan antes de crear la instancia
+    // Check that elements exist before creating the instance
     if (document.getElementById('sidebar')) {
         sidebarInstance = new SidebarClass(data);
         return sidebarInstance;
     } else {
-        console.error("No se pudo inicializar la sidebar: elementos del DOM no encontrados");
+        console.error("Could not initialize sidebar: DOM elements not found");
         return null;
     }
 }
@@ -39,72 +39,72 @@ export function Sidebar() {
             </div>
 
             <div class="sidebar-content" id="sidebarContent">
-                <!-- El contenido se generará dinámicamente -->
+                <!-- Content will be generated dynamically -->
             </div>
         </div>
     `;
 }
 
-// Función para encontrar el elemento correcto en el DOM
+// Function to find the correct element in the DOM
 function findDOMElement(result, data) {
     
     const entryContent = document.getElementsByClassName("entry-content")[0];
     if (!entryContent) {
-        console.error("No se encontró el contenedor entry-content");
+        console.error("Entry-content container not found");
         return null;
     }
 
     const section = data.find(s => s.id === result.sectionId);
     if (!section) {
-        console.error("No se encontró la sección con ID:", result.sectionId);
+        console.error("Section not found with ID:", result.sectionId);
         return null;
     }
     
     if (result.type === 'section') {
-        // Para secciones (##), buscar directamente por ID
+        // For sections (##), search directly by ID
         const element = document.getElementById(result.sectionId);
         return element;
     } else if (result.type === 'item') {
-        // Para items (###), encontrar por ID específico
+        // For items (###), find by specific ID
         const item = section.items.find(i => i.id === result.itemId);
         if (!item) {
-            console.error("No se encontró el item con ID:", result.itemId);
+            console.error("Item not found with ID:", result.itemId);
             return null;
         }
         
         const sectionIndex = parseInt(result.sectionId.split('-')[1]);
         const itemIndex = section.items.indexOf(item);
         
-        // El ID del elemento h3 sigue el formato section-X-item-Y
+        // The h3 element ID follows the format section-X-item-Y
         const itemId = `section-${sectionIndex}-item-${itemIndex}`;
         const element = document.getElementById(itemId);
         return element;
     } else if (result.type === 'subitem') {
-        // Para subitems (H4-H6)
+        // For subitems (H4-H6)
         const item = section.items.find(i => i.id === result.itemId);
         if (!item || !item.subitems) {
-            console.error("No se encontró el item padre o no tiene subitems:", result.itemId);
+            console.error("Parent item not found or has no subitems:", result.itemId);
             return null;
         }
         
         const subitem = item.subitems.find(s => s.id === result.subitemId);
         if (!subitem) {
-            console.error("No se encontró el subitem con ID:", result.subitemId);
+            console.error("Subitem not found with ID:", result.subitemId);
             return null;
         }
         
-        // Usar el domId almacenado si está disponible
+        // Use the stored domId if available
         const subitemId = subitem.domId || 
             `section-${parseInt(result.sectionId.split('-')[1])}-item-${section.items.indexOf(item)}-subitem-${item.subitems.indexOf(subitem)}`;
         let element = document.getElementById(subitemId);
         
-        // Si no lo encontramos con el ID esperado, intentemos buscar por el nivel y título
+        // If we didn't find it with the expected ID, try searching by level and title
         if (!element && subitem.level) {
             
-            // Buscar todos los encabezados del nivel correspondiente
+            // Search for all headers of the corresponding level
             const possibleElements = Array.from(document.querySelectorAll(`h${subitem.level}`));
             
-            // Filtrar por contenido similar
+            // Filter by similar content
             const titleNormalized = subitem.title.toLowerCase().trim();
             const match = possibleElements.find(el => 
                 el.textContent.toLowerCase().trim() === titleNormalized);
@@ -125,31 +125,31 @@ class SidebarClass {
         this.searchResults = [];
         this.currentResultIndex = -1;
         
-        // Inicializar directamente (ya verificamos la existencia del sidebar en initSidebar)
+        // Initialize directly (we already verified sidebar existence in initSidebar)
         this.init();
     }
 
     init() {
-        // Como initSidebar ya verificó la existencia de 'sidebar', solo verificamos otros elementos
+        // Since initSidebar already verified the existence of 'sidebar', we only check other elements
         
         this.render();
         this.bindEvents();
         this.setupScrollSpy();
         
-        // Inicializar estado de la sidebar según el tamaño de pantalla
+        // Initialize sidebar state according to screen size
         if (window.innerWidth < 1024) {
             document.getElementById('sidebar').classList.remove('open');
         }
     }
     
     updateData(newData) {
-        // Procesar los nuevos datos
+        // Process the new data
         this.data = this.processData(newData);
 
-        // Limpiar búsqueda activa si existe
+        // Clear active search if it exists
         this.clearSearch();
 
-        // Re-renderizar con los nuevos datos
+        // Re-render with the new data
         this.render();
     }
 
@@ -161,10 +161,10 @@ class SidebarClass {
 
         data.forEach(item => {
             if (item.startsWith('## ')) {
-                // Si hay una sección activa, la guardamos
+                // If there's an active section, save it
                 if (currentSection) sections.push(currentSection);
                 
-                // Creamos una nueva sección (H2)
+                // Create a new section (H2)
                 currentSection = {
                     id: `section-${sections.length}`,
                     title: item.replace(/^##\s*/, ''),
@@ -173,15 +173,15 @@ class SidebarClass {
                 };
                 currentItem = null;
             } else if (item.startsWith('### ') && currentSection) {
-                // Creamos un nuevo item (H3) dentro de la sección actual
+                // Create a new item (H3) within the current section
                 currentItem = {
                     id: `item-${currentSection.items.length}`,
                     title: item.replace(/^###\s*/, ''),
-                    subitems: [] // Para H4, H5, H6
+                    subitems: [] // For H4, H5, H6
                 };
                 currentSection.items.push(currentItem);
             } else if (item.startsWith('#### ') && currentSection && currentItem) {
-                // H4 se añade como subitem de un H3
+                // H4 is added as subitem of an H3
                 const sectionIndex = sections.length;
                 const itemIndex = currentSection.items.length - 1;
                 const subitemIndex = currentItem.subitems.length;
@@ -193,7 +193,7 @@ class SidebarClass {
                     level: 4
                 });
             } else if (item.startsWith('##### ') && currentSection && currentItem) {
-                // H5 se añade como subitem de un H3
+                // H5 is added as subitem of an H3
                 const sectionIndex = sections.length;
                 const itemIndex = currentSection.items.length - 1;
                 const subitemIndex = currentItem.subitems.length;
@@ -205,7 +205,7 @@ class SidebarClass {
                     level: 5
                 });
             } else if (item.startsWith('###### ') && currentSection && currentItem) {
-                // H6 se añade como subitem de un H3
+                // H6 is added as subitem of an H3
                 const sectionIndex = sections.length;
                 const itemIndex = currentSection.items.length - 1;
                 const subitemIndex = currentItem.subitems.length;
@@ -223,12 +223,124 @@ class SidebarClass {
         return sections;
     }
 
+    // Helper function to generate nested subitems HTML
+    generateSubitemsHTML(item) {
+        if (!item.subitems || item.subitems.length === 0) {
+            return '';
+        }
+
+        // Separate subitems by level
+        const h4Items = item.subitems.filter(s => s.level === 4);
+        const h5Items = item.subitems.filter(s => s.level === 5);
+        const h6Items = item.subitems.filter(s => s.level === 6);
+        
+        // Start building HTML
+        let subitemsHTML = `<div class="subitems">`;
+        
+        // Helper function to get child subitems
+        const getChildrenRange = (parent, level) => {
+            const parentIndex = item.subitems.indexOf(parent);
+            const nextSameLevelIndex = item.subitems.findIndex((s, i) => 
+                i > parentIndex && s.level <= parent.level
+            );
+            
+            return item.subitems.slice(
+                parentIndex + 1, 
+                nextSameLevelIndex !== -1 ? nextSameLevelIndex : undefined
+            ).filter(s => s.level === level);
+        };
+        
+        // Process H4 and their children
+        h4Items.forEach(h4 => {
+            subitemsHTML += `
+                <div class="subitem level-4" data-subitem-id="${h4.id}">
+                    ${h4.title}
+                </div>
+            `;
+            
+            // Search for H5 children of this H4
+            const childH5s = getChildrenRange(h4, 5);
+            
+            // Process H5 and their H6 children
+            childH5s.forEach(h5 => {
+                subitemsHTML += `
+                    <div class="subitem level-5" data-subitem-id="${h5.id}">
+                        ${h5.title}
+                    </div>
+                `;
+                
+                // Search for H6 children of this H5
+                const childH6s = getChildrenRange(h5, 6);
+                
+                // Add H6
+                childH6s.forEach(h6 => {
+                    subitemsHTML += `
+                        <div class="subitem level-6" data-subitem-id="${h6.id}">
+                            ${h6.title}
+                        </div>
+                    `;
+                });
+            });
+        });
+        
+        // Process orphan H5s (without an H4 parent)
+        const processedH5Ids = new Set();
+        h4Items.forEach(h4 => {
+            getChildrenRange(h4, 5).forEach(h5 => {
+                processedH5Ids.add(h5.id);
+            });
+        });
+        
+        const orphanH5s = h5Items.filter(h5 => !processedH5Ids.has(h5.id));
+        
+        orphanH5s.forEach(h5 => {
+            subitemsHTML += `
+                <div class="subitem level-5" data-subitem-id="${h5.id}">
+                    ${h5.title}
+                </div>
+            `;
+            
+            // Search for H6 children of this orphan H5
+            const childH6s = getChildrenRange(h5, 6);
+            
+            // Add H6
+            childH6s.forEach(h6 => {
+                subitemsHTML += `
+                    <div class="subitem level-6" data-subitem-id="${h6.id}">
+                        ${h6.title}
+                    </div>
+                `;
+            });
+        });
+        
+        // Process orphan H6s (without an H5 parent)
+        const processedH6Ids = new Set();
+        [...h4Items, ...h5Items].forEach(parent => {
+            getChildrenRange(parent, 6).forEach(h6 => {
+                processedH6Ids.add(h6.id);
+            });
+        });
+        
+        const orphanH6s = h6Items.filter(h6 => !processedH6Ids.has(h6.id));
+        
+        orphanH6s.forEach(h6 => {
+            subitemsHTML += `
+                <div class="subitem level-6" data-subitem-id="${h6.id}">
+                    ${h6.title}
+                </div>
+            `;
+        });
+        
+        subitemsHTML += `</div>`;
+        return subitemsHTML;
+    }
+
     render() {
         const content = document.getElementById('sidebarContent');
         
-        // Verificar que el contenedor de la sidebar exista
+        // Verify that the sidebar container exists
         if (!content) {
-            console.error("Elemento 'sidebarContent' no encontrado en el DOM");
+            console.error("Element 'sidebarContent' not found in DOM");
             return;
         }
         
@@ -236,6 +348,8 @@ class SidebarClass {
             content.innerHTML = '<div class="no-results">No data</div>';
             return;
         }
+
+        console.log("Rendering sidebar with data:", this.data);
 
         const html = this.data.map(section => `
             <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}">
@@ -245,114 +359,8 @@ class SidebarClass {
                 </div>
                 <div class="section-items">
                     ${section.items.map(item => {
-                        // Preparar estructura de subitems anidados
-                        let subitemsHTML = '';
-                        
-                        if (item.subitems && item.subitems.length > 0) {
-                            // Separar subitems por nivel
-                            const h4Items = item.subitems.filter(s => s.level === 4);
-                            const h5Items = item.subitems.filter(s => s.level === 5);
-                            const h6Items = item.subitems.filter(s => s.level === 6);
-                            
-                            // Empezar a construir HTML
-                            subitemsHTML = `<div class="subitems">`;
-                            
-                            // Función auxiliar para obtener subitems hijos
-                            const getChildrenRange = (parent, level) => {
-                                const parentIndex = item.subitems.indexOf(parent);
-                                const nextSameLevelIndex = item.subitems.findIndex((s, i) => 
-                                    i > parentIndex && s.level <= parent.level
-                                );
-                                
-                                return item.subitems.slice(
-                                    parentIndex + 1, 
-                                    nextSameLevelIndex !== -1 ? nextSameLevelIndex : undefined
-                                ).filter(s => s.level === level);
-                            };
-                            
-                            // Procesar H4 y sus hijos
-                            h4Items.forEach(h4 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-4" data-subitem-id="${h4.id}">
-                                        ${h4.title}
-                                    </div>
-                                `;
-                                
-                                // Buscar H5 hijos de este H4
-                                const childH5s = getChildrenRange(h4, 5);
-                                
-                                // Procesar H5 y sus hijos H6
-                                childH5s.forEach(h5 => {
-                                    subitemsHTML += `
-                                        <div class="subitem level-5" data-subitem-id="${h5.id}">
-                                            ${h5.title}
-                                        </div>
-                                    `;
-                                    
-                                    // Buscar H6 hijos de este H5
-                                    const childH6s = getChildrenRange(h5, 6);
-                                    
-                                    // Añadir H6
-                                    childH6s.forEach(h6 => {
-                                        subitemsHTML += `
-                                            <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                                ${h6.title}
-                                            </div>
-                                        `;
-                                    });
-                                });
-                            });
-                            
-                            // Procesar H5 huérfanos (sin un H4 padre)
-                            const processedH5Ids = new Set();
-                            h4Items.forEach(h4 => {
-                                getChildrenRange(h4, 5).forEach(h5 => {
-                                    processedH5Ids.add(h5.id);
-                                });
-                            });
-                            
-                            const orphanH5s = h5Items.filter(h5 => !processedH5Ids.has(h5.id));
-                            
-                            orphanH5s.forEach(h5 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-5" data-subitem-id="${h5.id}">
-                                        ${h5.title}
-                                    </div>
-                                `;
-                                
-                                // Buscar H6 hijos de este H5 huérfano
-                                const childH6s = getChildrenRange(h5, 6);
-                                
-                                // Añadir H6
-                                childH6s.forEach(h6 => {
-                                    subitemsHTML += `
-                                        <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                            ${h6.title}
-                                        </div>
-                                    `;
-                                });
-                            });
-                            
-                            // Procesar H6 huérfanos (sin un H5 padre)
-                            const processedH6Ids = new Set();
-                            [...h4Items, ...h5Items].forEach(parent => {
-                                getChildrenRange(parent, 6).forEach(h6 => {
-                                    processedH6Ids.add(h6.id);
-                                });
-                            });
-                            
-                            const orphanH6s = h6Items.filter(h6 => !processedH6Ids.has(h6.id));
-                            
-                            orphanH6s.forEach(h6 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                        ${h6.title}
-                                    </div>
-                                `;
-                            });
-                            
-                            subitemsHTML += `</div>`;
-                        }
+                        // Use the helper function to generate subitems
+                        const subitemsHTML = this.generateSubitemsHTML(item);
                         
                         return `
                             <div class="section-item ${item.subitems && item.subitems.length > 0 ? 'has-subitems' : ''}" data-item-id="${item.id}">
@@ -377,43 +385,43 @@ class SidebarClass {
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
         
-        // Verificar que los elementos esenciales existen
+        // Check that essential elements exist
         if (!sidebar) {
-            console.error("Elemento 'sidebar' no encontrado en el DOM");
+            console.error("Element 'sidebar' not found in DOM");
             return;
         }
 
-        // Toggle sidebar - comprobar elementos antes de agregar listeners
+        // Toggle sidebar - check elements before adding listeners
         if (toggle) toggle.addEventListener('click', () => this.toggle());
         if (overlay) overlay.addEventListener('click', () => this.close());
         
-        // Manejar cambios de tamaño de ventana
+        // Handle window resize changes
         let lastWidth = window.innerWidth;
 
         window.addEventListener('resize', () => {
             const currentWidth = window.innerWidth;
 
-            // Solo ejecutar si el cambio es en el ancho de la página
+            // Only run if the change is in page width
             if (currentWidth !== lastWidth) {
                 lastWidth = currentWidth;
                 const isLargeScreen = currentWidth >= 1024;
 
-                // En pantallas grandes, mostrar sidebar automáticamente
+                // On large screens, show sidebar automatically
                 if (isLargeScreen && !sidebar.classList.contains('open')) {
                     if (document.body.dataset.openSidebarResize !== "false") { this.open(); }
                 } 
-                // En pantallas pequeñas, ocultar sidebar si está abierta
+                // On small screens, hide sidebar if it's open
                 else if (!isLargeScreen && sidebar.classList.contains('open')) {
                     this.close();
                 }
             }
         });
 
-        // Búsqueda
+        // Search
         if (searchInput) {
             searchInput.addEventListener('input', (e) => this.search(e.target.value));
             
-            // Teclado
+            // Keyboard
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -424,25 +432,25 @@ class SidebarClass {
         }
         if (clearBtn) clearBtn.addEventListener('click', () => this.clearSearch());
 
-        // Navegación
+        // Navigation
         if (prevBtn) prevBtn.addEventListener('click', () => this.navigatePrev());
         if (nextBtn) nextBtn.addEventListener('click', () => this.navigateNext());
 
-        // Click en secciones
+        // Click on sections
         sidebar.addEventListener('click', (e) => {
-            // Click en el título de la sección - solo navegación, sin toggle
+            // Click on section title - only navigation, no toggle
             if (e.target.closest('.section-title')) {
                 const header = e.target.closest('.section-header');
                 if (header) {
                     const sectionId = header.parentElement.dataset.sectionId;
                     
-                    // Navegar al elemento del DOM
+                    // Navigate to DOM element
                     this.navigateToDOM(sectionId);
                 }
                 return;
             }
 
-            // Click en un subitem (H4-H6) - solo navegación al DOM
+            // Click on a subitem (H4-H6) - only navigation to DOM
             if (e.target.closest('.subitem')) {
                 const subitem = e.target.closest('.subitem');
                 const item = subitem.closest('.section-item');
@@ -453,13 +461,13 @@ class SidebarClass {
                     const itemId = item.dataset.itemId;
                     const subitemId = subitem.dataset.subitemId;
                     
-                    // Solo navegar al elemento del DOM para el subitem
+                    // Only navigate to DOM element for the subitem
                     this.navigateToDOM(sectionId, itemId, subitemId);
                 }
                 return;
             }
             
-            // Click en un item (###) - solo navegación al DOM (evitar conflicto con subitems)
+            // Click on an item (###) - only navigation to DOM (avoid conflict with subitems)
             if (e.target.closest('.section-item') && !e.target.closest('.subitem')) {
                 const item = e.target.closest('.section-item');
                 const section = item.closest('.section');
@@ -468,16 +476,16 @@ class SidebarClass {
                     const sectionId = section.dataset.sectionId;
                     const itemId = item.dataset.itemId;
                     
-                    // Solo navegar al elemento del DOM, no hacer toggle
+                    // Only navigate to DOM element, don't toggle
                     this.navigateToDOM(sectionId, itemId);
                 }
                 return;
             }
 
-            // Click en el ícono de colapso o en el fondo del header - solo toggle
+            // Click on collapse icon or header background - only toggle
             const header = e.target.closest('.section-header');
             if (header) {
-                // Asegurarse de que no se ha hecho clic en el título
+                // Make sure we didn't click on the title
                 if (!e.target.closest('.section-title')) {
                     const sectionId = header.parentElement.dataset.sectionId;
                     this.toggleSection(sectionId);
@@ -532,9 +540,9 @@ class SidebarClass {
         }
     }
 
-    // Función para navegar al elemento del DOM
+    // Function to navigate to DOM element
     navigateToDOM(sectionId, itemId = null, subitemId = null) {
-        // Crear un objeto result similar al de búsqueda para reutilizar findDOMElement
+        // Create a result object similar to search to reuse findDOMElement
         const result = {
             sectionId: sectionId,
             itemId: itemId,
@@ -548,10 +556,10 @@ class SidebarClass {
             if (window.innerWidth < 1024) {
                 this.close();
             }
-            // Hacer scroll al elemento en el contenido principal
+            // Scroll to element in main content
             domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Agregar highlight temporal al elemento del DOM
+            // Add temporary highlight to DOM element
             domElement.style.backgroundColor = '#454545';
             domElement.style.transition = 'background-color 0.3s ease';
             
@@ -567,29 +575,31 @@ class SidebarClass {
             return;
         }
 
-        // Desactivar temporalmente ScrollSpy durante la búsqueda
+        // Temporarily deactivate ScrollSpy during search
         this.scrollSpyActive = false;
         this.clearSidebarHighlights();
         
         document.getElementById('clearButton').classList.add('visible');
         this.searchResults = [];
 
-        // Filtrar secciones que contengan el término de búsqueda
+        // Filter sections that contain the search term
         const filteredData = [];
 
         this.data.forEach(section => {
             const sectionMatches = this.countMatches(section.title, query);
             
-            // Buscar coincidencias en items (H3)
+            // Search for matches in items (H3)
             const itemsWithMatches = section.items.map(item => {
                 const itemMatchCount = this.countMatches(item.title, query);
                 
-                // Buscar coincidencias en subitems (H4-H6)
+                // Search for matches in subitems (H4-H6)
                 const subitemsWithMatches = item.subitems ? item.subitems.map(subitem => ({
                     ...subitem,
                     matchCount: this.countMatches(subitem.title, query)
                 })).filter(subitem => subitem.matchCount > 0) : [];
                 
+                console.log(item.subitems);
+
                 return {
                     ...item,
                     matchCount: itemMatchCount,
@@ -598,10 +608,10 @@ class SidebarClass {
             }).filter(item => item.matchCount > 0 || (item.subitemsWithMatches && item.subitemsWithMatches.length > 0));
 
             if (sectionMatches > 0 || itemsWithMatches.length > 0) {
-                // Agregar la sección completa a los datos filtrados
+                // Add the complete section to filtered data
                 filteredData.push(section);
 
-                // Agregar resultados de búsqueda por cada coincidencia en secciones (H2)
+                // Add search results for each match in sections (H2)
                 for (let i = 0; i < sectionMatches; i++) {
                     this.searchResults.push({ 
                         sectionId: section.id, 
@@ -610,9 +620,9 @@ class SidebarClass {
                     });
                 }
                 
-                // Agregar resultados de búsqueda para items (H3) y subitems (H4-H6)
+                // Add search results for items (H3) and subitems (H4-H6)
                 itemsWithMatches.forEach(item => {
-                    // Agregar coincidencias en H3
+                    // Add matches in H3
                     for (let i = 0; i < item.matchCount; i++) {
                         this.searchResults.push({ 
                             sectionId: section.id, 
@@ -622,7 +632,7 @@ class SidebarClass {
                         });
                     }
                     
-                    // Agregar coincidencias en H4-H6
+                    // Add matches in H4-H6
                     if (item.subitemsWithMatches && item.subitemsWithMatches.length > 0) {
                         item.subitemsWithMatches.forEach(subitem => {
                             for (let i = 0; i < subitem.matchCount; i++) {
@@ -654,8 +664,17 @@ class SidebarClass {
     }
 
     countMatches(text, query) {
+        // If text contains HTML tags, extract only the text content
+        let textContent = text;
+        if (/<[^>]*>/g.test(text)) {
+            // Create a temporary element to extract text content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = text;
+            textContent = tempDiv.textContent || tempDiv.innerText || '';
+        }
+        
         const regex = new RegExp(this.escapeRegex(query), 'gi');
-        const matches = text.match(regex);
+        const matches = textContent.match(regex);
         return matches ? matches.length : 0;
     }
 
@@ -663,7 +682,7 @@ class SidebarClass {
         const content = document.getElementById('sidebarContent');
         
         if (sections.length === 0) {
-            content.innerHTML = '<div class="no-results">No se encontraron resultados</div>';
+            content.innerHTML = '<div class="no-results">No results found</div>';
             return;
         }
 
@@ -675,114 +694,8 @@ class SidebarClass {
                 </div>
                 <div class="section-items">
                     ${section.items.map(item => {
-                        // Preparar estructura de subitems anidados
-                        let subitemsHTML = '';
-                        
-                        if (item.subitems && item.subitems.length > 0) {
-                            // Separar subitems por nivel
-                            const h4Items = item.subitems.filter(s => s.level === 4);
-                            const h5Items = item.subitems.filter(s => s.level === 5);
-                            const h6Items = item.subitems.filter(s => s.level === 6);
-                            
-                            // Empezar a construir HTML
-                            subitemsHTML = `<div class="subitems">`;
-                            
-                            // Función auxiliar para obtener subitems hijos
-                            const getChildrenRange = (parent, level) => {
-                                const parentIndex = item.subitems.indexOf(parent);
-                                const nextSameLevelIndex = item.subitems.findIndex((s, i) => 
-                                    i > parentIndex && s.level <= parent.level
-                                );
-                                
-                                return item.subitems.slice(
-                                    parentIndex + 1, 
-                                    nextSameLevelIndex !== -1 ? nextSameLevelIndex : undefined
-                                ).filter(s => s.level === level);
-                            };
-                            
-                            // Procesar H4 y sus hijos
-                            h4Items.forEach(h4 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-4" data-subitem-id="${h4.id}">
-                                        ${h4.title}
-                                    </div>
-                                `;
-                                
-                                // Buscar H5 hijos de este H4
-                                const childH5s = getChildrenRange(h4, 5);
-                                
-                                // Procesar H5 y sus hijos H6
-                                childH5s.forEach(h5 => {
-                                    subitemsHTML += `
-                                        <div class="subitem level-5" data-subitem-id="${h5.id}">
-                                            ${h5.title}
-                                        </div>
-                                    `;
-                                    
-                                    // Buscar H6 hijos de este H5
-                                    const childH6s = getChildrenRange(h5, 6);
-                                    
-                                    // Añadir H6
-                                    childH6s.forEach(h6 => {
-                                        subitemsHTML += `
-                                            <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                                ${h6.title}
-                                            </div>
-                                        `;
-                                    });
-                                });
-                            });
-                            
-                            // Procesar H5 huérfanos (sin un H4 padre)
-                            const processedH5Ids = new Set();
-                            h4Items.forEach(h4 => {
-                                getChildrenRange(h4, 5).forEach(h5 => {
-                                    processedH5Ids.add(h5.id);
-                                });
-                            });
-                            
-                            const orphanH5s = h5Items.filter(h5 => !processedH5Ids.has(h5.id));
-                            
-                            orphanH5s.forEach(h5 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-5" data-subitem-id="${h5.id}">
-                                        ${h5.title}
-                                    </div>
-                                `;
-                                
-                                // Buscar H6 hijos de este H5 huérfano
-                                const childH6s = getChildrenRange(h5, 6);
-                                
-                                // Añadir H6
-                                childH6s.forEach(h6 => {
-                                    subitemsHTML += `
-                                        <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                            ${h6.title}
-                                        </div>
-                                    `;
-                                });
-                            });
-                            
-                            // Procesar H6 huérfanos (sin un H5 padre)
-                            const processedH6Ids = new Set();
-                            [...h4Items, ...h5Items].forEach(parent => {
-                                getChildrenRange(parent, 6).forEach(h6 => {
-                                    processedH6Ids.add(h6.id);
-                                });
-                            });
-                            
-                            const orphanH6s = h6Items.filter(h6 => !processedH6Ids.has(h6.id));
-                            
-                            orphanH6s.forEach(h6 => {
-                                subitemsHTML += `
-                                    <div class="subitem level-6" data-subitem-id="${h6.id}">
-                                        ${h6.title}
-                                    </div>
-                                `;
-                            });
-                            
-                            subitemsHTML += `</div>`;
-                        }
+                        // Usar la función auxiliar para generar subitems
+                        const subitemsHTML = this.generateSubitemsHTML(item);
                         
                         return `
                             <div class="section-item ${item.subitems && item.subitems.length > 0 ? 'has-subitems' : ''}" data-item-id="${item.id}">
@@ -801,24 +714,68 @@ class SidebarClass {
     highlightText(query) {
         const regex = new RegExp(`(${this.escapeRegex(query)})`, 'gi');
         document.querySelectorAll('.sidebar-component .section-title, .sidebar-component .section-item, .sidebar-component .subitem').forEach(el => {
-            const text = el.textContent;
-            el.innerHTML = text.replace(regex, '<span class="highlight">$1</span>');
+            // Get only the text nodes, preserving HTML structure
+            this.highlightTextInElement(el, regex);
+        });
+    }
+
+    highlightTextInElement(element, regex) {
+        // Process only text nodes to preserve HTML structure
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            // Check if this text node's parent already has a highlight class
+            let parent = node.parentNode;
+            let hasHighlightedAncestor = false;
+            
+            while (parent && parent !== element) {
+                if (parent.classList && parent.classList.contains('highlight')) {
+                    hasHighlightedAncestor = true;
+                    break;
+                }
+                parent = parent.parentNode;
+            }
+            
+            // Only add text nodes that don't have highlighted ancestors
+            if (!hasHighlightedAncestor) {
+                textNodes.push(node);
+            }
+        }
+
+        // Process text nodes in reverse order to avoid position issues
+        textNodes.reverse().forEach(textNode => {
+            const text = textNode.textContent;
+            if (regex.test(text)) {
+                const highlightedHTML = text.replace(regex, '<span class="highlight">$1</span>');
+                if (highlightedHTML !== text) {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = highlightedHTML;
+                    
+                    // Replace the text node with highlighted content
+                    const fragment = document.createDocumentFragment();
+                    while (tempDiv.firstChild) {
+                        fragment.appendChild(tempDiv.firstChild);
+                    }
+                    textNode.parentNode.replaceChild(fragment, textNode);
+                }
+            }
         });
     }
 
     navigateToResult(index) {
         if (index < 0 || index >= this.searchResults.length) return;
 
-        // Limpiar highlight anterior
-        document.querySelectorAll('.sidebar-component .current-highlight').forEach(el => {
-            el.classList.remove('current-highlight');
-            el.classList.add('highlight');
-        });
-
         const result = this.searchResults[index];
         const section = this.data.find(s => s.id === result.sectionId);
 
-        // Expandir sección si es necesario
+        // Expand section if necessary
         if (section && !section.expanded) {
             section.expanded = true;
             document.querySelector(`[data-section-id="${result.sectionId}"]`).classList.add('expanded');
@@ -828,21 +785,33 @@ class SidebarClass {
             let target;
             if (result.type === 'section') {
                 target = document.querySelector(`[data-section-id="${result.sectionId}"] .section-title`);
-            } else {
+            } else if (result.type === 'item') {
                 target = document.querySelector(`[data-section-id="${result.sectionId}"]`).querySelector(`[data-item-id="${result.itemId}"]`);
+            } else if (result.type === 'subitem') {
+                target = document.querySelector(`[data-section-id="${result.sectionId}"]`).querySelector(`[data-item-id="${result.itemId}"] .subitem[data-subitem-id="${result.subitemId}"]`);
             }
 
             if (target) {
+                // Clear previous highlights
+                document.querySelectorAll('.sidebar-component .current-highlight').forEach(el => {
+                    el.classList.remove('current-highlight');
+                    el.classList.add('highlight');
+                });
+
                 const highlight = target.querySelectorAll('.highlight')[result.matchIndex];
                 if (highlight) {
                     highlight.classList.remove('highlight');
                     highlight.classList.add('current-highlight');
                 }
                 
-                // Centrar con scroll al elemento sin mover la pagina entera
+                // Center with scroll to element without moving the entire page
                 const parent = document.getElementById("sidebarContent");
+                const targetRect = target.getBoundingClientRect();
+                const parentRect = parent.getBoundingClientRect();
+                const targetRelativeTop = targetRect.top - parentRect.top + parent.scrollTop;
+                
                 parent.scrollTo({
-                    top: target.offsetTop - parent.clientHeight / 2,
+                    top: targetRelativeTop - parent.clientHeight / 2,
                     behavior: 'smooth'
                 });
             }
@@ -900,7 +869,7 @@ class SidebarClass {
         this.render();
         this.updateSearchControls(false);
         
-        // Reactivar ScrollSpy si estamos en pantalla grande
+        // Reactivate ScrollSpy if we're on large screen
         if (window.innerWidth >= 1024) {
             this.scrollSpyActive = true;
             setTimeout(() => {
@@ -913,10 +882,10 @@ class SidebarClass {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
     
-    // Implementación del ScrollSpy
+    // ScrollSpy implementation
     setupScrollSpy() {
         this.scrollSpyActive = true;
-        // Usar throttle para evitar demasiadas actualizaciones durante el scroll
+        // Use throttle to avoid too many updates during scroll
         let ticking = false;
         window.addEventListener('scroll', () => {
             if (!ticking && this.scrollSpyActive) {
@@ -928,13 +897,13 @@ class SidebarClass {
             }
         });
         
-        // Activar también al redimensionar la ventana
+        // Also activate on window resize
         window.addEventListener('resize', () => {
             this.scrollSpyActive = true;
             this.highlightCurrentSection();
         });
         
-        // Llamar una vez inicialmente para establecer el estado inicial
+        // Call once initially to set initial state
         setTimeout(() => {
             this.highlightCurrentSection();
         }, 300);
@@ -958,20 +927,20 @@ class SidebarClass {
         const headers = Array.from(entryContent.querySelectorAll('h2, h3'));
         if (headers.length === 0) return;
         
-        // Encontrar el encabezado actualmente visible
+        // Find the currently visible header
         const scrollInit = window.innerHeight / 4;
         const scrollEnd = document.documentElement.scrollHeight - document.documentElement.clientHeight - scrollInit;
         const scrollY = window.scrollY;
-        const scrollPosition = scrollY + (window.innerHeight / 2); // Agregar offset para mejor detección
+        const scrollPosition = scrollY + (window.innerHeight / 2); // Add offset for better detection
 
-        // Encontrar el header actualmente visible
+        // Find the currently visible header
         let currentHeader = null;
         for (let i = 0; i < headers.length; i++) {
             if (scrollY <= scrollInit) {
-                // Si estamos en la parte superior de la página, resaltar el primer encabezado
+                // If we're at the top of the page, highlight the first header
                 currentHeader = headers[0];
             }else if (scrollY >= scrollEnd) {
-                // Si estamos en la parte inferior de la página, resaltar el último encabezado
+                // If we're at the bottom of the page, highlight the last header
                 currentHeader = headers[headers.length - 1];
             }else if (headers[i]?.getBoundingClientRect().top + window.scrollY <= scrollPosition) {
                 currentHeader = headers[i];
@@ -981,28 +950,28 @@ class SidebarClass {
         }
 
         if (!currentHeader) {
-            currentHeader = headers[0]; // Si no se encuentra, usar el primero
+            currentHeader = headers[0]; // If not found, use the first one
         }
         
-        // Limpiar highlights anteriores
+        // Clear previous highlights
         this.clearSidebarHighlights();
         
-        // Determinar tipo y posición del header
+        // Determine type and position of header
         const isH2 = currentHeader.tagName === 'H2';
         
-        // Obtener ID del elemento actual
+        // Get ID of current element
         const headerId = currentHeader.id;
         
-        // Determinar la sección correspondiente
+        // Determine corresponding section
         let section;
         let sectionIndex;
         
         if (isH2) {
-            // Si es un H2, buscar directamente por su ID
+            // If it's an H2, search directly by its ID
             section = this.data.find(s => s.id === headerId);
             sectionIndex = this.data.indexOf(section);
         } else {
-            // Si es un H3, extraer la sección del ID (section-X-item-Y)
+            // If it's an H3, extract the section from ID (section-X-item-Y)
             const idParts = headerId.split('-');
             if (idParts.length >= 2) {
                 sectionIndex = parseInt(idParts[1]);
@@ -1010,7 +979,7 @@ class SidebarClass {
             }
         }
         
-        // Si no se pudo determinar la sección por ID, intentar el método anterior
+        // If the section couldn't be determined by ID, try the previous method
         if (!section) {
             const h2Elements = entryContent.querySelectorAll("h2");
             const h2Index = Array.from(h2Elements).indexOf(isH2 ? currentHeader : this.findParentH2(currentHeader));
@@ -1019,21 +988,21 @@ class SidebarClass {
             if (!section) return;
         }
         
-        // Encontrar y resaltar en sidebar
+        // Find and highlight in sidebar
         const sidebarSection = document.querySelector(`[data-section-id="${section.id}"]`);
         if (sidebarSection) {
-            // Expandir la sección si no está expandida
+            // Expand the section if it's not expanded
             if (!section.expanded) {
                 section.expanded = true;
                 sidebarSection.classList.add('expanded');
             }
             
-            // Resaltar la sección o el item
+            // Highlight the section or item
             if (isH2) {
-                // Resaltar la sección
+                // Highlight the section
                 sidebarSection.querySelector('.section-header').classList.add('active');
             } else {
-                // Es un h3, intentar extraer el índice del item del ID
+                // It's an h3, try to extract the item index from ID
                 const idParts = headerId.split('-');
                 if (idParts.length >= 4 && idParts[2] === 'item') {
                     const itemIndex = parseInt(idParts[3]);
@@ -1045,7 +1014,7 @@ class SidebarClass {
                         }
                     }
                 } else {
-                    // Método anterior como fallback
+                    // Previous method as fallback
                     const h3Elements = this.getH3ElementsInSection(currentHeader);
                     const h3Index = h3Elements.indexOf(currentHeader);
                     
@@ -1059,7 +1028,7 @@ class SidebarClass {
                 }
             }
             
-            // Hacer scroll en la barra lateral
+            // Scroll in sidebar
             const sidebarContent = document.getElementById('sidebarContent');
             if (sidebarContent) {
                 const elementToScroll = isH2 ? 
@@ -1075,7 +1044,7 @@ class SidebarClass {
     }
     
     findParentH2(h3Element) {
-        // Intentar determinar la sección a partir del ID del h3
+        // Try to determine the section from h3 ID
         if (h3Element.id) {
             const idParts = h3Element.id.split('-');
             if (idParts.length >= 2) {
@@ -1086,7 +1055,7 @@ class SidebarClass {
             }
         }
         
-        // Método anterior como fallback
+        // Previous method as fallback
         let currentElement = h3Element.previousElementSibling;
         while (currentElement) {
             if (currentElement.tagName === 'H2') {
@@ -1110,7 +1079,7 @@ class SidebarClass {
         const entryContent = document.getElementsByClassName("entry-content")[0];
         if (!entryContent) return [];
         
-        // Buscar todos los h3 con IDs que coincidan con el patrón section-{sectionIndex}-item-*
+        // Search for all h3s with IDs that match the pattern section-{sectionIndex}-item-*
         return Array.from(entryContent.querySelectorAll('h3'))
             .filter(h3 => {
                 const idMatch = h3.id.match(new RegExp(`section-${sectionIndex}-item-\\d+`));

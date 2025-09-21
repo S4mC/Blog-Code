@@ -116,8 +116,8 @@
     --header-bg-rgb: 255, 255, 255;
 
     /* Article gradient overlay */
-    --article-gradient-start: rgba(106, 107, 112, 0.30);
-    --article-gradient-mid: rgba(106, 107, 112, 0.15);
+    --article-gradient-start: transparent;
+    --article-gradient-mid: rgba(106, 107, 112, 0.05);
     --article-gradient-end: transparent;
 
     --article-box-bg: rgba(0, 0, 0, 0.2);
@@ -350,7 +350,7 @@ body {
 }
 
 .header {
-    background-color: rgba(var(--header-bg-rgb), 0.3);
+    background-color: rgba(var(--header-bg-rgb), 0.8);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border-color);
