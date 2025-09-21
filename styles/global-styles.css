@@ -605,15 +605,10 @@ body {
 
 .entry-content h5 {
     font-size: 1rem;
-    padding-left: 8px;
-    border-left: 1px solid #e9e4e4;
 }
 
 .entry-content h6 {
     font-size: 1rem;
-    padding-left: 8px;
-    margin-left: 8px;
-    border-left: 1px solid #e2e44e;
 }
 
 .entry-content p {
@@ -1567,6 +1562,47 @@ details::after {
     background: #ffffff52;
     left: -6px;
     top: 50%;
+}
+
+/* Conector styles */
+.content-conector h1::before {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 8px;
+    background: #ffffff52;
+    left: 0px;
+    margin-top: 27px;
+}
+
+.content-conector h2::before {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 5px;
+    background: #ffffff52;
+    left: 0px;
+    margin-top: 25px;
+}
+
+.content-conector h3::before {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 3px;
+    background: #ffffff52;
+    left: 0px;
+    margin-top: 12px;
+}
+
+.content-conector h4::before, .content-conector h5::before, .content-conector h6::before {
+    content: "";
+    position: absolute;
+    width: 11px;
+    height: 3px;
+    background: #ffffff52;
+    left: 0px;
+    margin-top: 12px;
 }
 
 /* H4 Level */

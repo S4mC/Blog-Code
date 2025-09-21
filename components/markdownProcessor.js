@@ -166,6 +166,8 @@ function processCodeBlocksAndTitles(text) {
             } else {
                 // End of code block
                 inCodeBlock = false;
+
+                let spaceTitle = line.replace(trimmedLine, "");
                 
                 // Check if all lines have common leading whitespace and remove it if they do
                 let processedCode = currentCode;
@@ -175,7 +177,7 @@ function processCodeBlocksAndTitles(text) {
                     
                     if (nonEmptyLines.length > 0) {
                         // Find the minimum leading whitespace (spaces or tabs)
-                        let minIndentation = 4;
+                        let minIndentation = 4 + spaceTitle.length;
                         
                         for (const line of nonEmptyLines) {
                             let indentation = 0;
@@ -209,7 +211,8 @@ function processCodeBlocksAndTitles(text) {
                     language: currentLanguage,
                     code: processedCode.join("\n"),
                 });
-                protectedContent.push(placeholder);
+                protectedContent.push(spaceTitle + placeholder);
+                console.log("Processed code block:", codeBlocks);
             }
             continue;
         }
@@ -279,7 +282,7 @@ function processMarkdownBlocks(markdownContent) {
                 }
             });
         }
-        
+
         return lines;
     }
 
@@ -315,8 +318,12 @@ function processMarkdownBlocks(markdownContent) {
             i++;
         }
         
+        console.log("Block content before removing indentation:", blockContent);
+
         // Remove common indentation from block content
         blockContent = removeCommonIndentation(blockContent);
+
+        console.log("Block content after removing indentation:", blockContent);
         
         return [blockContent, i];
     }
@@ -325,7 +332,27 @@ function processMarkdownBlocks(markdownContent) {
         const line = lines[i];
         const trimmedLine = line.trim();
 
-        if (trimmedLine.startsWith(":::float-")) {
+        if (trimmedLine.startsWith(":::conector")) {
+            processedLines.push("");
+            processedLines.push(
+                `<div style="margin-left: 10px; padding-left: 20px; border-left: 3px solid #ffffff52; position: relative;" class="content-conector">`
+            );
+
+            // Process nested content
+            const [blockContent, endIndex] = processNestedBlocks(i + 1);
+            
+            // Recursively process the content inside the block
+            const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+            processedLines.push("");
+            for (const line of nestedProcessed.split("\n")) {
+                processedLines.push(line);
+            }
+            processedLines.push("");
+            i = endIndex;
+            processedLines.push("</div>");
+            processedLines.push("");
+
+        } else if (trimmedLine.startsWith(":::float-")) {
             const floatId = trimmedLine.substring(":::float-".length);
             processedLines.push("");
             processedLines.push(
