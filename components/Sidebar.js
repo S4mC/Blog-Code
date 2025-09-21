@@ -349,8 +349,6 @@ class SidebarClass {
             return;
         }
 
-        console.log("Rendering sidebar with data:", this.data);
-
         const html = this.data.map(section => `
             <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}">
                 <div class="section-header toggle-area">
@@ -597,8 +595,6 @@ class SidebarClass {
                     ...subitem,
                     matchCount: this.countMatches(subitem.title, query)
                 })).filter(subitem => subitem.matchCount > 0) : [];
-                
-                console.log(item.subitems);
 
                 return {
                     ...item,

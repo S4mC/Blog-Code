@@ -105,8 +105,8 @@ This is an example of a **blog entry** with *italic text*.
 - Links: [Example](https://example.com)
 
 :::details -open Collapsible Element
-### This item is open by default
-content
+\t### This item is open by default
+\tcontent
 :::
 
 ### SVG Container
@@ -133,7 +133,7 @@ function hello() {
 ### Embedded Iframe
 
 :::iframe
-https://example.com
+\thttps://example.com
 :::
 
 ### Blockquote
@@ -144,15 +144,15 @@ https://example.com
 ### Note Callout
 
 :::note
-This is a note callout with important information.
-You can include **formatted text** here.
+\tThis is a note callout with important information.
+\tYou can include **formatted text** here.
 :::
 
 ### Warning Callout
 
 :::warning
-This is a warning callout to highlight potential issues or important alerts.
-Be careful with this action!
+\tThis is a warning callout to highlight potential issues or important alerts.
+\tBe careful with this action!
 :::`;
 
             function MarkdownEditor() {
@@ -198,7 +198,7 @@ Be careful with this action!
                 // Estado para el contenido y la vista previa
                 const [markdown, setMarkdown] = useState(() => {
                     const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
-                    return activeTab?.content || DEFAULT_MARKDOWN_CONTENT;
+                    return activeTab?.content || "";
                 });
 
                 const [preview, setPreview] = useState("");
@@ -218,21 +218,68 @@ Be careful with this action!
                 // State to track element selection mode
                 const [isElementSelectionActive, setIsElementSelectionActive] = useState(false);
 
+                // Sistema simplificado para el scroll de la vista previa
+                const scrollDataRef = useRef({
+                    userPosition: JSON.parse(localStorage.getItem("editorPreviewScrollPosition") || '{"scrollTop":0,"scrollLeft":0}'),
+                    isUpdating: false,
+                    saveTimeout: null
+                });
+
                 const [wordWrap, setWordWrap] = useState(
                     localStorage.getItem("editorWordWrap") === "off" ? "off" : "on"
                 ); // 'on' por defecto
                 const editorRef = useRef(null);
                 const containerRef = useRef(null);
 
+                // Funciones simplificadas para el scroll
+                const saveScrollPosition = () => {
+                    if (scrollDataRef.current.isUpdating) return;
+                    const el = document.querySelector('.markdown-preview.entry-content');
+                    if (el) {
+                        const pos = { scrollTop: el.scrollTop, scrollLeft: el.scrollLeft };
+                        scrollDataRef.current.userPosition = pos;
+                        localStorage.setItem("editorPreviewScrollPosition", JSON.stringify(pos));
+                    }
+                };
+
+                const restoreScrollPosition = () => {
+                    const el = document.querySelector('.markdown-preview.entry-content');
+                    if (el && scrollDataRef.current.userPosition) {
+                        el.scrollTop = scrollDataRef.current.userPosition.scrollTop;
+                        el.scrollLeft = scrollDataRef.current.userPosition.scrollLeft;
+                    }
+                };
+
+                const setupScrollListener = () => {
+                    const el = document.querySelector('.markdown-preview.entry-content');
+                    if (el) {
+                        const handleScroll = () => {
+                            if (scrollDataRef.current.saveTimeout) clearTimeout(scrollDataRef.current.saveTimeout);
+                            scrollDataRef.current.saveTimeout = setTimeout(saveScrollPosition, 150);
+                        };
+                        el.removeEventListener('scroll', el._scrollHandler);
+                        el._scrollHandler = handleScroll;
+                        el.addEventListener('scroll', handleScroll, { passive: true });
+                    }
+                };
+
                 useEffect(() => {
                     updateTabContent(window.activeTabId, markdown);
                     if (showPreview) {
+                        scrollDataRef.current.isUpdating = true;
                         let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
                         setPreview(finalHtml);
+                        
                         setTimeout(() => {
-                            // Usar la función initSidebar que maneja de forma segura la inicialización/actualización
                             initSidebar(sidebarContent);
-                            eval(finalJS);
+                            if (finalJS) eval(finalJS);
+                            if (window.Prism) window.Prism.highlightAll();
+                            
+                            setTimeout(() => {
+                                restoreScrollPosition();
+                                setupScrollListener();
+                                scrollDataRef.current.isUpdating = false;
+                            }, 50);
                         }, 100);
                     }
                 }, [showPreview, markdown]);
@@ -240,12 +287,19 @@ Be careful with this action!
                 useEffect(() => {
                     if (showPreview) {
                         setTimeout(() => {
-                            if (window.Prism) {
-                                window.Prism.highlightAll();
-                            }
-                        }, 100);
+                            setupScrollListener();
+                            restoreScrollPosition();
+                        }, 200);
                     }
-                }, [showPreview, preview]);
+                    
+                    return () => {
+                        const el = document.querySelector('.markdown-preview.entry-content');
+                        if (el && el._scrollHandler) {
+                            el.removeEventListener('scroll', el._scrollHandler);
+                            delete el._scrollHandler;
+                        }
+                    };
+                }, [showPreview]);
                 
                 // Efecto para manejar el redimensionamiento de la vista previa
                 useEffect(() => {
@@ -917,7 +971,6 @@ Be careful with this action!
                     
                     // Define grid creator functions in global scope
                     window.updateGridPreview = function() {
-                        console.log("Updating preview");
                         const gridType = document.getElementById('grid-type').value;
                         const previewEl = document.getElementById('grid-preview');
                         
@@ -966,15 +1019,20 @@ Be careful with this action!
                             const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
                             const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
                             
-                            // Create unique ID for this grid
-                            const gridId = 'grid_' + Date.now();
+                            // Create unique ID for this grid by checking existing IDs in editor
+                            const editorContent = editorRef.current ? editorRef.current.getValue() : '';
+                            let gridNumber = 1;
+                            while (editorContent.includes(`id="grid_${gridNumber}"`)) {
+                                gridNumber++;
+                            }
+                            const gridId = 'grid_' + gridNumber;
                             
                             // Start with an advanced grid
                             gridMarkdown += `<div id="${gridId}" class="visual-grid">\n`;
                             
                             // Add divs for each area with unique IDs
                             gridAreas.forEach((area, index) => {
-                                gridMarkdown += `<div id="${gridId}_area${index+1}">\n${area.name}\n</div>\n`;
+                                gridMarkdown += `\t<div id="${gridId}_area${index+1}">\n\t\t${area.name}\n\t</div>\n`;
                             });
                             
                             gridMarkdown += "</div>\n";
@@ -1015,8 +1073,8 @@ Be careful with this action!
                             
                             // Generate placeholder content for each item
                             for (let i = 0; i < items; i++) {
-                                if (i > 0) gridMarkdown += "\n---\n\n";
-                                gridMarkdown += `### Elemento ${i + 1}\n\nContenido para elemento ${i + 1}. Reemplaza con tu propio contenido.\n`;
+                                if (i > 0) gridMarkdown += "\n\t---\n\n";
+                                gridMarkdown += `\t### Elemento ${i + 1}\n\n\tContenido para elemento ${i + 1}. Reemplaza con tu propio contenido.\n`;
                             }
                             
                             gridMarkdown += "\n:::\n";
@@ -1830,7 +1888,7 @@ Be careful with this action!
                 const insertIframe = () => {
                     const url = prompt("Enter the iframe URL:");
                     if (url) {
-                        insertText(`\n:::iframe style="height:25em"\n${url}\n:::\n`);
+                        insertText(`\n:::iframe style="height:25em"\n\t${url}\n:::\n`);
                     }
                 };
 
@@ -1843,7 +1901,7 @@ Be careful with this action!
                         );
                         if (createContent) {
                             insertText(
-                                `\n:::float-${id}\n### Floating content\nWrite here the content that will appear when clicking on the question mark symbol.\n:::\n`
+                                `\n:::float-${id}\n\t### Floating content\n\tWrite here the content that will appear when clicking on the question mark symbol.\n:::\n`
                             );
                             window.isIdUnique = false;
                         }
@@ -2898,7 +2956,7 @@ Be careful with this action!
                                                 <hr style="border: 1px solid #2d2d2d" />
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n```\n", "\n```\n");
+                                                        insertText("\n```\n\t", "\n```\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -2922,7 +2980,7 @@ Be careful with this action!
                                                                 <button
                                                                     onClick=${(e) => {
                                                                         insertText(
-                                                                            `\n\`\`\`${lang}\n`,
+                                                                            `\n\`\`\`${lang}\n\t`,
                                                                             "\n```\n"
                                                                         );
                                                                         e.currentTarget.parentElement.style.display =
@@ -3034,7 +3092,7 @@ Be careful with this action!
                                                 </button>
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n:::note\n", "\n:::\n");
+                                                        insertText("\n:::note\n\t", "\n:::\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -3059,7 +3117,7 @@ Be careful with this action!
                                                 </button>
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n:::warning\n", "\n:::\n");
+                                                        insertText("\n:::warning\n\t", "\n:::\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -3125,7 +3183,7 @@ Be careful with this action!
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    '\n```svg style="height:15em;"\n',
+                                                    '\n```svg style="height:15em;"\n\t',
                                                     "\n```\n"
                                                 )}
                                             title="SVG Container"
@@ -3149,7 +3207,7 @@ Be careful with this action!
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    '\n```animation\npublic/bodymovin.json',
+                                                    '\n```animation\n\tpublic/bodymovin.json',
                                                     "\n```\n"
                                                 )}
                                             title="Animation Container"
@@ -3166,7 +3224,7 @@ Be careful with this action!
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    "\n:::details Collapsible Element\n",
+                                                    "\n:::details Collapsible Element\n\t",
                                                     "\n:::\n"
                                                 )}
                                             title="Collapsible Element"
@@ -3711,11 +3769,6 @@ Be careful with this action!
                     title: 'Grid Configuration',
                     sections: [
                         {
-                            title: 'Type',
-                            type: 'options',
-                            options: ['grid-simple', 'grid-responsive', 'grid-advanced', 'grid-dashboard']
-                        },
-                        {
                             title: 'Columns',
                             type: 'options',
                             options: ['cols-1', 'cols-2', 'cols-3', 'cols-4', 'cols-5', 'cols-6']
@@ -4012,7 +4065,6 @@ Be careful with this action!
                                     !opt.startsWith('cols-') &&
                                     !opt.startsWith('gap-')
                                 );
-                                console.log('Matching option for {value}:', matchingOption);
 
                             }
                             

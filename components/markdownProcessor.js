@@ -166,10 +166,48 @@ function processCodeBlocksAndTitles(text) {
             } else {
                 // End of code block
                 inCodeBlock = false;
+                
+                // Check if all lines have common leading whitespace and remove it if they do
+                let processedCode = currentCode;
+                if (currentCode.length > 0) {
+                    // Filter out empty lines to find the minimum indentation
+                    const nonEmptyLines = currentCode.filter(line => line.trim() !== "");
+                    
+                    if (nonEmptyLines.length > 0) {
+                        // Find the minimum leading whitespace (spaces or tabs)
+                        let minIndentation = 4;
+                        
+                        for (const line of nonEmptyLines) {
+                            let indentation = 0;
+                            for (let i = 0; i < line.length; i++) {
+                                if (line[i] === ' ' || line[i] === '\t') {
+                                    indentation++;
+                                } else {
+                                    break;
+                                }
+                            }
+                            minIndentation = Math.min(minIndentation, indentation);
+                        }
+                        
+                        // If there's common indentation, remove it from all lines
+                        if (minIndentation > 0 && minIndentation !== Infinity) {
+                            processedCode = currentCode.map(line => {
+                                if (line.trim() === "") {
+                                    // Keep empty lines as they are
+                                    return line;
+                                } else {
+                                    // Remove the common indentation
+                                    return line.substring(minIndentation);
+                                }
+                            });
+                        }
+                    }
+                }
+                
                 const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
                     language: currentLanguage,
-                    code: currentCode.join("\n"),
+                    code: processedCode.join("\n"),
                 });
                 protectedContent.push(placeholder);
             }
@@ -205,11 +243,51 @@ function processCodeBlocksAndTitles(text) {
 }
 
 function processMarkdownBlocks(markdownContent) {
+    // Helper function to remove common leading whitespace from an array of lines
+    function removeCommonIndentation(lines) {
+        if (lines.length === 0) return lines;
+        
+        // Filter out empty lines to find the minimum indentation
+        const nonEmptyLines = lines.filter(line => line.trim() !== "");
+        
+        if (nonEmptyLines.length === 0) return lines;
+        
+        // Find the minimum leading whitespace (spaces or tabs)
+        let minIndentation = 4;
+        
+        for (const line of nonEmptyLines) {
+            let indentation = 0;
+            for (let i = 0; i < line.length; i++) {
+                if (line[i] === ' ' || line[i] === '\t') {
+                    indentation++;
+                } else {
+                    break;
+                }
+            }
+            minIndentation = Math.min(minIndentation, indentation);
+        }
+        
+        // If there's common indentation, remove it from all lines
+        if (minIndentation > 0 && minIndentation !== Infinity) {
+            return lines.map(line => {
+                if (line.trim() === "") {
+                    // Empty lines get 4 spaces to maintain structure
+                    return "    ";
+                } else {
+                    // Remove the common indentation
+                    return line.substring(minIndentation);
+                }
+            });
+        }
+        
+        return lines;
+    }
+
     // Process the content line by line
     const lines = markdownContent.split("\n");
     let processedLines = [];
     
-    function processNestedBlocks(startIndex, processContent = true) {
+    function processNestedBlocks(startIndex) {
         let i = startIndex;
         let blockContent = [];
         let nestedLevel = 0;
@@ -236,6 +314,9 @@ function processMarkdownBlocks(markdownContent) {
             }
             i++;
         }
+        
+        // Remove common indentation from block content
+        blockContent = removeCommonIndentation(blockContent);
         
         return [blockContent, i];
     }
@@ -495,6 +576,11 @@ export function renderMarkdown(markdownContent) {
         return `<a href="${element.href}" ${target}${
             element.title ? ` title="${element.title}"` : ""
         }>${cleanText}</a>`;
+    };
+
+    // Personalizar el renderer para bloques de código para evitar auto-generación
+    renderer.code = (element) => {
+        return `<p>${element.raw}</p>`;
     };
 
     // Personalizar el renderer para los encabezados H2 y H3
@@ -1195,9 +1281,19 @@ export function renderMarkdown(markdownContent) {
             
             const triggerRect = this.getBoundingClientRect();
             const parentRect = floatContainer.offsetParent.getBoundingClientRect();
+            
+            // Find the scrollable container (entry-content or closest scrollable parent)
+            let scrollContainer = this.closest('.entry-content');
+            if (!scrollContainer) {
+                scrollContainer = this.closest('[style*="overflow"]') || document.documentElement;
+            }
+            
+            // Get scroll offsets
+            const scrollLeft = scrollContainer.scrollLeft || 0;
+            const scrollTop = scrollContainer.scrollTop || 0;
 
-            let left = triggerRect.left - parentRect.left;
-            let top  = triggerRect.bottom - parentRect.top + 10;
+            let left = triggerRect.left - parentRect.left + scrollLeft;
+            let top  = triggerRect.bottom - parentRect.top + scrollTop + 10;
 
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
@@ -1212,14 +1308,45 @@ export function renderMarkdown(markdownContent) {
                 left = 0;
             }
 
-            // Ajustar vertical
-            if (triggerRect.y + floatHeight > window.innerHeight - 40) {
+            // Ajustar vertical - considerar tanto el viewport del contenedor con scroll como el viewport de la ventana
+            const scrollContainerRect = scrollContainer.getBoundingClientRect();
+            const triggerBottomRelativeToScroll = triggerRect.bottom - scrollContainerRect.top;
+            const availableSpaceInContainer = scrollContainer.clientHeight - triggerBottomRelativeToScroll;
+            
+            // También verificar si se sale del viewport de la ventana
+            const availableSpaceInWindow = window.innerHeight - triggerRect.bottom;
+            
+            // Si el contenedor tiene scroll, usar su espacio disponible, sino usar el de la ventana
+            const hasContainerScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight;
+            const shouldCheckContainer = hasContainerScroll && scrollContainer !== document.documentElement;
+            
+            let shouldPlaceAbove = false;
+            if (shouldCheckContainer) {
+                // El contenedor tiene scroll, verificar espacio en el contenedor
+                shouldPlaceAbove = availableSpaceInContainer < floatHeight + 50;
+            } else {
+                // El contenedor no tiene scroll, verificar espacio en la ventana
+                shouldPlaceAbove = availableSpaceInWindow < floatHeight + 50;
+            }
+            
+            if (shouldPlaceAbove) {
                 // si no cabe debajo, colócalo arriba del trigger
-                top = triggerRect.top - parentRect.top - floatHeight - 10;
+                top = triggerRect.top - parentRect.top + scrollTop - floatHeight - 10;
             }
 
-            if (top < 0) {
-                top = 0;
+            // Asegurar que no se salga por arriba
+            const minTop = shouldCheckContainer ? scrollTop + 10 : 10;
+            if (top < minTop) {
+                top = minTop;
+            }
+            
+            // Asegurar que no se salga por abajo del viewport de la ventana
+            if (!shouldCheckContainer) {
+                const maxTop = window.innerHeight - floatHeight - 20;
+                const currentTopInViewport = top - scrollTop + parentRect.top;
+                if (currentTopInViewport > maxTop) {
+                    top = maxTop + scrollTop - parentRect.top;
+                }
             }
 
             floatContainer.style.left = left + "px";

@@ -1,8 +1,8 @@
-function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processBalancedDelimiters(e,t){let s=e;const{findPattern:i,openChar:a,closeChar:r,processMatch:c,shouldProcess:l=()=>!0}=t,o=[];let n;for(;(n=i.exec(e))!==null;){const t={fullMatch:n,start:n.index,...n.groups||{}};let s=1,i=n.index+n[0].length,c=-1;for(;i<e.length&&s>0;){const t=e[i];if(t===a)s++;else if(t===r&&(s--,s===0)){c=i;break}i++}c!==-1&&(t.end=c+1,t.content=e.substring(n.index+n[0].length,c),l(t)&&o.push(t))}return o.reverse().forEach(t=>{const n=c(t,e);n!==null&&(s=s.substring(0,t.start)+n+s.substring(t.end))}),s}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,n=!1,o="",s=[],i=[],t=[],a=new Map;const c=e.split(`
-`);for(let e of c){const l=e.trim();if(l.startsWith("```")){if(n){n=!1;const e=`CODE_BLOCK_${r++}_BLOCK_CODE`;a.set(e,{language:o,code:s.join(`
-`)}),t.push(e)}else n=!0,o=l.slice(3).trim(),s=[];continue}if(n)s.push(e);else{let n=e.replace(/</g,"").replace(/>/g,"").trim();if(n.startsWith("## ")||n.startsWith("### ")||n.startsWith("#### ")||n.startsWith("##### ")||n.startsWith("###### ")){let s=processInlineCodeBlocks(n.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(s),t.push(e)}else e.startsWith("#t ")?t.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?t.push(`${e}`):t.push(e)}}return[t.join(`
-`),a,i]}function processMarkdownBlocks(e){const s=e.split(`
-`);let t=[];function n(e){let n=e,o=[],i=0;for(;n<s.length;){const e=s[n],t=e.trim();if(t===":::"){if(i===0)break;i--,o.push(e)}else t.startsWith(":::")?(i++,o.push(e)):o.push(e);n++}return[o,n]}for(let e=0;e<s.length;e++){const i=s[e],o=i.trim();if(o.startsWith(":::float-")){const s=o.substring(":::float-".length);t.push(""),t.push(`<div class="float-container" id="float-${s}"><button class="float-close">×</button>`);const[i,a]=n(e+1),r=processMarkdownBlocks(i.join(`
+function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exec(e))!==null;){const[,e,s]=t;e!=="src"&&(n+=` ${e}="${s}"`)}return n}function escapeHtml(e){return e.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;")}function processBalancedDelimiters(e,t){let s=e;const{findPattern:i,openChar:a,closeChar:r,processMatch:c,shouldProcess:l=()=>!0}=t,o=[];let n;for(;(n=i.exec(e))!==null;){const t={fullMatch:n,start:n.index,...n.groups||{}};let s=1,i=n.index+n[0].length,c=-1;for(;i<e.length&&s>0;){const t=e[i];if(t===a)s++;else if(t===r&&(s--,s===0)){c=i;break}i++}c!==-1&&(t.end=c+1,t.content=e.substring(n.index+n[0].length,c),l(t)&&o.push(t))}return o.reverse().forEach(t=>{const n=c(t,e);n!==null&&(s=s.substring(0,t.start)+n+s.substring(t.end))}),s}function processInlineCodeBlocks(e,t,n=!1){let c=0,s=e;const i=[];let a;const l=/`/g;for(;(a=l.exec(e))!==null;)i.push(a.index);const o=i.filter(t=>{const n=t>0&&e[t-1]==="`",s=t<e.length-1&&e[t+1]==="`";return!n&&!s}),r=[];for(let t=0;t<o.length-1;t+=2){const n=o[t],s=o[t+1];if(s!==0[0]){const o=e.substring(0,n),t=o.match(/ ([a-zA-Z0-9]+)$/);if(t){const o=t[1],i=e.substring(n+1,s);r.push({start:n-t[0].length+1,end:s+1,lang:o,code:i})}}}return r.reverse().forEach(e=>{let o=`INLINE_CODE_${c++}_CODE_INLINE`;n?o=`<code class="language-${e.lang}">${e.code}</code>`:t.set(o,{language:e.lang,code:e.code}),s=s.substring(0,e.start)+` ${o}`+s.substring(e.end)}),[s,t]}function processCodeBlocksAndTitles(e){let r=0,s=!1,o="",t=[],i=[],n=[],a=new Map;const c=e.split(`
+`);for(let e of c){const l=e.trim();if(l.startsWith("```")){if(s){s=!1;let e=t;if(t.length>0){const n=t.filter(e=>e.trim()!=="");if(n.length>0){let s=4;for(const e of n){let t=0;for(let n=0;n<e.length;n++)if(e[n]===" "||e[n]==="	")t++;else break;s=Math.min(s,t)}s>0&&s!==1/0&&(e=t.map(e=>e.trim()===""?e:e.substring(s)))}}const i=`CODE_BLOCK_${r++}_BLOCK_CODE`;a.set(i,{language:o,code:e.join(`
+`)}),n.push(i)}else s=!0,o=l.slice(3).trim(),t=[];continue}if(s)t.push(e);else{let t=e.replace(/</g,"").replace(/>/g,"").trim();if(t.startsWith("## ")||t.startsWith("### ")||t.startsWith("#### ")||t.startsWith("##### ")||t.startsWith("###### ")){let s=processInlineCodeBlocks(t.replace(/</g,"&lt;").replace(/>/g,"&gt;"),[],!0)[0];i.push(s),n.push(e)}else e.startsWith("#t ")?n.push(`<plain>${e.substring(3)}</plain>`):e.startsWith("<")?n.push(`${e}`):n.push(e)}}return[n.join(`
+`),a,i]}function processMarkdownBlocks(e){function o(e){if(e.length===0)return e;const n=e.filter(e=>e.trim()!=="");if(n.length===0)return e;let t=4;for(const e of n){let s=0;for(let t=0;t<e.length;t++)if(e[t]===" "||e[t]==="	")s++;else break;t=Math.min(t,s)}return t>0&&t!==1/0?e.map(e=>e.trim()===""?"    ":e.substring(t)):e}const s=e.split(`
+`);let t=[];function n(e){let n=e,t=[],i=0;for(;n<s.length;){const e=s[n],o=e.trim();if(o===":::"){if(i===0)break;i--,t.push(e)}else o.startsWith(":::")?(i++,t.push(e)):t.push(e);n++}return t=o(t),[t,n]}for(let e=0;e<s.length;e++){const i=s[e],o=i.trim();if(o.startsWith(":::float-")){const s=o.substring(":::float-".length);t.push(""),t.push(`<div class="float-container" id="float-${s}"><button class="float-close">×</button>`);const[i,a]=n(e+1),r=processMarkdownBlocks(i.join(`
 `));t.push("");for(const e of r.split(`
 `))t.push(e);t.push(""),e=a,t.push("</div>"),t.push("")}else if(o.startsWith(":::note")){t.push('<div class="note-callout">'),t.push('<div class="callout-header">'),t.push('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'),t.push("<span>Note</span>"),t.push("</div>"),t.push('<div class="callout-content">');const[s,o]=n(e+1),i=processMarkdownBlocks(s.join(`
 `));t.push("");for(const e of i.split(`
@@ -22,13 +22,13 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
                         </svg>`,l=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>`;t.push(`<div class="iframe-container"><iframe src="${r}" frameborder="0" allowfullscreen ${s}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${c}</span><span class="contract-icon" style="display: none;">${l}</span></button></div>`)}else t.push(i)}return t.join(`
-`)}export function renderMarkdown(e){const d=new marked.Renderer;d.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`};let c=0,r=0,a={};d.heading=function(e){let t="";if(e.depth===2)t=`section-${c}`,c++,r=0,a={};else if(e.depth===3){const e=Math.max(0,c-1);t=`section-${e}-item-${r}`,r++,a[`${e}-${r-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,c-1),s=Math.max(0,r-1),e=`${n}-${s}`;a[e]===0[0]&&(a[e]=0),t=`section-${n}-item-${s}-subitem-${a[e]}`,a[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let h=new Map,l=new Map,u=[],s="";[s,h,u]=processCodeBlocksAndTitles(e),s=s.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
+`)}export function renderMarkdown(e){const c=new marked.Renderer;c.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`},c.code=e=>`<p>${e.raw}</p>`;let l=0,r=0,a={};c.heading=function(e){let t="";if(e.depth===2)t=`section-${l}`,l++,r=0,a={};else if(e.depth===3){const e=Math.max(0,l-1);t=`section-${e}-item-${r}`,r++,a[`${e}-${r-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,l-1),s=Math.max(0,r-1),e=`${n}-${s}`;a[e]===0[0]&&(a[e]=0),t=`section-${n}-item-${s}-subitem-${a[e]}`,a[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let h=new Map,d=new Map,u=[],s="";[s,h,u]=processCodeBlocksAndTitles(e),s=s.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
 
 ${n}
 
-`}),[s,l]=processInlineCodeBlocks(s,l),s=s.replace(/\(w=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="width: ${t}${n}"></div>`),s=s.replace(/\(h=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="height: ${t}${n}"></div>`),s=processBalancedDelimiters(s,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const m=processMarkdownBlocks(s);s=m,marked.setOptions({breaks:!0,gfm:!0,renderer:d,headerIds:!0,mangle:!1});let i=marked.parse(s),o="";i=i.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
+`}),[s,d]=processInlineCodeBlocks(s,d),s=s.replace(/\(w=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="width: ${t}${n}"></div>`),s=s.replace(/\(h=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="height: ${t}${n}"></div>`),s=processBalancedDelimiters(s,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const m=processMarkdownBlocks(s);s=m,marked.setOptions({breaks:!0,gfm:!0,renderer:c,headerIds:!0,mangle:!1});let i=marked.parse(s),o="";i=i.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
-        </span>`);for(const[e,{language:t,code:n}]of l){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let t=1,n=1;for(const[r,{language:e,code:a}]of h){let s="";if(e.startsWith("svg")){let n=obtainAttributes(e);s=`<div
+        </span>`);for(const[e,{language:t,code:n}]of d){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let t=1,n=1;for(const[r,{language:e,code:a}]of h){let s="";if(e.startsWith("svg")){let n=obtainAttributes(e);s=`<div
                 id="SVGiewer${t}"
                 class="SVG-viewer"
                 ${n}
@@ -537,9 +537,19 @@ ${n}
             
             const triggerRect = this.getBoundingClientRect();
             const parentRect = floatContainer.offsetParent.getBoundingClientRect();
+            
+            // Find the scrollable container (entry-content or closest scrollable parent)
+            let scrollContainer = this.closest('.entry-content');
+            if (!scrollContainer) {
+                scrollContainer = this.closest('[style*="overflow"]') || document.documentElement;
+            }
+            
+            // Get scroll offsets
+            const scrollLeft = scrollContainer.scrollLeft || 0;
+            const scrollTop = scrollContainer.scrollTop || 0;
 
-            let left = triggerRect.left - parentRect.left;
-            let top  = triggerRect.bottom - parentRect.top + 10;
+            let left = triggerRect.left - parentRect.left + scrollLeft;
+            let top  = triggerRect.bottom - parentRect.top + scrollTop + 10;
 
             const floatWidth = floatContainer.offsetWidth;
             const floatHeight = floatContainer.offsetHeight;
@@ -554,14 +564,45 @@ ${n}
                 left = 0;
             }
 
-            // Ajustar vertical
-            if (triggerRect.y + floatHeight > window.innerHeight - 40) {
+            // Ajustar vertical - considerar tanto el viewport del contenedor con scroll como el viewport de la ventana
+            const scrollContainerRect = scrollContainer.getBoundingClientRect();
+            const triggerBottomRelativeToScroll = triggerRect.bottom - scrollContainerRect.top;
+            const availableSpaceInContainer = scrollContainer.clientHeight - triggerBottomRelativeToScroll;
+            
+            // También verificar si se sale del viewport de la ventana
+            const availableSpaceInWindow = window.innerHeight - triggerRect.bottom;
+            
+            // Si el contenedor tiene scroll, usar su espacio disponible, sino usar el de la ventana
+            const hasContainerScroll = scrollContainer.scrollHeight > scrollContainer.clientHeight;
+            const shouldCheckContainer = hasContainerScroll && scrollContainer !== document.documentElement;
+            
+            let shouldPlaceAbove = false;
+            if (shouldCheckContainer) {
+                // El contenedor tiene scroll, verificar espacio en el contenedor
+                shouldPlaceAbove = availableSpaceInContainer < floatHeight + 50;
+            } else {
+                // El contenedor no tiene scroll, verificar espacio en la ventana
+                shouldPlaceAbove = availableSpaceInWindow < floatHeight + 50;
+            }
+            
+            if (shouldPlaceAbove) {
                 // si no cabe debajo, colócalo arriba del trigger
-                top = triggerRect.top - parentRect.top - floatHeight - 10;
+                top = triggerRect.top - parentRect.top + scrollTop - floatHeight - 10;
             }
 
-            if (top < 0) {
-                top = 0;
+            // Asegurar que no se salga por arriba
+            const minTop = shouldCheckContainer ? scrollTop + 10 : 10;
+            if (top < minTop) {
+                top = minTop;
+            }
+            
+            // Asegurar que no se salga por abajo del viewport de la ventana
+            if (!shouldCheckContainer) {
+                const maxTop = window.innerHeight - floatHeight - 20;
+                const currentTopInViewport = top - scrollTop + parentRect.top;
+                if (currentTopInViewport > maxTop) {
+                    top = maxTop + scrollTop - parentRect.top;
+                }
             }
 
             floatContainer.style.left = left + "px";
