@@ -598,7 +598,7 @@ body {
 .entry-content h3 {
     font-size: 1.2rem;
     font-weight: 600;
-    margin-top: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
     margin-bottom: var(--spacing-xs);
     color: var(--text-color);
 }
