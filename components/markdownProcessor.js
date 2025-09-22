@@ -212,7 +212,6 @@ function processCodeBlocksAndTitles(text) {
                     code: processedCode.join("\n"),
                 });
                 protectedContent.push(spaceTitle + placeholder);
-                console.log("Processed code block:", codeBlocks);
             }
             continue;
         }
@@ -317,13 +316,9 @@ function processMarkdownBlocks(markdownContent) {
             }
             i++;
         }
-        
-        console.log("Block content before removing indentation:", blockContent);
 
         // Remove common indentation from block content
         blockContent = removeCommonIndentation(blockContent);
-
-        console.log("Block content after removing indentation:", blockContent);
         
         return [blockContent, i];
     }
