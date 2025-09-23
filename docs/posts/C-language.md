@@ -19,7 +19,6 @@ Use c`#include "myfile.h"` to include a library of files in your program(?=custo
 	This library can have **declarations** (functions, structures, macros, etc.), but **definitions** (the code for the functions) must be in a file with the same name, but with a .c extension.
 :::
 
-
 :::conector
     #### c`<stdio.h>`:
     Acronym of *standard input-output header* contains all the basic input and output tools in C, both for working with the console and with files.

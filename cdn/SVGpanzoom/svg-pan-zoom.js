@@ -1415,8 +1415,9 @@
                  * @param  {Event} evt
                  */
                 SvgPanZoom.prototype.handleTouchMove = function (evt) {
-                    
-                    if (this.options.preventMouseEventsDefault) {
+
+                    // Prevent default touch actions if more than one touch (because one finger can be used for scrolling in page)
+                    if (this.options.preventMouseEventsDefault && evt.touches.length !== 1) {
                         if (evt.preventDefault) {
                             evt.preventDefault();
                         }

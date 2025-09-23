@@ -330,7 +330,7 @@ function processMarkdownBlocks(markdownContent) {
         if (trimmedLine.startsWith(":::conector")) {
             processedLines.push("");
             processedLines.push(
-                `<div style="margin-left: 10px; padding-left: 20px; border-left: 3px solid #ffffff52; position: relative;" class="content-conector">`
+                `<div class="content-conector">`
             );
 
             // Process nested content

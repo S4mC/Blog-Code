@@ -461,7 +461,7 @@ function hello() {
                                                     >
                                                         <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M8 5h13m-8 7h8m-8 7h8M3 10a2 2 0 0 0 2 2h3"/><path d="M3 5v12a2 2 0 0 0 2 2h3"/></g>
                                                     </svg>
-                                                    Conector
+                                                    Connector
                                                 </button>
                                             </div>
                                             <svg
@@ -518,6 +518,15 @@ function hello() {
                                         <button onClick=${()=>e("*","*")} title="Italics">
                                             <em>C</em>
                                         </button>
+                                        <button onClick=${()=>e("~","~")} title="Strikethrough">
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            ><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-3-5.5A4 2 0 0 0 12 5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1.5a4 2 0 0 1-4-1.5"/></svg>
+                                        </button>
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
@@ -538,7 +547,7 @@ function hello() {
                                             </svg>
                                             <div class="menu-content" style="display: none;">
                                                 <button
-                                                    onClick=${t=>{e("[","](url)"),t.currentTarget.parentElement.style.display="none"}}
+                                                    onClick=${t=>{e("["," new](url)"),t.currentTarget.parentElement.style.display="none"}}
                                                 >
                                                     Normal Link
                                                 </button>

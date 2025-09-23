@@ -558,11 +558,15 @@ class SidebarClass {
             domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
             // Add temporary highlight to DOM element
-            domElement.style.backgroundColor = '#454545';
+            domElement.style.backgroundColor = 'var(--bg-color)';
+            domElement.style.color = 'var(--text-color)';
+            domElement.style.filter = 'invert(1)';
             domElement.style.transition = 'background-color 0.3s ease';
             
             setTimeout(() => {
                 domElement.style.backgroundColor = '';
+                domElement.style.color = '';
+                domElement.style.filter = '';
             }, 2000);
         }
     }

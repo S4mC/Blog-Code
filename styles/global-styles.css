@@ -90,6 +90,9 @@
     --sidebar-no-results-color: rgba(255, 255, 255, 0.7);
     --sidebar-clear-button-color: #666;
     --sidebar-text-color: white;
+
+    /* Connector colors */
+    --connector-line-color: #ffffff52;
 }
 
 [data-theme="light"] {
@@ -176,13 +179,16 @@
     --sidebar-item-border: rgba(0, 0, 0, 0.1);
     --sidebar-item-hover: rgba(0, 0, 0, 0.05);
     --sidebar-highlight-bg: #fef08a;
-        --sidebar-highlight-color: #422006;
+    --sidebar-highlight-color: #422006;
     --sidebar-current-highlight-bg: #fca5a5;
     --sidebar-current-highlight-color: #7f1d1d;
     --sidebar-no-results-color: #a78bfa;
     --sidebar-clear-button-color: #7c3aed;
     --sidebar-text-color: var(--text-color);
     --sidebar-text-color: var(--text-color);
+
+    /* Connector colors */
+    --connector-line-color: #00000052;
 }
 
 [data-theme="dark-blue"] {
@@ -202,7 +208,7 @@
 
     /* Article gradient overlay */
     --article-gradient-start: rgba(96, 165, 250, 0.18);
-    --article-gradient-mid: rgba(96, 165, 250, 0.10);
+    --article-gradient-mid: rgba(96, 165, 250, 0.1);
     --article-gradient-end: transparent;
 
     --article-box-bg: rgba(255, 255, 255, 0.15);
@@ -267,6 +273,9 @@
     --sidebar-no-results-color: rgba(255, 255, 255, 0.7);
     --sidebar-clear-button-color: #94a3b8;
     --sidebar-text-color: var(--text-color);
+
+    /* Connector colors */
+    --connector-line-color: #ffffff52;
 }
 
 :root {
@@ -434,7 +443,7 @@ body {
 }
 
 .main-container::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -60px;
     left: 50%;
@@ -451,23 +460,17 @@ body {
 }
 
 .main-container::after {
-    content: '';
+    content: "";
     position: absolute;
     top: -60px;
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
     height: 600px;
-    background-image: 
-        linear-gradient(var(--article-box-bg) 1px, transparent 1px),
+    background-image: linear-gradient(var(--article-box-bg) 1px, transparent 1px),
         linear-gradient(90deg, var(--article-box-bg) 1px, transparent 1px);
     background-size: 40px 40px;
-    mask: radial-gradient(
-        ellipse 80% 60% at center top,
-        black 0%,
-        black 35%,
-        transparent 70%
-    );
+    mask: radial-gradient(ellipse 80% 60% at center top, black 0%, black 35%, transparent 70%);
     pointer-events: none;
     opacity: 0.3;
 }
@@ -673,7 +676,12 @@ body {
     padding: 1em;
 }
 
-blockquote h1, blockquote h2, blockquote h3, blockquote h4, blockquote h5, blockquote h6 {
+blockquote h1,
+blockquote h2,
+blockquote h3,
+blockquote h4,
+blockquote h5,
+blockquote h6 {
     color: var(--blockquote-border) !important;
 }
 
@@ -1248,7 +1256,11 @@ blockquote h1, blockquote h2, blockquote h3, blockquote h4, blockquote h5, block
 
 /* Summary */
 details {
-    background: linear-gradient(135deg, var(--details-bg-gradient-start) 0%, var(--details-bg-gradient-end) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--details-bg-gradient-start) 0%,
+        var(--details-bg-gradient-end) 100%
+    );
     border: 1px solid var(--details-border);
     color: var(--details-text-color);
     border-radius: 12px;
@@ -1268,7 +1280,11 @@ details:hover {
 
 details[open] {
     border-color: var(--details-hover-border);
-    background: linear-gradient(135deg, var(--details-open-bg-start) 0%, var(--details-open-bg-end) 100%);
+    background: linear-gradient(
+        135deg,
+        var(--details-open-bg-start) 0%,
+        var(--details-open-bg-end) 100%
+    );
     box-shadow: var(--details-open-shadow);
 }
 
@@ -1303,7 +1319,7 @@ summary::before {
     transition: transform 0.3s ease;
 }
 
-details[open]>summary::before {
+details[open] > summary::before {
     transform: rotate(225deg);
 }
 
@@ -1491,7 +1507,7 @@ details::after {
     .markdown-grid.grid-cols-6 {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .markdown-grid .grid-item {
         padding: 0.75rem;
     }
@@ -1505,7 +1521,7 @@ details::after {
     .markdown-grid.grid-cols-6 {
         grid-template-columns: 1fr;
     }
-    
+
     .markdown-grid .grid-item {
         padding: 0.5rem;
     }
@@ -1533,7 +1549,7 @@ details::after {
 /* Styles for H4-H6 headings in sidebar */
 .sidebar-component .subitems {
     margin-left: 10px;
-    border-left: 2px solid #ffffff52;
+    border-left: 2px solid var(--connector-line-color);
     margin-top: 5px;
     position: relative;
 }
@@ -1559,18 +1575,26 @@ details::after {
     position: absolute;
     width: 6px;
     height: 2px;
-    background: #ffffff52;
+    background: var(--connector-line-color);
     left: -6px;
     top: 50%;
 }
 
 /* Conector styles */
+.content-conector {
+    margin-left: 10px;
+    padding-left: 20px;
+    padding-top: 10px;
+    border-left: 3px solid var(--connector-line-color);
+    position: relative;
+}
+
 .content-conector h1::before {
     content: "";
     position: absolute;
     width: 11px;
     height: 8px;
-    background: #ffffff52;
+    background: var(--connector-line-color);
     left: 0px;
     margin-top: 27px;
 }
@@ -1580,7 +1604,7 @@ details::after {
     position: absolute;
     width: 11px;
     height: 5px;
-    background: #ffffff52;
+    background: var(--connector-line-color);
     left: 0px;
     margin-top: 25px;
 }
@@ -1590,17 +1614,19 @@ details::after {
     position: absolute;
     width: 11px;
     height: 3px;
-    background: #ffffff52;
+    background: var(--connector-line-color);
     left: 0px;
     margin-top: 12px;
 }
 
-.content-conector h4::before, .content-conector h5::before, .content-conector h6::before {
+.content-conector h4::before,
+.content-conector h5::before,
+.content-conector h6::before {
     content: "";
     position: absolute;
     width: 11px;
     height: 3px;
-    background: #ffffff52;
+    background: var(--connector-line-color);
     left: 0px;
     margin-top: 12px;
 }
@@ -1762,8 +1788,8 @@ details::after {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.animation-container>svg {
-    pointer-events: none;  /*Allow clicks to pass through to the container*/
+.animation-container > svg {
+    pointer-events: none; /*Allow clicks to pass through to the container*/
 }
 
 @keyframes pulse {
@@ -1784,13 +1810,14 @@ details::after {
     }
     40% {
         transform: scale(0.85);
-        background-color: #969623;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        filter: invert(1);
     }
     100% {
         transform: scale(1);
     }
 }
-
 
 /* Delete header title on small screens */
 @media (max-width: 440px) {
