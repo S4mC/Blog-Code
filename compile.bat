@@ -5,6 +5,7 @@ setlocal enabledelayedexpansion
 :: ================================
 :: Configuration
 :: ================================
+
 :: Source root folder
 set SRC=.
 :: Destination root folder
@@ -14,13 +15,29 @@ set DIST=docs
 set FOLDERS=components styles .
 
 :: Define individual files to be minified (space-separated, with relative paths)
-set INDIVIDUAL_FILES=cdn/prism/prism_vsc.css cdn/SVGpanzoom/svg-pan-zoom.js
+set INDIVIDUAL_FILES=cdn\prism\prism_vsc.css cdn\SVGpanzoom\svg-pan-zoom.js
 
-:: Define which subfolders/files should be copied without minifying (space-separated)
+:: Define which subfolders\files should be copied without minifying (space-separated)
 set COPY_ONLY=cdn posts public search.json
 
-:: Define excluded js, html, and css files (just filenames, space-separated)
+:: Define excluded js, html, and css files (space-separated)
+:: Supports three formats:
+:: - Full path: "folder\filename.html" (excludes specific file in specific folder)
+:: - Wildcard: "ANY\filename.html" (excludes filename in any folder)
+:: - Just filename: "filename.html" (excludes exact filename match only in root folder)
 set EXCLUDE=
+
+:: ================================
+:: Validation
+:: ================================
+:: Check if source and destination are the same
+if /I "%SRC%"=="%DIST%" (
+    echo ERROR: Source and destination folders cannot be the same! ^(Because we delete the destination folder first^)
+    echo Source: %SRC%
+    echo Destination: %DIST%
+    pause
+    exit /b 1
+)
 
 :: ================================
 :: Prepare destination
@@ -46,6 +63,7 @@ for %%d in (%COPY_ONLY%) do (
         xcopy /E /I /Y "%SRC%\%%d" "%DIST%\%%d" >nul
     ) else if exist "%SRC%\%%d" (
         :: If it's a file
+        if not exist "%DIST%\src" mkdir "%DIST%\src"
         copy /Y "%SRC%\%%d" "%DIST%\%%d" >nul
     ) else (
         echo Skipped %%d (not found)
@@ -64,7 +82,7 @@ for %%d in (%FOLDERS%) do (
 
     :: Process CSS (only in the specific directory, not subdirectories)
     for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.css" 2^>nul') do (
-        call :checkExclude "%%f"
+        call :checkExclude "%%f" "%%d"
         if "!SKIP!"=="0" (
             echo ^> Minifying %%f
             minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
@@ -75,7 +93,7 @@ for %%d in (%FOLDERS%) do (
 
     :: Process JS (only in the specific directory, not subdirectories)  
     for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.js" 2^>nul') do (
-        call :checkExclude "%%f"
+        call :checkExclude "%%f" "%%d"
         if "!SKIP!"=="0" (
             echo ^> Minifying %%f
             minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
@@ -86,7 +104,7 @@ for %%d in (%FOLDERS%) do (
 
     :: Process HTML (only in the specific directory, not subdirectories)
     for /f "tokens=*" %%f in ('dir /b "%SRC%\%%d\*.html" 2^>nul') do (
-        call :checkExclude "%%f"
+        call :checkExclude "%%f" "%%d"
         if "!SKIP!"=="0" (
             echo ^> Minifying %%f
             minify.exe "%SRC%\%%d\%%f" -o "%DIST%\%%d\%%f"
@@ -124,14 +142,37 @@ exit /b
 
 :: ================================
 :: Function: checkExclude
-:: Input: filename
+:: Input: filename and folder path
 :: Sets variable SKIP=1 if excluded, 0 otherwise
+:: Supports:
+:: - Full paths: "src\filename.html" 
+:: - Wildcards: "ANY\filename.html" (matches any folder)
+:: - Just filenames: "filename.html" (exact match only in root folder)
 :: ================================
 :checkExclude
 set "SKIP=0"
+set "inputFile=%~1"
+set "inputFolder=%~2"
+set "fullPath=%inputFolder%\%inputFile%"
+
 if defined EXCLUDE (
     for %%x in (%EXCLUDE%) do (
-        if /I "%~1"=="%%x" set "SKIP=1"
+        set "pattern=%%x"
+        
+        if "!pattern:~0,4!"=="ANY\" (
+            :: Wildcard pattern - check if filename matches in any folder
+            set "wildcardFile=!pattern:~4!"
+            if /I "!inputFile!"=="!wildcardFile!" set "SKIP=1"
+        ) else (
+            :: Check if pattern contains backslash
+            if "!pattern!" NEQ "!pattern:\=!" (
+                :: Full path pattern - exact path match
+                if /I "!fullPath!"=="!pattern!" set "SKIP=1"
+            ) else (
+                :: Just filename pattern - only exclude if in root folder (no inputFolder or inputFolder is empty/.)
+                if "!inputFolder!"=="." if /I "!inputFile!"=="!pattern!" set "SKIP=1"
+            )
+        )
     )
 )
 exit /b

@@ -46,6 +46,7 @@ ${n}
                     
                     let viewer${t} = document.getElementById('SVGiewer${t}');
                     let rectElement${t} = viewer${t}.querySelector('svg>g>rect');
+                    let lastWidth${t} = window.innerWidth;
 
                     function proper_height${t}(){
                         rectElement${t} = viewer${t}.querySelector('svg>g>rect');
@@ -76,19 +77,26 @@ ${n}
                     
                     let resizeTimeout${t};
                     window.addEventListener("resize", function () {
-                        clearTimeout(resizeTimeout${t}); // Cancela cualquier timeout anterior
-                        resizeTimeout${t} = setTimeout(function () {
-                            viewer${t} = document.getElementById('SVGiewer${t}');
-                            if (window.zoomContainer${t}) {
-                                window.zoomContainer${t}.destroy();
-                            }
-                            proper_height${t}();
-                            viewer${t}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
-                                viewport.replaceWith(...viewport.childNodes);
-                            });
-                            window.zoomContainer${t} = svgPanZoom("#page${t}");
-                            center_svg${t}();
-                        }, 280); // 280ms after it finishes
+                        const currentWidth = window.innerWidth;
+                        
+                        // Only execute if width has changed
+                        if (currentWidth !== lastWidth${t}) {
+                            lastWidth${t} = currentWidth;
+                            
+                            clearTimeout(resizeTimeout${t}); // Cancel any previous timeout
+                            resizeTimeout${t} = setTimeout(function () {
+                                viewer${t} = document.getElementById('SVGiewer${t}');
+                                if (window.zoomContainer${t}) {
+                                    window.zoomContainer${t}.destroy();
+                                }
+                                proper_height${t}();
+                                viewer${t}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
+                                    viewport.replaceWith(...viewport.childNodes);
+                                });
+                                window.zoomContainer${t} = svgPanZoom("#page${t}");
+                                center_svg${t}();
+                            }, 280); // 280ms after it finishes
+                        }
                     });
                     
                     proper_height${t}();
