@@ -770,6 +770,7 @@ export function renderMarkdown(markdownContent) {
                     
                     let viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
                     let rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
+                    let lastWidth${numberSVGcontainer} = window.innerWidth;
 
                     function proper_height${numberSVGcontainer}(){
                         rectElement${numberSVGcontainer} = viewer${numberSVGcontainer}.querySelector('svg>g>rect');
@@ -800,19 +801,26 @@ export function renderMarkdown(markdownContent) {
                     
                     let resizeTimeout${numberSVGcontainer};
                     window.addEventListener("resize", function () {
-                        clearTimeout(resizeTimeout${numberSVGcontainer}); // Cancela cualquier timeout anterior
-                        resizeTimeout${numberSVGcontainer} = setTimeout(function () {
-                            viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
-                            if (window.zoomContainer${numberSVGcontainer}) {
-                                window.zoomContainer${numberSVGcontainer}.destroy();
-                            }
-                            proper_height${numberSVGcontainer}();
-                            viewer${numberSVGcontainer}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
-                                viewport.replaceWith(...viewport.childNodes);
-                            });
-                            window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
-                            center_svg${numberSVGcontainer}();
-                        }, 280); // 280ms after it finishes
+                        const currentWidth = window.innerWidth;
+                        
+                        // Only execute if width has changed
+                        if (currentWidth !== lastWidth${numberSVGcontainer}) {
+                            lastWidth${numberSVGcontainer} = currentWidth;
+                            
+                            clearTimeout(resizeTimeout${numberSVGcontainer}); // Cancel any previous timeout
+                            resizeTimeout${numberSVGcontainer} = setTimeout(function () {
+                                viewer${numberSVGcontainer} = document.getElementById('SVGiewer${numberSVGcontainer}');
+                                if (window.zoomContainer${numberSVGcontainer}) {
+                                    window.zoomContainer${numberSVGcontainer}.destroy();
+                                }
+                                proper_height${numberSVGcontainer}();
+                                viewer${numberSVGcontainer}.querySelectorAll('.svg-pan-zoom_viewport').forEach(viewport => {
+                                    viewport.replaceWith(...viewport.childNodes);
+                                });
+                                window.zoomContainer${numberSVGcontainer} = svgPanZoom("#page${numberSVGcontainer}");
+                                center_svg${numberSVGcontainer}();
+                            }, 280); // 280ms after it finishes
+                        }
                     });
                     
                     proper_height${numberSVGcontainer}();
