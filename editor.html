@@ -407,7 +407,7 @@ function hello() {
                             editorRef.current = monaco.editor.create(containerRef.current, {
                                 value: markdown,
                                 language: "markdown",
-                                theme: "vs-dark",
+                                theme: document.documentElement.getAttribute('monaco-theme') || "vs-dark",
                                 minimap: { enabled: true },
                                 fontSize: 16,
                                 lineNumbers: "on",
@@ -425,7 +425,7 @@ function hello() {
                                 editorRef.current.restoreViewState(activeTab.viewState);
                             }
 
-                            // Hacer el editor disponible globalmente para el sistema de asistencia
+                            // Make the editor available globally for the support system
                             window.currentEditor = editorRef.current;
 
                             // Add key handler
