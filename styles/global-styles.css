@@ -18,6 +18,7 @@
     --text-secondary: #d4d4d8;
     --text-muted: #a1a1aa;
     --border-color: #3f3f46;
+    --highlight-border-color: #5e5e60;
     --card-background: #ffffff0d;
 
     /* Header blur background */
@@ -113,6 +114,7 @@
     --text-secondary: #475569;
     --text-muted: #94a3b8;
     --border-color: #aeaeae;
+    --highlight-border-color: #767676;
     --card-background: #ffffff0d;
 
     /* Header blur background */
@@ -201,6 +203,7 @@
     --text-secondary: #cbd5e1;
     --text-muted: #64748b;
     --border-color: #334155;
+    --highlight-border-color: #616b7a;
     --card-background: #ffffff0d;
 
     /* Header blur background */
@@ -1715,7 +1718,7 @@ details::after {
     display: none;
     position: absolute;
     background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--highlight-border-color);
     border-radius: var(--border-radius);
     padding: var(--spacing-md);
     box-shadow: var(--shadow-lg);

@@ -19,6 +19,7 @@ Use c`#include "myfile.h"` to include a library of files in your program(?=custo
 	This library can have **declarations** (functions, structures, macros, etc.), but **definitions** (the code for the functions) must be in a file with the same name, but with a .c extension.
 :::
 
+
 :::conector
     #### c`<stdio.h>`:
     Acronym of *standard input-output header* contains all the basic input and output tools in C, both for working with the console and with files.
@@ -110,22 +111,27 @@ For example, in this code it is necessary to have a casting to obtain a suitable
 ```
 
 ## Conditionals
-The if condition in c is exactly the same as in javascript:
+The c`if` condition in c is exactly the same as in javascript:
 ```c
-    #include <stdio.h>
+    int nota = 15;
 
-    int main() {
-        int nota = 15;
-        if (nota >= 18) {
-            printf("Excellent");
-        } else if (nota >= 11) {
-            printf("Approved");
-        } else {
-            printf("Disapproved");
-        }
-        return 0;
+    if (nota >= 18) {
+        printf("Excellent");
+    } else if (nota >= 11) {
+        printf("Approved");
+    } else {
+        printf("Disapproved");
     }
 ```
+
+## Loops
+The c`while` loop in c is exactly the same as in javascript:
+```c
+    while (condition) {
+        // code to execute
+    }
+```
+
 
 ### Ternary Operator
 A shorthand for simple if ... else statements, exactly the same as in javascript:
