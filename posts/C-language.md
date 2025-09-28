@@ -124,6 +124,12 @@ The c`if` condition in c is exactly the same as in javascript:
     }
 ```
 
+### Ternary Operator
+A shorthand for simple if ... else statements, exactly the same as in javascript:
+ javascript`variable = condition ? value_if_true: value_if_false;`
+
+(h=8px)
+
 ## Loops
 The c`while` loop in c is exactly the same as in javascript:
 ```c
@@ -131,13 +137,6 @@ The c`while` loop in c is exactly the same as in javascript:
         // code to execute
     }
 ```
-
-
-### Ternary Operator
-A shorthand for simple if ... else statements, exactly the same as in javascript:
- javascript`variable = condition ? value_if_true: value_if_false;`
-
-(h=8px)
 
 ## Arithmetic operators
 Used for basic math operations
