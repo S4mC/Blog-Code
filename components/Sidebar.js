@@ -124,6 +124,8 @@ class SidebarClass {
         this.data = this.processData(data);
         this.searchResults = [];
         this.currentResultIndex = -1;
+        this.actualHighlightedTimeout = null;
+        this.actualHighlightedElement = null;
         
         // Initialize directly (we already verified sidebar existence in initSidebar)
         this.init();
@@ -554,6 +556,20 @@ class SidebarClass {
             if (window.innerWidth < 1024) {
                 this.close();
             }
+
+            const clearHighlight = (clearElement) => {
+                clearElement.style.backgroundColor = '';
+                clearElement.style.color = '';
+                clearElement.style.filter = '';
+            }
+
+            if (this.actualHighlightedElement) {
+                clearTimeout(this.actualHighlightedTimeout);
+                clearHighlight(this.actualHighlightedElement);
+            }
+
+            this.actualHighlightedElement = domElement;
+
             // Scroll to element in main content
             domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
@@ -562,11 +578,9 @@ class SidebarClass {
             domElement.style.color = 'var(--text-color)';
             domElement.style.filter = 'invert(1)';
             domElement.style.transition = 'background-color 0.3s ease';
-            
-            setTimeout(() => {
-                domElement.style.backgroundColor = '';
-                domElement.style.color = '';
-                domElement.style.filter = '';
+
+            this.actualHighlightedTimeout = setTimeout(() => {
+                clearHighlight(domElement);
             }, 2000);
         }
     }

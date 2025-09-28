@@ -1723,7 +1723,7 @@ details::after {
     padding: var(--spacing-md);
     box-shadow: var(--shadow-lg);
     max-width: 400px;
-    width: max-content;
+    width: 100%;
     max-height: 300px;
     overflow-y: auto;
     z-index: 1001;
