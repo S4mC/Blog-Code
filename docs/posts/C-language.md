@@ -88,6 +88,16 @@ You can use c`&` on variables or objects that take up memory to get that memory 
     use c`#include <limits.h>` and c`printf("%d\n", INT_MAX);` for sure
 :::
 
+## Arithmetic operators
+Used for basic math operations
+```c
+    int a = 5 + 3;  // addition
+    int a = 10 - 7; // subtraction
+    int a = 4 * 3;  // multiplication
+    float b = 10.0 / 3; // division
+    int a = 10 % 3; // modulus (remainder)
+```
+
 ## Casting
 Casting is the process of explicitly converting a value from one data type to another. It tells the compiler to treat a variable or expression as if it were of a different type.
 
@@ -138,13 +148,35 @@ The c`while` loop in c is exactly the same as in javascript:
     }
 ```
 
-## Arithmetic operators
-Used for basic math operations
+## Functions
+If functions are declared after the main function, then they must have a **prototype**, which is simply the function header, before the main function.
 ```c
-    int a = 5 + 3;  // addition
-    int a = 10 - 7; // subtraction
-    int a = 4 * 3;  // multiplication
-    float b = 10.0 / 3; // division
-    int a = 10 % 3; // modulus (remainder)
-```
+    int functionName(int argument1); // Prototype, this is necessary if the function is called before implementation because otherwise the compiler does not know what the structure of the function looks like when it is called in the main function and cannot compile the C program.
 
+    int main() {
+        functionName(100);
+        return 0;
+    }
+
+    int functionName(int argument1) { // Implementation
+        // Function code
+        return 1;
+    }
+```
+- Functions must have the return type in their header c`func_type functionName(type_arg1 arg1)`, if you don't want to return a value simply use c`void`.
+- Arguments must have their type in their header, you can pass a variable memory address using c`functionName(&variable);` and receive it using c`functionName(int *variable_adress)`, the c`*` in the argument is because it gets the value from the variable address:
+```c
+    void functionName(int *variable_adress); // Prototype
+
+    int main() {
+        int variable;
+        functionName(&variable);
+        // variable now has other value
+        return 0;
+    }
+
+    void functionName(int *variable_adress) { // Implementation
+        *variable_adress = 10 // If you change *variable_address the changes will also have an effect on the variable in the main function.
+    }
+```
+- In general, when you use c`int *ptr = &variable;` it means: "Put the address of **variable** in **ptr** and the value in that address (ptr) is **int** type"

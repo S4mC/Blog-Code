@@ -2981,7 +2981,7 @@ function hello() {
                                                 <hr style="border: 1px solid #2d2d2d" />
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n```\n\t", "\n```\n");
+                                                        insertText("\n```\n    ", "\n```\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -3005,7 +3005,7 @@ function hello() {
                                                                 <button
                                                                     onClick=${(e) => {
                                                                         insertText(
-                                                                            `\n\`\`\`${lang}\n\t`,
+                                                                            `\n\`\`\`${lang}\n    `,
                                                                             "\n```\n"
                                                                         );
                                                                         e.currentTarget.parentElement.style.display =
