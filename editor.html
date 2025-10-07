@@ -596,8 +596,12 @@ function hello() {
                                     if (editorRef.current && window.activeTabId) {
                                         const content = editorRef.current.getValue();
 
+                                        // Get the current tabs from localStorage (most up-to-date version)
+                                        const currentTabsJson = localStorage.getItem("editorTabs");
+                                        const currentTabs = currentTabsJson ? JSON.parse(currentTabsJson) : [];
+
                                         // Update the active tab with the current content
-                                        const tabsSave = tabs.map((tab) => {
+                                        const tabsSave = currentTabs.map((tab) => {
                                             if (parseInt(tab.id) !== parseInt(window.activeTabId)) return tab;
 
                                             tab.viewState = editorRef.current.saveViewState();
@@ -615,7 +619,7 @@ function hello() {
 
                                         // Save all tabs to localStorage
                                         localStorage.setItem("editorTabs", JSON.stringify(tabsSave));
-                                        // If saved successfully, do not show alert
+
                                         return;
                                     }
                                 } catch (error) {

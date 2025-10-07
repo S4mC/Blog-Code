@@ -1,2 +1,2 @@
 # Commands
-    run `./compile.bat;exit`(Compile)
+    run `./compile.bat;github`(Compile)
