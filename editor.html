@@ -227,13 +227,18 @@ function hello() {
 
                 const [wordWrap, setWordWrap] = useState(
                     localStorage.getItem("editorWordWrap") === "off" ? "off" : "on"
-                ); // 'on' por defecto
+                ); // 'on' by default
                 const editorRef = useRef(null);
                 const containerRef = useRef(null);
 
-                // Funciones simplificadas para el scroll
-                const saveScrollPosition = () => {
+                // Simplified functions for scrolling
+                const saveScrollPosition = (position) => {
                     if (scrollDataRef.current.isUpdating) return;
+                    if (position) {
+                        scrollDataRef.current.userPosition = position;
+                        localStorage.setItem("editorPreviewScrollPosition", JSON.stringify(position));
+                        return;
+                    }
                     const el = document.querySelector('.markdown-preview.entry-content');
                     if (el) {
                         const pos = { scrollTop: el.scrollTop, scrollLeft: el.scrollLeft };
@@ -368,7 +373,7 @@ function hello() {
                     };
                 }, [isResizing, previewPosition, gridRatio]);
                 
-                // Efecto para agregar eventos de mouse al redimensionador
+                // Effect to add mouse events to the resizer
                 useEffect(() => {
                     const initResizer = () => {
                         const resizeElement = document.querySelector('.editor-content #resize-handle');
@@ -388,8 +393,8 @@ function hello() {
                             resizeElement.removeEventListener('mousedown', handleMouseDown);
                         };
                     };
-                    
-                    // Dar tiempo para que el DOM se actualice
+
+                    // Give time for the DOM to update
                     const timerId = setTimeout(initResizer, 100);
                     
                     return () => {
@@ -399,10 +404,10 @@ function hello() {
 
                 useEffect(() => {
                     if (!editorRef.current) {
-                        // La configuración ya está hecha arriba
+                        // The configuration is already done above
 
                         require(["vs/editor/editor.main"], () => {
-                            // Asegurar que cargamos el contenido correcto para la pestaña activa
+                            // Ensure we load the correct content for the active tab
 
                             editorRef.current = monaco.editor.create(containerRef.current, {
                                 value: markdown,
@@ -413,13 +418,13 @@ function hello() {
                                 lineNumbers: "on",
                                 roundedSelection: false,
                                 scrollBeyondLastLine: false,
-                                wordWrap: wordWrap, // Usar el estado wordWrap
+                                wordWrap: wordWrap, // Using the wordWrap state
                                 acceptSuggestionOnEnter: "off",
                                 automaticLayout: true,
                                 smoothScrolling: true,
                             });
                             
-                            // Restaurar el estado de la vista (scroll, cursor, etc) si existe
+                            // Restore the view state (scroll, cursor, etc.) if it exists
                             const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
                             if (activeTab && activeTab.viewState) {
                                 editorRef.current.restoreViewState(activeTab.viewState);
@@ -448,28 +453,28 @@ function hello() {
                                     const model = editor.getModel();
                                     const lineContent = model.getLineContent(position.lineNumber);
 
-                                    // Verificar si se presionó Shift+Enter
+                                    // Check if Shift+Enter was pressed
                                     const shiftKey =
                                         ed._standaloneKeybindingService._currentChord?.[0]?.shiftKey;
 
-                                    // Expresión regular para detectar líneas numeradas (ej: "1. ", "12. ")
+                                    // Regular expression to detect numbered lines (e.g., "1. ", "12. ")
                                     const numberedListRegex = /^(\d+)\.(\s+)(.*)$/;
-                                    // Expresión regular para detectar listas con viñetas (ej: "- ")
+                                    // Regular expression to detect bullet lists (e.g., "- ")
                                     const bulletListRegex = /^(-|\*)(\s+)(.*)$/;
 
                                     const numberedMatch = lineContent.match(numberedListRegex);
                                     const bulletMatch = lineContent.match(bulletListRegex);
 
-                                    // Si se está presionando Shift, simplemente insertar un salto de línea sin continuar la lista
+                                    // If Shift is being pressed, just insert a line break without continuing the list
                                     if (shiftKey) {
                                         editor.trigger("keyboard", "type", { text: "\n" });
                                         return true;
                                     }
 
                                     if (numberedMatch) {
-                                        // Si la línea actual está vacía después del número (ej: "1. "), terminar la lista
+                                        // If the current line is empty after the number (e.g., "1. "), end the list
                                         if (numberedMatch[3].trim() === "") {
-                                            // Eliminar la línea actual y añadir una línea en blanco
+                                            // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
                                                 startColumn: 1,
@@ -482,14 +487,14 @@ function hello() {
                                                     text: "",
                                                 },
                                             ]);
-                                            return true; // Prevenir el comportamiento por defecto
+                                            return true; // Prevent default behavior
                                         }
 
                                         const currentNumber = parseInt(numberedMatch[1], 10);
                                         const nextNumber = currentNumber + 1;
-                                        const spacing = numberedMatch[2]; // Conservar el mismo espaciado
+                                        const spacing = numberedMatch[2]; // Keep the same spacing
 
-                                        // Insertar una nueva línea con el siguiente número
+                                        // Insert a new line with the next number
                                         const text = "\n" + nextNumber + "." + spacing;
                                         editor.executeEdits("", [
                                             {
@@ -507,19 +512,19 @@ function hello() {
                                             },
                                         ]);
 
-                                        // Mover el cursor a la nueva línea después del número
+                                        // Move the cursor to the new line after the number
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
                                             column: (nextNumber + ".").length + spacing.length + 1,
                                         });
 
-                                        return true; // Completado
+                                        return true; // Completed
                                     }
 
                                     if (bulletMatch) {
-                                        // Si la línea actual está vacía después de la viñeta (ej: "- "), terminar la lista
+                                        // If the current line is empty after the bullet (e.g., "- "), end the list
                                         if (bulletMatch[3].trim() === "") {
-                                            // Eliminar la línea actual y añadir una línea en blanco
+                                            // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
                                                 startColumn: 1,
@@ -532,13 +537,13 @@ function hello() {
                                                     text: "",
                                                 },
                                             ]);
-                                            return true; // Prevenir el comportamiento por defecto
+                                            return true; // Prevent default behavior
                                         }
 
                                         const bulletChar = bulletMatch[1]; // "-" o "*"
-                                        const spacing = bulletMatch[2]; // Conservar el mismo espaciado
+                                        const spacing = bulletMatch[2]; // Keep the same spacing
 
-                                        // Insertar una nueva línea con la misma viñeta
+                                        // Insert a new line with the same bullet
                                         const text = "\n" + bulletChar + spacing;
                                         editor.executeEdits("", [
                                             {
@@ -556,16 +561,16 @@ function hello() {
                                             },
                                         ]);
 
-                                        // Mover el cursor a la nueva línea después de la viñeta
+                                        // Move the cursor to the new line after the bullet
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
                                             column: bulletChar.length + spacing.length + 1,
                                         });
 
-                                        return true; // Completado
+                                        return true; // Completed
                                     }
 
-                                    // Si no es ningún tipo de lista, usar el comportamiento predeterminado de Enter
+                                    // If not any type of list, use the default Enter behavior
                                     editor.trigger("keyboard", "type", { text: "\n" });
                                     return true;
                                 },
@@ -576,26 +581,27 @@ function hello() {
                                 setMarkdown(content);
                             });
 
-                            // Sistema de asistencia de configuración
+                            // Configuration assistant system
                             editorRef.current.onDidChangeCursorPosition((e) => {
                                 checkForConfigurableBlock(e.position);
                             });
 
-                            // Inicializar sistema de asistencia
+                            // Initialize configuration assistant
                             initializeConfigAssistant();
 
-                            // Manejar el evento beforeunload para guardar tabs en localStorage
+                            // Handle beforeunload event to save tabs to localStorage
                             const handleBeforeUnload = (e) => {
-                                // Intentar guardar una última vez en localStorage
+                                // Try saving one last time to localStorage
                                 try {
                                     if (editorRef.current && window.activeTabId) {
                                         const content = editorRef.current.getValue();
 
-                                        // Actualizar la pestaña activa con el contenido actual
+                                        // Update the active tab with the current content
                                         const tabsSave = tabs.map((tab) => {
                                             if (parseInt(tab.id) !== parseInt(window.activeTabId)) return tab;
 
                                             tab.viewState = editorRef.current.saveViewState();
+                                            tab.scrollDataRef = scrollDataRef.current.userPosition;
 
                                             const tabTitle = extractTitleFromMarkdown(content);
 
@@ -607,16 +613,16 @@ function hello() {
                                             };
                                         });
 
-                                        // Guardar todas las pestañas en localStorage
+                                        // Save all tabs to localStorage
                                         localStorage.setItem("editorTabs", JSON.stringify(tabsSave));
-                                        // Si se guarda correctamente, no mostramos alerta
+                                        // If saved successfully, do not show alert
                                         return;
                                     }
                                 } catch (error) {
-                                    // Si falla el guardado, mostramos la alerta
+                                    // If saving fails, show alert
                                     e.preventDefault();
                                     e.returnValue =
-                                        "No se pudieron guardar los cambios automáticamente. ¿Seguro que quieres salir?";
+                                        "Changes could not be saved automatically. Are you sure you want to log out?";
                                     return e.returnValue;
                                 }
                             };
@@ -626,28 +632,28 @@ function hello() {
                     }
                 }, []);
 
-                // Efecto para guardar las pestañas en localStorage cuando cambian
+                // Effect to save tabs to localStorage when they change
                 useEffect(() => {
                     try {
                         localStorage.setItem("editorTabs", JSON.stringify(tabs));
                     } catch (e) {
-                        console.warn("Error al guardar las pestañas en localStorage:", e);
+                        console.warn("Error saving tabs to localStorage:", e);
                     }
                 }, [tabs]);
 
-                // Efecto para actualizar el editor cuando cambia la pestaña activa
+                // Effect to update the editor when the active tab changes
                 useEffect(() => {
                     if (!editorRef.current || activeTabId === null) return;
 
                     window.activeTabId = activeTabId;
-                    // Evitar actualizaciones en cascada
+                    // Avoid cascading updates
 
                     const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
                     if (activeTab && editorRef.current.getModel()) {
                         const currentContent = editorRef.current.getValue();
 
                         const oldModel = editorRef.current.getModel();
-                        if (oldModel) oldModel.dispose(); // limpia historial y estado interno
+                        if (oldModel) oldModel.dispose(); // clears history and internal status
 
                         const newModel = monaco.editor.createModel(activeTab.content, "markdown");
                         setMarkdown(activeTab.content || "");
@@ -656,20 +662,28 @@ function hello() {
                         if (activeTab.viewState) {
                             editorRef.current.restoreViewState(activeTab.viewState);
                         }
+                        if (activeTab.scrollDataRef) {
+                            saveScrollPosition(activeTab.scrollDataRef);
+                            restoreScrollPosition();
+                        } else {
+                            // If there's no saved scroll position, reset to top
+                            saveScrollPosition({ scrollTop: 0, scrollLeft: 0 });
+                            restoreScrollPosition();
+                        }
                     }
 
                     localStorage.setItem("editorActiveTabId", activeTabId?.toString());
                 }, [activeTabId]);
 
-                // Función para extraer el título del contenido markdown
+                // Function to extract the title from markdown content
                 const extractTitleFromMarkdown = (content) => {
                     const titleMatch = content.match(/^#\s+(.+)$/m);
                     return titleMatch ? titleMatch[1].trim() : "Sin título";
                 };
 
-                // Función para crear una nueva pestaña
+                // Function to create a new tab
                 const createNewTab = () => {
-                    // Guardar contenido actual antes de crear una nueva pestaña
+                    // Save current content before creating a new tab
                     if (editorRef.current && activeTabId) {
                         updateTabContent(activeTabId, editorRef.current.getValue());
                     }
@@ -677,7 +691,7 @@ function hello() {
                     const newTabNumber = tabs.length + 1;
                     const newTabId = getNextTabId(tabs);
 
-                    // Crear contenido con título único
+                    // Create content with unique title
                     let newContent = DEFAULT_MARKDOWN_CONTENT;
                     if (newTabNumber > 1) {
                         newContent = newContent.replace("# New document", `# Document ${newTabNumber}`);
@@ -690,33 +704,33 @@ function hello() {
                         isModified: false,
                     };
 
-                    // Actualizar estado
+                    // Update state
                     setTabs([...tabs, newTab]);
                     setActiveTabId(newTabId);
                 };
 
-                // Función para cambiar a una pestaña
+                // Function to switch to a tab
                 const switchToTab = (tabId) => {
                     const numericTabId = parseInt(tabId);
                     const numericActiveTabId = parseInt(activeTabId);
 
                     if (numericActiveTabId === numericTabId) return;
 
-                    // Guardar contenido actual antes de cambiar
+                    // Save current content before switching
                     if (editorRef.current && activeTabId !== null) {
                         const currentContent = editorRef.current.getValue();
 
                         updateTabContent(numericActiveTabId, currentContent, true);
                     }
 
-                    // Cambiar a la nueva pestaña
+                    // Switch to the new tab
                     const targetTab = tabs.find((tab) => parseInt(tab.id) === numericTabId);
                     if (!targetTab) return;
 
                     setActiveTabId(numericTabId);
                 };
 
-                // Función para actualizar el contenido de una pestaña
+                // Function to update the content of a tab
                 const updateTabContent = (tabId, newContent, viewState = false) => {
                     const numericTabId = parseInt(tabId);
 
@@ -724,9 +738,10 @@ function hello() {
                         prevTabs.map((tab) => {
                             if (parseInt(tab.id) !== numericTabId) return tab;
 
-                            // Se actualiza el viewState, si se envia el parámetro
+                            // Update the viewState if the parameter is sent
                             if (viewState) {
                                 tab.viewState = editorRef.current.saveViewState();
+                                tab.scrollDataRef = scrollDataRef.current.userPosition;
                             }
 
                             const tabTitle = extractTitleFromMarkdown(newContent);
@@ -741,7 +756,7 @@ function hello() {
                     );
                 };
 
-                // Función para cerrar una pestaña
+                // Function to close a tab
                 const closeTab = (tabId, event) => {
                     if (event) event.stopPropagation();
 
@@ -749,15 +764,15 @@ function hello() {
                     const numericActiveTabId = parseInt(activeTabId);
                     const tabToClose = tabs.find((tab) => parseInt(tab.id) === numericTabId);
 
-                    // Confirmar cierre si hay cambios
+                    // Confirm close if there are changes
                     if (tabToClose?.isModified) {
                         const confirmClose = window.confirm(
-                            `¿Estás seguro que deseas cerrar "${tabToClose.title}"? Los cambios no guardados se perderán.`
+                            `Are you sure you want to close "${tabToClose.title}"? Unsaved changes will be lost.`
                         );
                         if (!confirmClose) return;
                     }
 
-                    // Manejar caso especial: última pestaña
+                    // Handle special case: last tab
                     if (tabs.length === 1) {
                         const newTabId = getNextTabId(tabs);
                         setTabs([
@@ -772,14 +787,14 @@ function hello() {
                         return;
                     }
 
-                    // Si cerramos la pestaña activa, seleccionar otra
+                    // If closing the active tab, select another
                     if (numericActiveTabId === numericTabId) {
                         const tabIndex = tabs.findIndex((tab) => parseInt(tab.id) === numericTabId);
                         const newActiveTab = tabs[tabIndex === 0 ? 1 : tabIndex - 1];
                         setActiveTabId(parseInt(newActiveTab.id));
                     }
 
-                    // Eliminar la pestaña
+                    // Remove the tab
                     setTabs((prevTabs) => prevTabs.filter((tab) => parseInt(tab.id) !== numericTabId));
                 };
 
@@ -1854,7 +1869,19 @@ function hello() {
                 };
 
                 const handleExport = () => {
-                    const blob = new Blob([preview], { type: "text/html" });
+                    let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
+                    // Add finalJs
+                    finalHtml += "<script id=\"entry-script\">\n";
+                    finalHtml += finalJS;
+                    finalHtml += "\n<"; // If we put directly, some editors (like VSCode) get confused
+                    finalHtml += "/script>";
+                    // Add sidebarContent
+                    finalHtml += "<script id=\"sidebar-data\" type=\"application/json\">\n";
+                    finalHtml += JSON.stringify(sidebarContent, null, 4);
+                    finalHtml += "\n<"; // If we put directly, some editors (like VSCode) get confused
+                    finalHtml += "/script>";
+
+                    const blob = new Blob([finalHtml], { type: "text/html" });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement("a");
                     a.href = url;

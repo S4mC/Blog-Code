@@ -179,4 +179,4 @@ If functions are declared after the main function, then they must have a **proto
         *variable_adress = 10 // If you change *variable_address the changes will also have an effect on the variable in the main function.
     }
 ```
-- In general, when you use c`int *ptr = &variable;` it means: "Put the address of **variable** in **ptr** and the value in that address (ptr) is **int** type"
+- In general, when you use c`int *ptr = &variable;` it means: "Put the address of **variable** in **ptr** and the value in that address is **int** type"

@@ -83,16 +83,41 @@
                             return response.text();
                         })
                         .then((markdownContent) => {
-                            let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent);
+                            let sidebarContent = [];
+                            let finalJS = "";
+                            let finalHtml = "";
 
-                            setContent(finalHtml);
+                            if (entryPath.endsWith(".html")) {
+                                // Handle HTML content
+                                setContent(markdownContent);
+                                // Extract title from <title> tag
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(markdownContent, "text/html");
+                                
+                                // Extract title from first h1 using the parser
+                                const firstH1 = doc.querySelector("h1");
+                                if (firstH1) {
+                                    setTitle(firstH1.textContent);
+                                    document.title = firstH1.textContent + " - Blog Code";
+                                }
 
-                            // Extract title from first h1
-                            const titleMatch =
-                                markdownContent.match(/^#\s+(.+)$/m);
-                            if (titleMatch) {
-                                setTitle(titleMatch[1]);
-                                document.title = titleMatch[1] + " - Blog Code";
+                                finalJS = doc.getElementById("entry-script").textContent;
+
+                                sidebarContent = JSON.parse(
+                                    doc.getElementById("sidebar-data").textContent
+                                );
+                            }else{
+                                [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent);
+
+                                setContent(finalHtml);
+
+                                // Extract title from first h1
+                                const titleMatch =
+                                    markdownContent.match(/^#\s+(.+)$/m);
+                                if (titleMatch) {
+                                    setTitle(titleMatch[1]);
+                                    document.title = titleMatch[1] + " - Blog Code";
+                                }
                             }
 
                             setLoading(false);
