@@ -208,7 +208,7 @@ function hello() {
                 const [previewPosition, setPreviewPosition] = useState(
                     savedPreviewPosition === "bottom" ? "bottom" : "right"
                 );
-                
+
                 // Estado para las proporciones del grid
                 const [gridRatio, setGridRatio] = useState(
                     localStorage.getItem("editorGridRatio") || "1fr 0fr 1fr"
@@ -220,9 +220,12 @@ function hello() {
 
                 // Sistema simplificado para el scroll de la vista previa
                 const scrollDataRef = useRef({
-                    userPosition: JSON.parse(localStorage.getItem("editorPreviewScrollPosition") || '{"scrollTop":0,"scrollLeft":0}'),
+                    userPosition: JSON.parse(
+                        localStorage.getItem("editorPreviewScrollPosition") ||
+                            '{"scrollTop":0,"scrollLeft":0}'
+                    ),
                     isUpdating: false,
-                    saveTimeout: null
+                    saveTimeout: null,
                 });
 
                 const [wordWrap, setWordWrap] = useState(
@@ -239,7 +242,7 @@ function hello() {
                         localStorage.setItem("editorPreviewScrollPosition", JSON.stringify(position));
                         return;
                     }
-                    const el = document.querySelector('.markdown-preview.entry-content');
+                    const el = document.querySelector(".markdown-preview.entry-content");
                     if (el) {
                         const pos = { scrollTop: el.scrollTop, scrollLeft: el.scrollLeft };
                         scrollDataRef.current.userPosition = pos;
@@ -248,7 +251,7 @@ function hello() {
                 };
 
                 const restoreScrollPosition = () => {
-                    const el = document.querySelector('.markdown-preview.entry-content');
+                    const el = document.querySelector(".markdown-preview.entry-content");
                     if (el && scrollDataRef.current.userPosition) {
                         el.scrollTop = scrollDataRef.current.userPosition.scrollTop;
                         el.scrollLeft = scrollDataRef.current.userPosition.scrollLeft;
@@ -256,15 +259,16 @@ function hello() {
                 };
 
                 const setupScrollListener = () => {
-                    const el = document.querySelector('.markdown-preview.entry-content');
+                    const el = document.querySelector(".markdown-preview.entry-content");
                     if (el) {
                         const handleScroll = () => {
-                            if (scrollDataRef.current.saveTimeout) clearTimeout(scrollDataRef.current.saveTimeout);
+                            if (scrollDataRef.current.saveTimeout)
+                                clearTimeout(scrollDataRef.current.saveTimeout);
                             scrollDataRef.current.saveTimeout = setTimeout(saveScrollPosition, 150);
                         };
-                        el.removeEventListener('scroll', el._scrollHandler);
+                        el.removeEventListener("scroll", el._scrollHandler);
                         el._scrollHandler = handleScroll;
-                        el.addEventListener('scroll', handleScroll, { passive: true });
+                        el.addEventListener("scroll", handleScroll, { passive: true });
                     }
                 };
 
@@ -274,12 +278,12 @@ function hello() {
                         scrollDataRef.current.isUpdating = true;
                         let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
                         setPreview(finalHtml);
-                        
+
                         setTimeout(() => {
                             initSidebar(sidebarContent);
                             if (finalJS) eval(finalJS);
                             if (window.Prism) window.Prism.highlightAll();
-                            
+
                             setTimeout(() => {
                                 restoreScrollPosition();
                                 setupScrollListener();
@@ -296,35 +300,38 @@ function hello() {
                             restoreScrollPosition();
                         }, 200);
                     }
-                    
+
                     return () => {
-                        const el = document.querySelector('.markdown-preview.entry-content');
+                        const el = document.querySelector(".markdown-preview.entry-content");
                         if (el && el._scrollHandler) {
-                            el.removeEventListener('scroll', el._scrollHandler);
+                            el.removeEventListener("scroll", el._scrollHandler);
                             delete el._scrollHandler;
                         }
                     };
                 }, [showPreview]);
-                
+
                 // Efecto para manejar el redimensionamiento de la vista previa
                 useEffect(() => {
                     const handleMouseMove = (e) => {
                         if (!isResizing || previewPosition !== "right") return;
-                        
+
                         // Contenedor principal
-                        const editorContainer = document.querySelector('.editor-content');
+                        const editorContainer = document.querySelector(".editor-content");
                         if (!editorContainer) return;
-                        
+
                         // Calcular el ancho como fracción del contenedor padre
                         const containerRect = editorContainer.getBoundingClientRect();
                         const editorWidth = containerRect.width;
-                        
+
                         // Calcular la posición relativa del mouse dentro del contenedor
                         const mouseX = e.clientX - containerRect.left;
-                        
+
                         // Asegurar límites razonables (20% a 80%)
-                        const limitedX = Math.min(Math.max(mouseX, editorWidth * 0.2), editorWidth * 0.8);
-                        
+                        const limitedX = Math.min(
+                            Math.max(mouseX, editorWidth * 0.2),
+                            editorWidth * 0.8
+                        );
+
                         // Calcular la proporción para grid-template-columns
                         // Usar proporciones relativas para que sea más preciso
                         const ratio = limitedX / editorWidth;
@@ -332,51 +339,51 @@ function hello() {
                         const rightFr = 1 - ratio;
                         const newRatio = `${leftFr}fr 0fr ${rightFr}fr`;
                         setGridRatio(newRatio);
-                        
+
                         // Aplicar directamente para evitar retraso en la UI
                         if (editorContainer) {
                             editorContainer.style.gridTemplateColumns = newRatio;
                         }
-                        
+
                         // Optimizar re-rendering evitando actualizaciones de estado frecuentes
                         e.preventDefault();
                     };
-                    
+
                     const handleMouseUp = () => {
                         if (isResizing) {
                             setIsResizing(false);
                             // Guardar en localStorage
                             localStorage.setItem("editorGridRatio", gridRatio);
                             // Remover la clase de resizing del body
-                            document.body.classList.remove('resizing');
+                            document.body.classList.remove("resizing");
                         }
                     };
-                    
+
                     if (isResizing) {
-                        document.addEventListener('mousemove', handleMouseMove);
-                        document.addEventListener('mouseup', handleMouseUp);
+                        document.addEventListener("mousemove", handleMouseMove);
+                        document.addEventListener("mouseup", handleMouseUp);
                         // Agregar clase al body para indicar que estamos redimensionando
-                        document.body.classList.add('resizing');
+                        document.body.classList.add("resizing");
                         // Cambiar el cursor en todo el documento durante el redimensionamiento
-                        document.body.style.cursor = 'col-resize';
+                        document.body.style.cursor = "col-resize";
                     } else {
                         // Restaurar el cursor cuando no estamos redimensionando
-                        document.body.style.cursor = '';
+                        document.body.style.cursor = "";
                     }
-                    
+
                     return () => {
-                        document.removeEventListener('mousemove', handleMouseMove);
-                        document.removeEventListener('mouseup', handleMouseUp);
+                        document.removeEventListener("mousemove", handleMouseMove);
+                        document.removeEventListener("mouseup", handleMouseUp);
                         // Asegurarnos de limpiar las clases y estilos si el componente se desmonta
-                        document.body.classList.remove('resizing');
-                        document.body.style.cursor = '';
+                        document.body.classList.remove("resizing");
+                        document.body.style.cursor = "";
                     };
                 }, [isResizing, previewPosition, gridRatio]);
-                
+
                 // Effect to add mouse events to the resizer
                 useEffect(() => {
                     const initResizer = () => {
-                        const resizeElement = document.querySelector('.editor-content #resize-handle');
+                        const resizeElement = document.querySelector(".editor-content #resize-handle");
                         if (!resizeElement) return;
                         const handleMouseDown = (e) => {
                             // Check if we are in the resizer area
@@ -386,17 +393,17 @@ function hello() {
                                 e.preventDefault();
                             }
                         };
-                        
-                        resizeElement.addEventListener('mousedown', handleMouseDown);
-                        
+
+                        resizeElement.addEventListener("mousedown", handleMouseDown);
+
                         return () => {
-                            resizeElement.removeEventListener('mousedown', handleMouseDown);
+                            resizeElement.removeEventListener("mousedown", handleMouseDown);
                         };
                     };
 
                     // Give time for the DOM to update
                     const timerId = setTimeout(initResizer, 100);
-                    
+
                     return () => {
                         clearTimeout(timerId);
                     };
@@ -412,7 +419,7 @@ function hello() {
                             editorRef.current = monaco.editor.create(containerRef.current, {
                                 value: markdown,
                                 language: "markdown",
-                                theme: document.documentElement.getAttribute('monaco-theme') || "vs-dark",
+                                theme: document.documentElement.getAttribute("monaco-theme") || "vs-dark",
                                 minimap: { enabled: true },
                                 fontSize: 16,
                                 lineNumbers: "on",
@@ -423,9 +430,11 @@ function hello() {
                                 automaticLayout: true,
                                 smoothScrolling: true,
                             });
-                            
+
                             // Restore the view state (scroll, cursor, etc.) if it exists
-                            const activeTab = tabs.find((tab) => parseInt(tab.id) === parseInt(activeTabId));
+                            const activeTab = tabs.find(
+                                (tab) => parseInt(tab.id) === parseInt(activeTabId)
+                            );
                             if (activeTab && activeTab.viewState) {
                                 editorRef.current.restoreViewState(activeTab.viewState);
                             }
@@ -598,11 +607,14 @@ function hello() {
 
                                         // Get the current tabs from localStorage (most up-to-date version)
                                         const currentTabsJson = localStorage.getItem("editorTabs");
-                                        const currentTabs = currentTabsJson ? JSON.parse(currentTabsJson) : [];
+                                        const currentTabs = currentTabsJson
+                                            ? JSON.parse(currentTabsJson)
+                                            : [];
 
                                         // Update the active tab with the current content
                                         const tabsSave = currentTabs.map((tab) => {
-                                            if (parseInt(tab.id) !== parseInt(window.activeTabId)) return tab;
+                                            if (parseInt(tab.id) !== parseInt(window.activeTabId))
+                                                return tab;
 
                                             tab.viewState = editorRef.current.saveViewState();
                                             tab.scrollDataRef = scrollDataRef.current.userPosition;
@@ -880,18 +892,18 @@ function hello() {
 
                     editor.focus();
                 };
-                
+
                 // Grid Creator Modal
                 function openGridCreator() {
                     // Create modal container if it doesn't exist
-                    let modalContainer = document.getElementById('grid-creator-modal');
+                    let modalContainer = document.getElementById("grid-creator-modal");
                     if (!modalContainer) {
-                        modalContainer = document.createElement('div');
-                        modalContainer.id = 'grid-creator-modal';
-                        modalContainer.className = 'modal-container';
+                        modalContainer = document.createElement("div");
+                        modalContainer.id = "grid-creator-modal";
+                        modalContainer.className = "modal-container";
                         document.body.appendChild(modalContainer);
                     }
-                    
+
                     // Set modal content
                     modalContainer.innerHTML = `
                         <div class="modal-content grid-creator-content">
@@ -977,83 +989,88 @@ function hello() {
                             </div>
                         </div>
                     `;
-                    
+
                     // Show modal
-                    modalContainer.style.display = 'flex';
-                    
+                    modalContainer.style.display = "flex";
+
                     // Variables para el grid visual
                     window.gridAreas = [];
                     window.gridAreaCounter = 1;
                     window.isDrawing = false;
                     window.startCell = null;
                     window.currentArea = null;
-                    
+
                     // Define grid creator functions in global scope
-                    window.updateGridPreview = function() {
-                        const gridType = document.getElementById('grid-type').value;
-                        const previewEl = document.getElementById('grid-preview');
-                        
+                    window.updateGridPreview = function () {
+                        const gridType = document.getElementById("grid-type").value;
+                        const previewEl = document.getElementById("grid-preview");
+
                         // Hide all parameter groups
-                        document.querySelectorAll('.param-group').forEach(el => {
-                            el.style.display = 'none';
+                        document.querySelectorAll(".param-group").forEach((el) => {
+                            el.style.display = "none";
                         });
-                        
+
                         // Show relevant parameter group
-                        if (gridType === 'visual') {
-                            document.getElementById('visual-grid-params').style.display = 'flex';
+                        if (gridType === "visual") {
+                            document.getElementById("visual-grid-params").style.display = "flex";
                             setTimeout(() => regenerateVisualGrid(), 100);
-                            
-                        } else if (gridType === 'advanced' || gridType === 'dashboard') {
-                            document.getElementById('advanced-grid-params').style.display = 'flex';
+                        } else if (gridType === "advanced" || gridType === "dashboard") {
+                            document.getElementById("advanced-grid-params").style.display = "flex";
                         } else {
-                            document.getElementById('simple-grid-params').style.display = 'flex';
+                            document.getElementById("simple-grid-params").style.display = "flex";
                         }
-                        
+
                         // Generate preview HTML based on selected options
                         let previewHTML = '<div class="preview-grid" style="';
-                        
-                        if (gridType === 'simple' || gridType === 'responsive') {
-                            const columns = document.getElementById('grid-columns').value;
-                            const gap = document.getElementById('grid-gap').value;
-                            const items = document.getElementById('grid-items').value;
-                            
-                            previewHTML += `grid-template-columns: repeat(${columns}, 1fr); gap: ${gap * 0.5}rem;">`;
-                            
+
+                        if (gridType === "simple" || gridType === "responsive") {
+                            const columns = document.getElementById("grid-columns").value;
+                            const gap = document.getElementById("grid-gap").value;
+                            const items = document.getElementById("grid-items").value;
+
+                            previewHTML += `grid-template-columns: repeat(${columns}, 1fr); gap: ${
+                                gap * 0.5
+                            }rem;">`;
+
                             for (let i = 0; i < items; i++) {
                                 previewHTML += `<div class="preview-grid-item">Elemento ${i + 1}</div>`;
                             }
                         }
-                        
-                        previewHTML += '</div>';
+
+                        previewHTML += "</div>";
                         previewEl.innerHTML = previewHTML;
                     };
-                    
-                    window.insertGridToEditor = function() {
-                        const gridType = document.getElementById('grid-type').value;
+
+                    window.insertGridToEditor = function () {
+                        const gridType = document.getElementById("grid-type").value;
                         let gridMarkdown = "";
-                        
-                        if (gridType === 'visual') {
+
+                        if (gridType === "visual") {
                             // Create an advanced grid based on user-drawn areas
-                            const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
-                            const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
-                            const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
-                            
+                            const columns =
+                                parseInt(document.getElementById("visual-grid-columns").value) || 5;
+                            const rows =
+                                parseInt(document.getElementById("visual-grid-rows").value) || 5;
+                            const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
+
                             // Create unique ID for this grid by checking existing IDs in editor
-                            const editorContent = editorRef.current ? editorRef.current.getValue() : '';
+                            const editorContent = editorRef.current ? editorRef.current.getValue() : "";
                             let gridNumber = 1;
                             while (editorContent.includes(`id="grid_${gridNumber}"`)) {
                                 gridNumber++;
                             }
-                            const gridId = 'grid_' + gridNumber;
-                            
+                            const gridId = "grid_" + gridNumber;
+
                             // Start with an advanced grid
                             gridMarkdown += `<div id="${gridId}" class="visual-grid">\n`;
-                            
+
                             // Add divs for each area with unique IDs
                             gridAreas.forEach((area, index) => {
-                                gridMarkdown += `\t<div id="${gridId}_area${index+1}">\n\t\t${area.name}\n\t</div>\n`;
+                                gridMarkdown += `\t<div id="${gridId}_area${index + 1}">\n\t\t${
+                                    area.name
+                                }\n\t</div>\n`;
                             });
-                            
+
                             gridMarkdown += "</div>\n";
                             gridMarkdown += "\n<style>\n";
                             gridMarkdown += `\t#${gridId} {\n`;
@@ -1063,11 +1080,13 @@ function hello() {
                             gridMarkdown += `\t\tgap: ${gap}px;\n`;
                             gridMarkdown += `\t\tmin-height: 400px;\n`;
                             gridMarkdown += "\t}\n";
-                            
+
                             // Define the style for each area using IDs
                             gridAreas.forEach((area, index) => {
-                                gridMarkdown += `\t#${gridId}_area${index+1} {\n`;
-                                gridMarkdown += `\t\tgrid-column: ${area.startX + 1} / ${area.endX + 2};\n`;
+                                gridMarkdown += `\t#${gridId}_area${index + 1} {\n`;
+                                gridMarkdown += `\t\tgrid-column: ${area.startX + 1} / ${
+                                    area.endX + 2
+                                };\n`;
                                 gridMarkdown += `\t\tgrid-row: ${area.startY + 1} / ${area.endY + 2};\n`;
                                 gridMarkdown += `\t\tbackground-color: var(--card-background);\n`;
                                 gridMarkdown += `\t\tborder: 1px solid var(--border-color);\n`;
@@ -1075,37 +1094,38 @@ function hello() {
                                 gridMarkdown += `\t\tborder-radius: 8px;\n`;
                                 gridMarkdown += "\t}\n";
                             });
-                            
+
                             gridMarkdown += "</style>\n";
-                        }
-                        else if (gridType === 'simple' || gridType === 'responsive') {
-                            const columns = document.getElementById('grid-columns').value;
-                            const gap = document.getElementById('grid-gap').value;
-                            const items = document.getElementById('grid-items').value;
-                            const equalHeight = document.getElementById('grid-equal-height').checked;
-                            
+                        } else if (gridType === "simple" || gridType === "responsive") {
+                            const columns = document.getElementById("grid-columns").value;
+                            const gap = document.getElementById("grid-gap").value;
+                            const items = document.getElementById("grid-items").value;
+                            const equalHeight = document.getElementById("grid-equal-height").checked;
+
                             let gridConfig = `cols-${columns} gap-${gap}`;
-                            if (gridType === 'responsive') gridConfig += ' responsive';
-                            if (equalHeight) gridConfig += ' equal-height';
-                            
+                            if (gridType === "responsive") gridConfig += " responsive";
+                            if (equalHeight) gridConfig += " equal-height";
+
                             gridMarkdown = `\n:::grid ${gridConfig}\n`;
-                            
+
                             // Generate placeholder content for each item
                             for (let i = 0; i < items; i++) {
                                 if (i > 0) gridMarkdown += "\n\t---\n\n";
-                                gridMarkdown += `\t### Elemento ${i + 1}\n\n\tContenido para elemento ${i + 1}. Reemplaza con tu propio contenido.\n`;
+                                gridMarkdown += `\t### Elemento ${i + 1}\n\n\tContenido para elemento ${
+                                    i + 1
+                                }. Reemplaza con tu propio contenido.\n`;
                             }
-                            
+
                             gridMarkdown += "\n:::\n";
                         }
-                        
+
                         // Insertar el grid markdown en el editor
                         insertText(gridMarkdown, "");
-                        
+
                         // Cerrar el modal
-                        document.getElementById('grid-creator-modal').style.display = 'none';
+                        document.getElementById("grid-creator-modal").style.display = "none";
                     };
-                    
+
                     // Variables y event listeners para el grid visual
                     let isDrawing = false;
                     let currentArea = null;
@@ -1114,94 +1134,95 @@ function hello() {
                     let gridAreaCounter = 1;
 
                     // Añadir el event listener para mouseup a nivel del documento
-                    document.addEventListener('mouseup', function(e) {
+                    document.addEventListener("mouseup", function (e) {
                         if (isDrawing) {
                             endDrawing(e);
                         }
                     });
 
                     // Funciones para el grid visual
-                    window.regenerateVisualGrid = function() {
-                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
-                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
-                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
-                        
-                        const designerEl = document.getElementById('visual-grid-designer');
+                    window.regenerateVisualGrid = function () {
+                        const columns =
+                            parseInt(document.getElementById("visual-grid-columns").value) || 5;
+                        const rows = parseInt(document.getElementById("visual-grid-rows").value) || 5;
+                        const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
+
+                        const designerEl = document.getElementById("visual-grid-designer");
                         if (!designerEl) return;
-                        
+
                         // Limpia el diseñador
-                        designerEl.innerHTML = '';
-                        
+                        designerEl.innerHTML = "";
+
                         // Configura el grid
                         designerEl.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
                         designerEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
                         designerEl.style.gap = `${gap}px`;
-                        
+
                         // Create grid cells
                         for (let y = 0; y < rows; y++) {
                             for (let x = 0; x < columns; x++) {
-                                const cell = document.createElement('div');
-                                cell.className = 'grid-cell';
+                                const cell = document.createElement("div");
+                                cell.className = "grid-cell";
                                 cell.dataset.x = x;
                                 cell.dataset.y = y;
-                                
+
                                 // Events for drawing areas
-                                cell.addEventListener('mousedown', startDrawing);
-                                cell.addEventListener('mousemove', continueDrawing);
-                                
+                                cell.addEventListener("mousedown", startDrawing);
+                                cell.addEventListener("mousemove", continueDrawing);
+
                                 designerEl.appendChild(cell);
                             }
                         }
-                        
+
                         // Redraw existing areas
                         redrawGridAreas();
                         updateVisualGridPreview();
                     };
-                    
-                    window.startDrawing = function(e) {
+
+                    window.startDrawing = function (e) {
                         if (e.button !== 0) return; // Left button only
-                        
+
                         isDrawing = true;
                         const cell = e.target;
                         startCell = {
                             x: parseInt(cell.dataset.x),
-                            y: parseInt(cell.dataset.y)
+                            y: parseInt(cell.dataset.y),
                         };
-                        
+
                         // Inicializar la última celda conocida
                         lastKnownCell = startCell;
-                        
+
                         // Create a temporary area to display while drawing
-                        currentArea = document.createElement('div');
-                        currentArea.className = 'grid-area drawing';
+                        currentArea = document.createElement("div");
+                        currentArea.className = "grid-area drawing";
                         currentArea.innerHTML = `Area ${gridAreaCounter}`;
-                        document.getElementById('visual-grid-designer').appendChild(currentArea);
-                        
+                        document.getElementById("visual-grid-designer").appendChild(currentArea);
+
                         updateCurrentArea(startCell, startCell);
                     };
-                    
-                    window.continueDrawing = function(e) {
+
+                    window.continueDrawing = function (e) {
                         if (!isDrawing || !currentArea) return;
-                        
+
                         const cell = e.target;
-                        if (cell.className !== 'grid-cell') return;
-                        
+                        if (cell.className !== "grid-cell") return;
+
                         const currentCell = {
                             x: parseInt(cell.dataset.x),
-                            y: parseInt(cell.dataset.y)
+                            y: parseInt(cell.dataset.y),
                         };
-                        
+
                         // Actualizar la última celda conocida
                         lastKnownCell = currentCell;
-                        
+
                         updateCurrentArea(startCell, currentCell);
                     };
-                    
+
                     let lastKnownCell = null;
 
-                    window.endDrawing = function(e) {
+                    window.endDrawing = function (e) {
                         if (!isDrawing || !currentArea) return;
-                        
+
                         // Si no tenemos una última celda conocida, cancelar
                         if (!lastKnownCell) {
                             if (currentArea) {
@@ -1211,18 +1232,18 @@ function hello() {
                             isDrawing = false;
                             return;
                         }
-                        
+
                         const endCell = {
                             x: lastKnownCell.x,
-                            y: lastKnownCell.y
+                            y: lastKnownCell.y,
                         };
-                        
+
                         // Calculate the final area
                         const startX = Math.min(startCell.x, endCell.x);
                         const startY = Math.min(startCell.y, endCell.y);
                         const endX = Math.max(startCell.x, endCell.x);
                         const endY = Math.max(startCell.y, endCell.y);
-                        
+
                         // Add the area to the list
                         const newArea = {
                             id: `area-${gridAreaCounter}`,
@@ -1231,159 +1252,174 @@ function hello() {
                             startY,
                             endX,
                             endY,
-                            color: getRandomColor()
+                            color: getRandomColor(),
                         };
-                        
+
                         gridAreas.push(newArea);
                         gridAreaCounter++;
-                        
+
                         // Remove the temporary area
                         if (currentArea) {
                             currentArea.remove();
                             currentArea = null;
                         }
-                        
+
                         // Redraw all areas
                         redrawGridAreas();
                         updateGridAreasList();
                         updateVisualGridPreview();
-                        
+
                         isDrawing = false;
                     };
-                    
-                    window.updateCurrentArea = function(start, end) {
+
+                    window.updateCurrentArea = function (start, end) {
                         if (!currentArea) return;
-                        
-                        const designerEl = document.getElementById('visual-grid-designer');
-                        const cells = designerEl.querySelectorAll('.grid-cell');
+
+                        const designerEl = document.getElementById("visual-grid-designer");
+                        const cells = designerEl.querySelectorAll(".grid-cell");
                         const cellSize = cells[0].getBoundingClientRect();
-                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
-                        
+                        const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
+
                         const startX = Math.min(start.x, end.x);
                         const startY = Math.min(start.y, end.y);
                         const endX = Math.max(start.x, end.x);
                         const endY = Math.max(start.y, end.y);
-                        
+
                         // Calcular tamaño y posición
                         const width = (endX - startX + 1) * cellSize.width + (endX - startX) * gap;
                         const height = (endY - startY + 1) * cellSize.height + (endY - startY) * gap;
-                        
+
                         // Encontrar la primera celda para posicionar correctamente
-                        const firstCell = designerEl.querySelector(`.grid-cell[data-x="${startX}"][data-y="${startY}"]`);
+                        const firstCell = designerEl.querySelector(
+                            `.grid-cell[data-x="${startX}"][data-y="${startY}"]`
+                        );
                         const firstCellRect = firstCell.getBoundingClientRect();
                         const designerRect = designerEl.getBoundingClientRect();
-                        
+
                         // Ajustar posición relativa al contenedor
                         const left = firstCellRect.left - designerRect.left;
                         const top = firstCellRect.top - designerRect.top;
-                        
+
                         // Aplicar estilo
                         currentArea.style.left = `${left}px`;
                         currentArea.style.top = `${top}px`;
                         currentArea.style.width = `${width}px`;
                         currentArea.style.height = `${height}px`;
                     };
-                    
-                    window.redrawGridAreas = function() {
+
+                    window.redrawGridAreas = function () {
                         // Remove all existing areas
-                        const designerEl = document.getElementById('visual-grid-designer');
+                        const designerEl = document.getElementById("visual-grid-designer");
                         if (!designerEl) return;
-                        
-                        designerEl.querySelectorAll('.grid-area:not(.drawing)').forEach(el => el.remove());
-                        
+
+                        designerEl
+                            .querySelectorAll(".grid-area:not(.drawing)")
+                            .forEach((el) => el.remove());
+
                         // Draw each area
-                        gridAreas.forEach(area => {
-                            const areaEl = document.createElement('div');
-                            areaEl.className = 'grid-area';
+                        gridAreas.forEach((area) => {
+                            const areaEl = document.createElement("div");
+                            areaEl.className = "grid-area";
                             areaEl.id = area.id;
                             areaEl.innerHTML = area.name;
-                            areaEl.style.backgroundColor = area.color || 'rgba(0, 122, 204, 0.4)';
-                            
+                            areaEl.style.backgroundColor = area.color || "rgba(0, 122, 204, 0.4)";
+
                             // Add button to remove
-                            const removeBtn = document.createElement('div');
-                            removeBtn.className = 'remove-area';
-                            removeBtn.innerHTML = '×';
+                            const removeBtn = document.createElement("div");
+                            removeBtn.className = "remove-area";
+                            removeBtn.innerHTML = "×";
                             removeBtn.onclick = (e) => {
                                 e.stopPropagation();
                                 removeGridArea(area.id);
                             };
                             areaEl.appendChild(removeBtn);
-                            
+
                             designerEl.appendChild(areaEl);
-                            
+
                             // Position the area correctly
                             positionGridArea(areaEl, area);
                         });
                     };
-                    
-                    window.positionGridArea = function(areaEl, area) {
-                        const designerEl = document.getElementById('visual-grid-designer');
-                        const cells = designerEl.querySelectorAll('.grid-cell');
+
+                    window.positionGridArea = function (areaEl, area) {
+                        const designerEl = document.getElementById("visual-grid-designer");
+                        const cells = designerEl.querySelectorAll(".grid-cell");
                         if (cells.length === 0) return;
-                        
+
                         const cellSize = cells[0].getBoundingClientRect();
-                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
-                        
+                        const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
+
                         // Encontrar la primera celda para posicionar correctamente
-                        const firstCell = designerEl.querySelector(`.grid-cell[data-x="${area.startX}"][data-y="${area.startY}"]`);
+                        const firstCell = designerEl.querySelector(
+                            `.grid-cell[data-x="${area.startX}"][data-y="${area.startY}"]`
+                        );
                         if (!firstCell) return;
-                        
+
                         const firstCellRect = firstCell.getBoundingClientRect();
                         const designerRect = designerEl.getBoundingClientRect();
-                        
+
                         // Calcular tamaño
-                        const width = (area.endX - area.startX + 1) * cellSize.width + (area.endX - area.startX) * gap;
-                        const height = (area.endY - area.startY + 1) * cellSize.height + (area.endY - area.startY) * gap;
-                        
+                        const width =
+                            (area.endX - area.startX + 1) * cellSize.width +
+                            (area.endX - area.startX) * gap;
+                        const height =
+                            (area.endY - area.startY + 1) * cellSize.height +
+                            (area.endY - area.startY) * gap;
+
                         // Ajustar posición relativa al contenedor
                         const left = firstCellRect.left - designerRect.left;
                         const top = firstCellRect.top - designerRect.top;
-                        
+
                         // Aplicar estilo
                         areaEl.style.left = `${left}px`;
                         areaEl.style.top = `${top}px`;
                         areaEl.style.width = `${width}px`;
                         areaEl.style.height = `${height}px`;
                     };
-                    
-                    window.updateGridAreasList = function() {
-                        const listEl = document.getElementById('grid-areas-list');
+
+                    window.updateGridAreasList = function () {
+                        const listEl = document.getElementById("grid-areas-list");
                         if (!listEl) return;
-                        
+
                         // Clear the list
-                        listEl.innerHTML = '';
-                        
+                        listEl.innerHTML = "";
+
                         // Add each area to the list
-                        gridAreas.forEach(area => {
-                            const itemEl = document.createElement('div');
-                            itemEl.className = 'grid-area-item';
-                            
-                            const info = document.createElement('span');
-                            info.textContent = `${area.name}: (${area.startX+1},${area.startY+1}) a (${area.endX+1},${area.endY+1})`;
-                            
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'Remove';
+                        gridAreas.forEach((area) => {
+                            const itemEl = document.createElement("div");
+                            itemEl.className = "grid-area-item";
+
+                            const info = document.createElement("span");
+                            info.textContent = `${area.name}: (${area.startX + 1},${
+                                area.startY + 1
+                            }) a (${area.endX + 1},${area.endY + 1})`;
+
+                            const removeBtn = document.createElement("button");
+                            removeBtn.textContent = "Remove";
                             removeBtn.onclick = () => removeGridArea(area.id);
-                            
+
                             itemEl.appendChild(info);
                             itemEl.appendChild(removeBtn);
                             listEl.appendChild(itemEl);
                         });
                     };
-                    
-                    window.removeGridArea = function(id) {
+
+                    window.removeGridArea = function (id) {
                         // Remove the area from the list
-                        gridAreas = gridAreas.filter(area => area.id !== id);
-                        
+                        gridAreas = gridAreas.filter((area) => area.id !== id);
+
                         // Redraw and update the list
                         redrawGridAreas();
                         updateGridAreasList();
                         updateVisualGridPreview();
                     };
-                    
-                    window.resetGridAreas = function() {
+
+                    window.resetGridAreas = function () {
                         // Confirm before deleting all areas
-                        if (gridAreas.length > 0 && confirm('Are you sure you want to delete all areas?')) {
+                        if (
+                            gridAreas.length > 0 &&
+                            confirm("Are you sure you want to delete all areas?")
+                        ) {
                             gridAreas = [];
                             gridAreaCounter = 1;
                             redrawGridAreas();
@@ -1391,25 +1427,29 @@ function hello() {
                             updateVisualGridPreview();
                         }
                     };
-                    
-                    window.addGridArea = function() {
-                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
-                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
-                        
+
+                    window.addGridArea = function () {
+                        const columns =
+                            parseInt(document.getElementById("visual-grid-columns").value) || 5;
+                        const rows = parseInt(document.getElementById("visual-grid-rows").value) || 5;
+
                         // Create a default area in an available position
-                        let startX = 0, startY = 0;
+                        let startX = 0,
+                            startY = 0;
                         let found = false;
-                        
+
                         // Find an available cell
-                        outerLoop:
-                        for (let y = 0; y < rows; y++) {
+                        outerLoop: for (let y = 0; y < rows; y++) {
                             for (let x = 0; x < columns; x++) {
                                 // Comprobar si esta celda ya está ocupada
-                                const isOccupied = gridAreas.some(area => 
-                                    x >= area.startX && x <= area.endX && 
-                                    y >= area.startY && y <= area.endY
+                                const isOccupied = gridAreas.some(
+                                    (area) =>
+                                        x >= area.startX &&
+                                        x <= area.endX &&
+                                        y >= area.startY &&
+                                        y <= area.endY
                                 );
-                                
+
                                 if (!isOccupied) {
                                     startX = x;
                                     startY = y;
@@ -1418,12 +1458,14 @@ function hello() {
                                 }
                             }
                         }
-                        
+
                         if (!found) {
-                            alert('There\'s no space available for a new area. Delete an existing area or resize the grid.');
+                            alert(
+                                "There's no space available for a new area. Delete an existing area or resize the grid."
+                            );
                             return;
                         }
-                        
+
                         // Crear el área con tamaño 1x1
                         const newArea = {
                             id: `area-${gridAreaCounter}`,
@@ -1432,43 +1474,46 @@ function hello() {
                             startY,
                             endX: startX,
                             endY: startY,
-                            color: getRandomColor()
+                            color: getRandomColor(),
                         };
-                        
+
                         gridAreas.push(newArea);
                         gridAreaCounter++;
-                        
+
                         // Actualizar la interfaz
                         redrawGridAreas();
                         updateGridAreasList();
                         updateVisualGridPreview();
                     };
-                    
-                    window.updateVisualGridGap = function() {
-                        const designerEl = document.getElementById('visual-grid-designer');
+
+                    window.updateVisualGridGap = function () {
+                        const designerEl = document.getElementById("visual-grid-designer");
                         if (!designerEl) return;
-                        
-                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
+
+                        const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
                         designerEl.style.gap = `${gap}px`;
-                        
+
                         // Actualizar posición de todas las áreas
                         redrawGridAreas();
                         updateVisualGridPreview();
                     };
-                    
-                    window.updateVisualGridPreview = function() {
-                        const previewEl = document.getElementById('grid-preview');
+
+                    window.updateVisualGridPreview = function () {
+                        const previewEl = document.getElementById("grid-preview");
                         if (!previewEl) return;
-                        
-                        const columns = parseInt(document.getElementById('visual-grid-columns').value) || 5;
-                        const rows = parseInt(document.getElementById('visual-grid-rows').value) || 5;
-                        const gap = parseInt(document.getElementById('visual-grid-gap').value) || 8;
-                        
+
+                        const columns =
+                            parseInt(document.getElementById("visual-grid-columns").value) || 5;
+                        const rows = parseInt(document.getElementById("visual-grid-rows").value) || 5;
+                        const gap = parseInt(document.getElementById("visual-grid-gap").value) || 8;
+
                         let previewHTML = `<div class="preview-grid" style="grid-template-columns: repeat(${columns}, 1fr); grid-template-rows: repeat(${rows}, 1fr); gap: ${gap}px;">`;
-                        
+
                         // Create a 2D array to represent the grid
-                        const gridMap = Array(rows).fill().map(() => Array(columns).fill(null));
-                        
+                        const gridMap = Array(rows)
+                            .fill()
+                            .map(() => Array(columns).fill(null));
+
                         // Mark areas in the map
                         gridAreas.forEach((area, index) => {
                             for (let y = area.startY; y <= area.endY; y++) {
@@ -1479,7 +1524,7 @@ function hello() {
                                 }
                             }
                         });
-                        
+
                         // Create elements for each grid area
                         gridAreas.forEach((area, index) => {
                             const style = `
@@ -1488,10 +1533,10 @@ function hello() {
                                 background-color: var(--card-background);
                                 border: 1px solid var(--border-color);
                             `;
-                            
+
                             previewHTML += `<div class="preview-grid-item" style="${style}">${area.name}</div>`;
                         });
-                        
+
                         // Add empty cells where no areas are defined
                         for (let y = 0; y < rows; y++) {
                             for (let x = 0; x < columns; x++) {
@@ -1501,35 +1546,35 @@ function hello() {
                                         grid-row: ${y + 1} / ${y + 2};
                                         opacity: 0.3;
                                     `;
-                                    
+
                                     previewHTML += `<div class="preview-grid-item" style="${style}"></div>`;
                                 }
                             }
                         }
-                        
-                        previewHTML += '</div>';
+
+                        previewHTML += "</div>";
                         previewEl.innerHTML = previewHTML;
                     };
-                    
-                    window.getRandomColor = function() {
+
+                    window.getRandomColor = function () {
                         // Lista de colores semitransparentes predefinidos
                         const colors = [
-                            'rgba(25, 118, 210, 0.6)',   // Azul
-                            'rgba(56, 142, 60, 0.6)',    // Verde
-                            'rgba(211, 47, 47, 0.6)',    // Rojo
-                            'rgba(245, 124, 0, 0.6)',    // Naranja
-                            'rgba(123, 31, 162, 0.6)',   // Púrpura
-                            'rgba(0, 151, 167, 0.6)',    // Cian
-                            'rgba(81, 45, 168, 0.6)',    // Índigo
-                            'rgba(230, 74, 25, 0.6)',    // Naranja oscuro
+                            "rgba(25, 118, 210, 0.6)", // Azul
+                            "rgba(56, 142, 60, 0.6)", // Verde
+                            "rgba(211, 47, 47, 0.6)", // Rojo
+                            "rgba(245, 124, 0, 0.6)", // Naranja
+                            "rgba(123, 31, 162, 0.6)", // Púrpura
+                            "rgba(0, 151, 167, 0.6)", // Cian
+                            "rgba(81, 45, 168, 0.6)", // Índigo
+                            "rgba(230, 74, 25, 0.6)", // Naranja oscuro
                         ];
-                        
+
                         return colors[Math.floor(Math.random() * colors.length)];
                     };
-                    
+
                     // Inicializar la vista previa después de definir las funciones
                     setTimeout(() => {
-                        if (document.getElementById('grid-type')) {
+                        if (document.getElementById("grid-type")) {
                             updateGridPreview();
                         }
                     }, 100);
@@ -1875,12 +1920,12 @@ function hello() {
                 const handleExport = () => {
                     let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
                     // Add finalJs
-                    finalHtml += "<script id=\"entry-script\">\n";
+                    finalHtml += '<script id="entry-script">\n';
                     finalHtml += finalJS;
                     finalHtml += "\n<"; // If we put directly, some editors (like VSCode) get confused
                     finalHtml += "/script>";
                     // Add sidebarContent
-                    finalHtml += "<script id=\"sidebar-data\" type=\"application/json\">\n";
+                    finalHtml += '<script id="sidebar-data" type="application/json">\n';
                     finalHtml += JSON.stringify(sidebarContent, null, 4);
                     finalHtml += "\n<"; // If we put directly, some editors (like VSCode) get confused
                     finalHtml += "/script>";
@@ -1952,7 +1997,9 @@ function hello() {
                         if (isFloatIdUnique(id, null, editorRef.current)) {
                             window.isIdUnique = id;
                         } else {
-                            alert(`An element with ID "${id}" already exists. Please choose another ID.`);
+                            alert(
+                                `An element with ID "${id}" already exists. Please choose another ID.`
+                            );
                         }
                     }
 
@@ -1990,6 +2037,474 @@ function hello() {
                         return true;
                     }
                     return false;
+                };
+
+                // Function to get list of posts files
+                const getPostsFiles = async () => {
+                    try {
+                        // Fetch the search.json file which contains all posts
+                        const response = await fetch("https://s4mc.github.io/Files/Blog-Code/search.json");
+                        if (!response.ok) {
+                            throw new Error("Failed to fetch posts list");
+                        }
+                        const data = await response.json();
+
+                        // Extract unique file paths from the search index
+                        const files = [...new Set(data.entries.map((entry) => entry.path))];
+
+                        return files;
+                    } catch (error) {
+                        console.error("Error fetching posts files:", error);
+                        return [];
+                    }
+                };
+
+                // Function to load file content
+                const loadFileContent = async (filePath) => {
+                    try {
+                        const response = await fetch(filePath);
+                        if (!response.ok) {
+                            throw new Error(`Failed to load file: ${filePath}`);
+                        }
+                        return await response.text();
+                    } catch (error) {
+                        console.error("Error loading file:", error);
+                        return null;
+                    }
+                };
+
+                // Function to open diff editor
+                const openDiffEditor = async (originalContent, originalTitle = "Original") => {
+                    if (!editorRef.current) return;
+
+                    const currentContent = editorRef.current.getValue();
+                    const currentTitle = "Current";
+
+                    // Get saved view mode preference
+                    const savedViewMode = localStorage.getItem("diffEditorViewMode") || "split";
+
+                    // Create a modal container for the diff editor
+                    let diffContainer = document.getElementById("diff-editor-modal");
+                    
+                    // Clean up previous editor instance if it exists
+                    if (diffContainer && diffContainer._cleanup) {
+                        diffContainer._cleanup();
+                    }
+                    
+                    if (!diffContainer) {
+                        diffContainer = document.createElement("div");
+                        diffContainer.id = "diff-editor-modal";
+                        diffContainer.className = "modal-container";
+                        diffContainer.style.cssText =
+                            "display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;";
+                        document.body.appendChild(diffContainer);
+                    }
+
+                    diffContainer.innerHTML = `
+                        <div style="width: 96%; height: 96%; background: var(--bg-primary); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--border-color);">
+                                <h3 style="margin: 0; color: #fafafa; border-radius: 8px; margin-right: 20px; padding: 10px;">Compare Changes: "${originalTitle}" vs "${currentTitle}"</h3>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <button id="diff-view-split" class="diff-view-toggle ${
+                                        savedViewMode === "split" ? "active" : ""
+                                    }" style="padding: 6px 12px; background: ${
+                        savedViewMode === "split" ? "var(--bg-hover)" : "var(--bg-secondary)"
+                    }; border: 0px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
+                                        Split View
+                                    </button>
+                                    <button id="diff-view-inline" class="diff-view-toggle ${
+                                        savedViewMode === "inline" ? "active" : ""
+                                    }" style="padding: 6px 12px; background: ${
+                        savedViewMode === "inline" ? "var(--bg-hover)" : "var(--bg-secondary)"
+                    }; border: 0px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
+                                        Inline View
+                                    </button>
+                                    <div style="display: flex; gap: 5px; align-items: center; margin-left: 10px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                                        <button id="diff-nav-prev" style="background: none; border: none; color: var(--text-color); cursor: pointer; padding: 4px 8px; font-size: 16px;" title="Previous change">↑</button>
+                                        <span id="diff-changes-info" style="color: var(--text-color); font-size: 14px; min-width: 60px; text-align: center;">Loading...</span>
+                                        <button id="diff-nav-next" style="background: none; border: none; color: var(--text-color); cursor: pointer; padding: 4px 8px; font-size: 16px;" title="Next change">↓</button>
+                                    </div>
+                                    <button onclick="(function() { const modal = document.getElementById('diff-editor-modal'); if (modal && modal._cleanup) modal._cleanup(); modal.style.display='none'; })()" style="background: none; border: none; color: #fafafa; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px; margin-left: 10px;">&times;</button>
+                                </div>
+                            </div>
+                            <div id="diff-editor-container" style="flex: 1; overflow: hidden; padding-bottom: var(--spacing-md);"></div>
+                        </div>
+                    `;
+
+                    diffContainer.style.display = "flex";
+
+                    // Wait for DOM to be ready
+                    setTimeout(() => {
+                        const container = document.getElementById("diff-editor-container");
+                        if (!container) return;
+
+                        // Create diff editor
+                        const diffEditor = monaco.editor.createDiffEditor(container, {
+                            enableSplitViewResizing: true,
+                            language: "markdown",
+                            minimap: { enabled: true },
+                            renderSideBySide: savedViewMode === "split",
+                            readOnly: false,
+                            automaticLayout: true,
+                            wordWrap: wordWrap, // Using the wordWrap state
+                            theme: document.documentElement.getAttribute("monaco-theme") || "vs-dark",
+                        });
+
+                        // Use the main editor's model for the modified side instead of creating a new one
+                        // This ensures the undo/redo history is shared
+                        const mainEditorModel = editorRef.current.getModel();
+                        const originalModel = monaco.editor.createModel(originalContent, "markdown");
+
+                        diffEditor.setModel({
+                            original: originalModel,
+                            modified: mainEditorModel,
+                        });
+
+                        // Get the modified editor
+                        const modifiedEditor = diffEditor.getModifiedEditor();
+                        
+                        // Sync cursor position and selection from main editor to diff editor
+                        const mainPosition = editorRef.current.getPosition();
+                        const mainSelection = editorRef.current.getSelection();
+                        if (mainPosition) {
+                            modifiedEditor.setPosition(mainPosition);
+                        }
+                        if (mainSelection) {
+                            modifiedEditor.setSelection(mainSelection);
+                        }
+                        
+                        // Focus the modified editor
+                        modifiedEditor.focus();
+
+                        // Handle view mode toggle buttons
+                        const splitBtn = document.getElementById("diff-view-split");
+                        const inlineBtn = document.getElementById("diff-view-inline");
+
+                        const updateViewMode = (mode) => {
+                            diffEditor.updateOptions({
+                                renderSideBySide: mode === "split",
+                            });
+
+                            // Update button styles
+                            if (mode === "split") {
+                                splitBtn.style.background = "var(--bg-hover)";
+                                inlineBtn.style.background = "var(--bg-secondary)";
+                                splitBtn.classList.add("active");
+                                inlineBtn.classList.remove("active");
+                            } else {
+                                splitBtn.style.background = "var(--bg-secondary)";
+                                inlineBtn.style.background = "var(--bg-hover)";
+                                splitBtn.classList.remove("active");
+                                inlineBtn.classList.add("active");
+                            }
+
+                            // Save preference
+                            localStorage.setItem("diffEditorViewMode", mode);
+                        };
+
+                        splitBtn.addEventListener("click", () => updateViewMode("split"));
+                        inlineBtn.addEventListener("click", () => updateViewMode("inline"));
+
+                        // Navigation between changes
+                        let currentChangeIndex = 0;
+                        let lineChanges = [];
+                        let isInitialLoad = true;
+                        let hasNavigatedToFirstChange = false;
+
+                        const updateChangesInfo = () => {
+                            const changes = diffEditor.getLineChanges() || [];
+                            lineChanges = changes;
+                            const changesInfo = document.getElementById("diff-changes-info");
+                            const prevBtn = document.getElementById("diff-nav-prev");
+                            const nextBtn = document.getElementById("diff-nav-next");
+
+                            if (changesInfo) {
+                                if (changes.length === 0) {
+                                    // Only show "No changes" if not initial load
+                                    if (!isInitialLoad) {
+                                        changesInfo.textContent = "No changes";
+                                    }
+                                    prevBtn.disabled = true;
+                                    nextBtn.disabled = true;
+                                    prevBtn.style.opacity = "0.5";
+                                    nextBtn.style.opacity = "0.5";
+                                    prevBtn.style.cursor = "not-allowed";
+                                    nextBtn.style.cursor = "not-allowed";
+                                } else {
+                                    isInitialLoad = false;
+                                    changesInfo.textContent = `${currentChangeIndex + 1}/${
+                                        changes.length
+                                    }`;
+                                    prevBtn.disabled = false;
+                                    nextBtn.disabled = false;
+                                    prevBtn.style.opacity = "1";
+                                    nextBtn.style.opacity = "1";
+                                    prevBtn.style.cursor = "pointer";
+                                    nextBtn.style.cursor = "pointer";
+                                }
+                            }
+                        };
+
+                        const goToChange = (index) => {
+                            if (lineChanges.length === 0) return;
+
+                            // Ensure index is within bounds
+                            currentChangeIndex =
+                                ((index % lineChanges.length) + lineChanges.length) % lineChanges.length;
+
+                            const change = lineChanges[currentChangeIndex];
+                            const modifiedEditor = diffEditor.getModifiedEditor();
+
+                            // Get the line number to navigate to
+                            let lineNumber;
+                            if (change.modifiedStartLineNumber) {
+                                lineNumber = change.modifiedStartLineNumber;
+                            } else if (change.originalStartLineNumber) {
+                                lineNumber = change.originalStartLineNumber;
+                            } else {
+                                return;
+                            }
+
+                            // Scroll to the change and highlight it
+                            modifiedEditor.revealLineInCenter(
+                                lineNumber,
+                                monaco.editor.ScrollType.Smooth
+                            );
+                            modifiedEditor.setPosition({ lineNumber, column: 1 });
+                            modifiedEditor.focus();
+
+                            updateChangesInfo();
+                        };
+
+                        const prevBtn = document.getElementById("diff-nav-prev");
+                        const nextBtn = document.getElementById("diff-nav-next");
+
+                        prevBtn.addEventListener("click", () => {
+                            goToChange(currentChangeIndex - 1);
+                        });
+
+                        nextBtn.addEventListener("click", () => {
+                            goToChange(currentChangeIndex + 1);
+                        });
+
+                        // Listen for when diff is ready - this is much more reliable
+                        let diffUpdateTimeout = null;
+                        diffEditor.onDidUpdateDiff(() => {
+                            // Clear any pending timeout
+                            if (diffUpdateTimeout) {
+                                clearTimeout(diffUpdateTimeout);
+                            }
+                            
+                            // Reset to first change only if user hasn't manually navigated
+                            if (!hasNavigatedToFirstChange) {
+                                currentChangeIndex = 0;
+                            }
+                            isInitialLoad = false;
+                            
+                            // Small delay to ensure DOM is updated
+                            diffUpdateTimeout = setTimeout(() => {
+                                updateChangesInfo();
+                                // Only auto-navigate to first change on initial load
+                                if (!hasNavigatedToFirstChange && lineChanges.length > 0) {
+                                    goToChange(0);
+                                    hasNavigatedToFirstChange = true;
+                                }
+                            }, 50);
+                        });
+
+                        // Store reference to cleanup on close
+                        diffContainer._cleanup = () => {
+                            if (diffUpdateTimeout) {
+                                clearTimeout(diffUpdateTimeout);
+                            }
+                            
+                            // Sync back cursor position to main editor before closing
+                            const modifiedEditor = diffEditor.getModifiedEditor();
+                            const position = modifiedEditor.getPosition();
+                            const selection = modifiedEditor.getSelection();
+                            
+                            if (editorRef.current) {
+                                if (position) {
+                                    editorRef.current.setPosition(position);
+                                }
+                                if (selection) {
+                                    editorRef.current.setSelection(selection);
+                                }
+                                editorRef.current.focus();
+                            }
+                            
+                            diffEditor.dispose();
+                            originalModel.dispose();
+                            // Don't dispose mainEditorModel as it's still being used by the main editor
+                        };
+                        
+                        // Add keyboard shortcut to close modal (Escape key)
+                        const handleEscape = (e) => {
+                            if (e.key === "Escape") {
+                                if (diffContainer._cleanup) {
+                                    diffContainer._cleanup();
+                                }
+                                diffContainer.style.display = "none";
+                                document.removeEventListener("keydown", handleEscape);
+                            }
+                        };
+                        document.addEventListener("keydown", handleEscape);
+                    }, 100);
+                };
+
+                // Function to compare with default file
+                const compareWithDefault = async () => {
+                    const title = extractTitleFromMarkdown(markdown).replace(/\s+/g, "-");
+                    if (!title) {
+                        showCompareFileList();
+                        return;
+                    }
+
+                    let defaultFileName = `posts/${title}.md`;
+                    let content = await loadFileContent(defaultFileName);
+
+                    if (!content) {
+                        defaultFileName = `posts/${title}.html`;
+                        content = await loadFileContent(defaultFileName);
+                    }
+
+                    if (content) {
+                        openDiffEditor(content, defaultFileName);
+                    } else {
+                        // If file not found, show file list
+                        showCompareFileList();
+                    }
+                };
+
+                // Function to show file list for comparison
+                const showCompareFileList = async (e) => {
+                    // Create a pseudo-button wrapper if not called from an event
+                    const compareButton = e?.currentTarget || document.querySelector('[title="Compare Changes"]');
+                    
+                    // Check if menu already exists and is visible
+                    let menu = document.getElementById("compare-file-menu");
+                    if (menu && menu.style.display === "block") {
+                        menu.style.display = "none";
+                        return;
+                    }
+
+                    const files = await getPostsFiles();
+
+                    if (files.length === 0) {
+                        alert("No posts found to compare.");
+                        return;
+                    }
+
+                    // Create a temporary menu if it doesn't exist
+                    if (!menu) {
+                        menu = document.createElement("div");
+                        menu.id = "compare-file-menu";
+                        menu.className = "menu-content";
+                        menu.style.cssText =
+                            "position: fixed; display: block; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);";
+                        document.body.appendChild(menu);
+                    }
+
+                    // Position menu near the compare button
+                    if (compareButton) {
+                        const rect = compareButton.getBoundingClientRect();
+                        menu.style.top = `${rect.bottom + 5}px`;
+                        menu.style.left = `${rect.left}px`;
+                    }
+
+                    menu.innerHTML = files
+                        .map(
+                            (file) => `
+                        <button onclick="window.compareWithFile('${file}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
+                            ${file}
+                        </button>
+                    `
+                        )
+                        .join("");
+
+                    menu.style.display = "block";
+
+                    // Use the same closing pattern as handleMenuToggle/handleMenuOpen
+                    const closeMenu = (event) => {
+                        if (!menu.contains(event.target) && !compareButton.contains(event.target)) {
+                            menu.style.display = "none";
+                            document.removeEventListener("click", closeMenu);
+                            document.removeEventListener("contextmenu", closeMenu);
+                        }
+                    };
+                    setTimeout(() => {
+                        document.addEventListener("click", closeMenu);
+                        document.addEventListener("contextmenu", closeMenu);
+                    }, 0);
+                };
+
+                // Make function globally accessible
+                window.compareWithFile = async (filePath) => {
+                    const content = await loadFileContent(filePath);
+                    if (content) {
+                        openDiffEditor(content, filePath);
+                    }
+                    const menu = document.getElementById("compare-file-menu");
+                    if (menu) menu.style.display = "none";
+                };
+
+                // Helper function to handle menu toggle for toolbar buttons
+                const handleMenuToggle = (e, onOpenCallback = null) => {
+                    if (e.target !== e.currentTarget) return; // Only act if click was on button itself
+                    
+                    const button = e.currentTarget;
+                    const menu = button.querySelector(".menu-content");
+                    const isVisible = menu.style.display === "block";
+                    menu.style.display = isVisible ? "none" : "block";
+
+                    if (!isVisible) {
+                        // Execute callback if provided (for special initialization like table grid)
+                        if (onOpenCallback) {
+                            onOpenCallback(menu);
+                        }
+                        
+                        const closeMenu = (event) => {
+                            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                                menu.style.display = "none";
+                                document.removeEventListener("click", closeMenu);
+                                document.removeEventListener("contextmenu", closeMenu);
+                            }
+                        };
+                        setTimeout(() => {
+                            document.addEventListener("click", closeMenu);
+                            document.addEventListener("contextmenu", closeMenu);
+                        }, 0);
+                    }
+                };
+
+                // Helper function to handle menu open (for right-click)
+                const handleMenuOpen = (e, onOpenCallback = null) => {
+                    e.preventDefault();
+                    const button = e.currentTarget;
+                    const menu = button.querySelector(".menu-content");
+                    const isVisible = menu.style.display === "block";
+                    
+                    // Toggle menu on right-click
+                    menu.style.display = isVisible ? "none" : "block";
+                    
+                    if (!isVisible) {
+                        // Execute callback if provided (for special initialization like table grid)
+                        if (onOpenCallback) {
+                            onOpenCallback(menu);
+                        }
+                        
+                        const closeMenu = (event) => {
+                            if (!menu.contains(event.target) && !button.contains(event.target)) {
+                                menu.style.display = "none";
+                                document.removeEventListener("click", closeMenu);
+                                document.removeEventListener("contextmenu", closeMenu);
+                            }
+                        };
+                        setTimeout(() => {
+                            document.addEventListener("click", closeMenu);
+                            document.addEventListener("contextmenu", closeMenu);
+                        }, 0);
+                    }
                 };
 
                 return html`
@@ -2167,38 +2682,8 @@ function hello() {
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
-                                            onClick=${(e) => {
-                                                // Solo actuar si el click fue directamente en el botón principal (no en los hijos)
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                             title="Header"
                                         >
                                             H
@@ -2283,37 +2768,8 @@ function hello() {
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
-                                            onClick=${(e) => {
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                             title="List"
                                         >
                                             <svg
@@ -2654,11 +3110,13 @@ function hello() {
                                                     </svg>
                                                     Numbered list
                                                 </button>
-                                                <button onClick=${(e) => {
+                                                <button
+                                                    onClick=${(e) => {
                                                         insertText("\n:::conector\n\t", "\n:::\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
-                                                    }}>
+                                                    }}
+                                                >
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
                                                         width="16"
@@ -2666,7 +3124,18 @@ function hello() {
                                                         viewBox="0 0 23 18"
                                                         style="margin-right: 8px;"
                                                     >
-                                                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"><path d="M8 5h13m-8 7h8m-8 7h8M3 10a2 2 0 0 0 2 2h3"/><path d="M3 5v12a2 2 0 0 0 2 2h3"/></g>
+                                                        <g
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            stroke-linecap="round"
+                                                            stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                        >
+                                                            <path
+                                                                d="M8 5h13m-8 7h8m-8 7h8M3 10a2 2 0 0 0 2 2h3"
+                                                            />
+                                                            <path d="M3 5v12a2 2 0 0 0 2 2h3" />
+                                                        </g>
                                                     </svg>
                                                     Connector
                                                 </button>
@@ -2687,41 +3156,26 @@ function hello() {
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
-                                            onClick=${(e) => {
-                                                // Solo actuar si el click fue directamente en el botón principal (no en los hijos)
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                             title="Space"
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 18" style="pointer-events: none;"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 6h10m-10 6h10m-10 6h10M5 19V5m0 14l-2-2.5M5 19l2-2.5M5 5L3 7m2-2l2 2"/></svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="1.5"
+                                                    d="M11 6h10m-10 6h10m-10 6h10M5 19V5m0 14l-2-2.5M5 19l2-2.5M5 5L3 7m2-2l2 2"
+                                                />
+                                            </svg>
                                             <div class="menu-content" style="display: none;">
                                                 <button
                                                     onClick=${(e) => {
@@ -2764,49 +3218,32 @@ function hello() {
                                         <button onClick=${() => insertText("*", "*")} title="Italics">
                                             <em>C</em>
                                         </button>
-                                        <button onClick=${() => insertText("~", "~")} title="Strikethrough">
+                                        <button
+                                            onClick=${() => insertText("~", "~")}
+                                            title="Strikethrough"
+                                        >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 width="18"
                                                 height="16"
                                                 viewBox="0 0 24 18"
                                                 style="pointer-events: none;"
-                                            ><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14m-3-5.5A4 2 0 0 0 12 5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1.5a4 2 0 0 1-4-1.5"/></svg>
+                                            >
+                                                <path
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    stroke-linecap="round"
+                                                    stroke-linejoin="round"
+                                                    stroke-width="2"
+                                                    d="M5 12h14m-3-5.5A4 2 0 0 0 12 5h-1a3.5 3.5 0 0 0 0 7h2a3.5 3.5 0 0 1 0 7h-1.5a4 2 0 0 1-4-1.5"
+                                                />
+                                            </svg>
                                         </button>
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
-                                            onClick=${(e) => {
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                             title="Link"
                                         >
                                             <svg
@@ -2918,37 +3355,8 @@ function hello() {
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
-                                            onClick=${(e) => {
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                             title="Code"
                                         >
                                             <svg
@@ -3067,37 +3475,8 @@ function hello() {
                                         <button
                                             class="editor-menu"
                                             title="Callout Types"
-                                            onClick=${(e) => {
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
-
-                                                    if (!isVisible) {
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                            }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
-                                            }}
+                                            onClick=${(e) => handleMenuToggle(e)}
+                                            onContextMenu=${(e) => handleMenuOpen(e)}
                                         >
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
@@ -3263,7 +3642,7 @@ function hello() {
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    '\n```animation\n\tpublic/bodymovin.json',
+                                                    "\n```animation\n\tpublic/bodymovin.json",
                                                     "\n```\n"
                                                 )}
                                             title="Animation Container"
@@ -3274,7 +3653,10 @@ function hello() {
                                                 height="18"
                                                 viewBox="0 0 24 18"
                                             >
-                                                <path fill="currentColor" d="M4 2h10v2H4v10H2V4c0-1.11.89-2 2-2m4 4h10v2H8v10H6V8c0-1.11.89-2 2-2m4 4h8c1.11 0 2 .89 2 2v8c0 1.11-.89 2-2 2h-8c-1.11 0-2-.89-2-2v-8c0-1.11.89-2 2-2m2 2v8l6-4z"/>
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M4 2h10v2H4v10H2V4c0-1.11.89-2 2-2m4 4h10v2H8v10H6V8c0-1.11.89-2 2-2m4 4h8c1.11 0 2 .89 2 2v8c0 1.11-.89 2-2 2h-8c-1.11 0-2-.89-2-2v-8c0-1.11.89-2 2-2m2 2v8l6-4z"
+                                                />
                                             </svg>
                                         </button>
                                         <button
@@ -3297,10 +3679,7 @@ function hello() {
                                                 />
                                             </svg>
                                         </button>
-                                        <button
-                                            onClick=${() => openGridCreator()}
-                                            title="Grid Creator"
-                                        >
+                                        <button onClick=${() => openGridCreator()} title="Grid Creator">
                                             <svg
                                                 xmlns="http://www.w3.org/2000/svg"
                                                 width="18"
@@ -3308,157 +3687,131 @@ function hello() {
                                                 viewBox="0 0 25 18"
                                                 style="pointer-events: none;"
                                             >
-                                                <g fill="none" fill-rule="evenodd"><path d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z"/><path fill="currentColor" d="M19 11a2 2 0 0 1 1.995 1.85L21 13v6a2 2 0 0 1-1.85 1.995L19 21h-4a2 2 0 0 1-1.995-1.85L13 19v-6a2 2 0 0 1 1.85-1.995L15 11zM9 15a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm10-2h-4v6h4zM9 17H5v2h4zM9 3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2H5v6h4zm10-2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2h-4v2h4z"/></g>
+                                                <g fill="none" fill-rule="evenodd">
+                                                    <path
+                                                        d="m12.593 23.258l-.011.002l-.071.035l-.02.004l-.014-.004l-.071-.035q-.016-.005-.024.005l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.017-.018m.265-.113l-.013.002l-.185.093l-.01.01l-.003.011l.018.43l.005.012l.008.007l.201.093q.019.005.029-.008l.004-.014l-.034-.614q-.005-.018-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.004-.011l.017-.43l-.003-.012l-.01-.01z"
+                                                    />
+                                                    <path
+                                                        fill="currentColor"
+                                                        d="M19 11a2 2 0 0 1 1.995 1.85L21 13v6a2 2 0 0 1-1.85 1.995L19 21h-4a2 2 0 0 1-1.995-1.85L13 19v-6a2 2 0 0 1 1.85-1.995L15 11zM9 15a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 1 2-2zm10-2h-4v6h4zM9 17H5v2h4zM9 3a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2H5v6h4zm10-2a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2h-4v2h4z"
+                                                    />
+                                                </g>
                                             </svg>
                                         </button>
                                         <button
                                             class="editor-menu"
                                             style="padding-left: 4px;"
                                             onClick=${(e) => {
-                                                // Solo actuar si el click fue directamente en el botón principal (no en los hijos)
-                                                if (e.target === e.currentTarget) {
-                                                    const menu =
-                                                        e.currentTarget.querySelector(".menu-content");
-                                                    const isVisible = menu.style.display === "block";
-                                                    menu.style.display = isVisible ? "none" : "block";
+                                                const initTableGrid = (menu) => {
+                                                    setTimeout(() => {
+                                                        const tableGrid = menu.querySelector(".table-grid-container");
+                                                        const dimensionsEl = menu.querySelector(".table-grid-dimensions");
 
-                                                    if (!isVisible) {
-                                                        // Inicializamos el grid selector cuando se abre el menú
-                                                        setTimeout(() => {
-                                                            const tableGrid =
-                                                                menu.querySelector(
-                                                                    ".table-grid-container"
-                                                                );
-                                                            const dimensionsEl =
-                                                                menu.querySelector(
-                                                                    ".table-grid-dimensions"
-                                                                );
+                                                        if (tableGrid) {
+                                                            const updateActiveCells = (rows, cols) => {
+                                                                const cells = tableGrid.querySelectorAll(".table-grid-cell");
+                                                                cells.forEach((cell, index) => {
+                                                                    const cellRow = Math.floor(index / 10) + 1;
+                                                                    const cellCol = (index % 10) + 1;
+                                                                    if (cellRow <= rows && cellCol <= cols) {
+                                                                        cell.classList.add("active");
+                                                                    } else {
+                                                                        cell.classList.remove("active");
+                                                                    }
+                                                                });
+                                                                if (dimensionsEl) {
+                                                                    dimensionsEl.textContent = `${cols}x${rows}`;
+                                                                }
+                                                            };
 
-                                                            if (tableGrid) {
-                                                                // Inicializamos la función de actualización
-                                                                const updateActiveCells = (
-                                                                    rows,
-                                                                    cols
-                                                                ) => {
-                                                                    const cells =
-                                                                        tableGrid.querySelectorAll(
-                                                                            ".table-grid-cell"
-                                                                        );
-                                                                    cells.forEach((cell, index) => {
-                                                                        const cellRow =
-                                                                            Math.floor(index / 10) + 1;
-                                                                        const cellCol = (index % 10) + 1;
+                                                            updateActiveCells(1, 1);
 
-                                                                        if (
-                                                                            cellRow <= rows &&
-                                                                            cellCol <= cols
-                                                                        ) {
-                                                                            cell.classList.add("active");
-                                                                        } else {
-                                                                            cell.classList.remove(
-                                                                                "active"
-                                                                            );
-                                                                        }
-                                                                    });
-
-                                                                    if (dimensionsEl) {
-                                                                        dimensionsEl.textContent = `${cols}x${rows}`;
+                                                            if (!tableGrid.hasInitializedEvents) {
+                                                                tableGrid.mousemoveHandler = (event) => {
+                                                                    const cell = event.target;
+                                                                    if (cell.classList.contains("table-grid-cell")) {
+                                                                        const index = Array.from(tableGrid.children).indexOf(cell);
+                                                                        const hoveredRows = Math.floor(index / 10) + 1;
+                                                                        const hoveredCols = (index % 10) + 1;
+                                                                        updateActiveCells(hoveredRows, hoveredCols);
                                                                     }
                                                                 };
 
-                                                                // Inicializamos la cuadrícula con 1x1
-                                                                updateActiveCells(1, 1);
+                                                                tableGrid.clickHandler = (event) => {
+                                                                    const cell = event.target;
+                                                                    if (cell.classList.contains("table-grid-cell")) {
+                                                                        const index = Array.from(tableGrid.children).indexOf(cell);
+                                                                        const rows = Math.floor(index / 10) + 1;
+                                                                        const cols = (index % 10) + 1;
+                                                                        generateTable(rows, cols);
+                                                                        menu.style.display = "none";
+                                                                    }
+                                                                };
 
-                                                                // Solo configuramos los eventos si no están ya configurados
-                                                                if (!tableGrid.hasInitializedEvents) {
-                                                                    // Evento para el hover
-                                                                    tableGrid.mousemoveHandler = (
-                                                                        event
-                                                                    ) => {
-                                                                        const cell = event.target;
-                                                                        if (
-                                                                            cell.classList.contains(
-                                                                                "table-grid-cell"
-                                                                            )
-                                                                        ) {
-                                                                            const index = Array.from(
-                                                                                tableGrid.children
-                                                                            ).indexOf(cell);
-                                                                            const hoveredRows =
-                                                                                Math.floor(index / 10) +
-                                                                                1;
-                                                                            const hoveredCols =
-                                                                                (index % 10) + 1;
-                                                                            updateActiveCells(
-                                                                                hoveredRows,
-                                                                                hoveredCols
-                                                                            );
-                                                                        }
-                                                                    };
+                                                                tableGrid.addEventListener("mousemove", tableGrid.mousemoveHandler);
+                                                                tableGrid.addEventListener("click", tableGrid.clickHandler);
+                                                                tableGrid.hasInitializedEvents = true;
+                                                            }
+                                                        }
+                                                    }, 0);
+                                                };
+                                                handleMenuToggle(e, initTableGrid);
+                                            }}
+                                            onContextMenu=${(e) => {
+                                                const initTableGrid = (menu) => {
+                                                    setTimeout(() => {
+                                                        const tableGrid = menu.querySelector(".table-grid-container");
+                                                        const dimensionsEl = menu.querySelector(".table-grid-dimensions");
 
-                                                                    // Evento para el click
-                                                                    tableGrid.clickHandler = (event) => {
-                                                                        const cell = event.target;
-                                                                        if (
-                                                                            cell.classList.contains(
-                                                                                "table-grid-cell"
-                                                                            )
-                                                                        ) {
-                                                                            const index = Array.from(
-                                                                                tableGrid.children
-                                                                            ).indexOf(cell);
-                                                                            const rows =
-                                                                                Math.floor(index / 10) +
-                                                                                1;
-                                                                            const cols =
-                                                                                (index % 10) + 1;
-
-                                                                            // Generar e insertar la tabla
-                                                                            generateTable(rows, cols);
-                                                                            menu.style.display = "none";
-                                                                        }
-                                                                    };
-
-                                                                    // Añadimos los listeners
-                                                                    tableGrid.addEventListener(
-                                                                        "mousemove",
-                                                                        tableGrid.mousemoveHandler
-                                                                    );
-                                                                    tableGrid.addEventListener(
-                                                                        "click",
-                                                                        tableGrid.clickHandler
-                                                                    );
-
-                                                                    // Marcamos que ya se inicializaron
-                                                                    tableGrid.hasInitializedEvents = true;
+                                                        if (tableGrid) {
+                                                            const updateActiveCells = (rows, cols) => {
+                                                                const cells = tableGrid.querySelectorAll(".table-grid-cell");
+                                                                cells.forEach((cell, index) => {
+                                                                    const cellRow = Math.floor(index / 10) + 1;
+                                                                    const cellCol = (index % 10) + 1;
+                                                                    if (cellRow <= rows && cellCol <= cols) {
+                                                                        cell.classList.add("active");
+                                                                    } else {
+                                                                        cell.classList.remove("active");
+                                                                    }
+                                                                });
+                                                                if (dimensionsEl) {
+                                                                    dimensionsEl.textContent = `${cols}x${rows}`;
                                                                 }
-                                                            }
-                                                        }, 0);
+                                                            };
 
-                                                        const closeMenu = (event) => {
-                                                            if (
-                                                                !menu.contains(event.target) &&
-                                                                !e.target.contains(event.target)
-                                                            ) {
-                                                                menu.style.display = "none";
-                                                                document.removeEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                );
-                                                                // No necesitamos eliminar los event listeners
-                                                                // ya que los mantenemos durante toda la vida del componente
+                                                            updateActiveCells(1, 1);
+
+                                                            if (!tableGrid.hasInitializedEvents) {
+                                                                tableGrid.mousemoveHandler = (event) => {
+                                                                    const cell = event.target;
+                                                                    if (cell.classList.contains("table-grid-cell")) {
+                                                                        const index = Array.from(tableGrid.children).indexOf(cell);
+                                                                        const hoveredRows = Math.floor(index / 10) + 1;
+                                                                        const hoveredCols = (index % 10) + 1;
+                                                                        updateActiveCells(hoveredRows, hoveredCols);
+                                                                    }
+                                                                };
+
+                                                                tableGrid.clickHandler = (event) => {
+                                                                    const cell = event.target;
+                                                                    if (cell.classList.contains("table-grid-cell")) {
+                                                                        const index = Array.from(tableGrid.children).indexOf(cell);
+                                                                        const rows = Math.floor(index / 10) + 1;
+                                                                        const cols = (index % 10) + 1;
+                                                                        generateTable(rows, cols);
+                                                                        menu.style.display = "none";
+                                                                    }
+                                                                };
+
+                                                                tableGrid.addEventListener("mousemove", tableGrid.mousemoveHandler);
+                                                                tableGrid.addEventListener("click", tableGrid.clickHandler);
+                                                                tableGrid.hasInitializedEvents = true;
                                                             }
-                                                        };
-                                                        setTimeout(
-                                                            () =>
-                                                                document.addEventListener(
-                                                                    "click",
-                                                                    closeMenu
-                                                                ),
-                                                            0
-                                                        );
-                                                    }
-                                                }
+                                                        }
+                                                    }, 0);
+                                                };
+                                                handleMenuOpen(e, initTableGrid);
                                             }}
                                             title="Table"
                                         >
@@ -3596,6 +3949,46 @@ function hello() {
                                             </svg>
                                         </button>
                                         <button
+                                            class="editor-menu"
+                                            style="padding-left: 4px;"
+                                            onClick=${(e) => {
+                                                if (e.button === 0) {
+                                                    // Left click - compare with default file
+                                                    compareWithDefault();
+                                                }
+                                            }}
+                                            onContextMenu=${(e) => {
+                                                // Right click - show file list
+                                                e.preventDefault();
+                                                showCompareFileList();
+                                            }}
+                                            title="Compare Changes"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="M10 23v-2H5q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h5V1h2v22zm4-18V3h5q.825 0 1.413.588T21 5v14q0 .825-.587 1.413T19 21h-5v-2h5V5zm0 8v-2h3v2zm0-4V7h3v2zm-7 8h3v-2H7zm0-4h3v-2H7zm0-4h3V7H7z"
+                                                />
+                                            </svg>
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="16"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12 15.4l-6-6L7.4 8l4.6 4.6L16.6 8L18 9.4z"
+                                                ></path>
+                                            </svg>
+                                        </button>
+                                        <button
                                             onClick=${toggleWordWrap}
                                             class=${wordWrap === "on" ? "active" : ""}
                                             title="Toggle Word Wrap"
@@ -3649,18 +4042,23 @@ function hello() {
                                                 const newPosition =
                                                     previewPosition === "right" ? "bottom" : "right";
                                                 setPreviewPosition(newPosition);
-                                                
+
                                                 // Si cambia a posición derecha, restaurar proporciones guardadas
                                                 if (newPosition === "right") {
                                                     setTimeout(() => {
-                                                        const editorContent = document.querySelector('.editor-content');
+                                                        const editorContent =
+                                                            document.querySelector(".editor-content");
                                                         if (editorContent) {
-                                                            const savedRatio = localStorage.getItem("editorGridRatio") || "1fr 0fr 1fr";
-                                                            editorContent.style.gridTemplateColumns = savedRatio;
+                                                            const savedRatio =
+                                                                localStorage.getItem(
+                                                                    "editorGridRatio"
+                                                                ) || "1fr 0fr 1fr";
+                                                            editorContent.style.gridTemplateColumns =
+                                                                savedRatio;
                                                         }
                                                     }, 0);
                                                 }
-                                                
+
                                                 try {
                                                     localStorage.setItem(
                                                         "editorPreviewPosition",
@@ -3729,7 +4127,9 @@ function hello() {
                                     class="editor-content ${previewPosition} ${!showPreview
                                         ? "preview-hidden"
                                         : ""}"
-                                    style="${previewPosition === 'right' && showPreview ? `grid-template-columns: ${gridRatio};` : ''}"
+                                    style="${previewPosition === "right" && showPreview
+                                        ? `grid-template-columns: ${gridRatio};`
+                                        : ""}"
                                 >
                                     <div
                                         ref=${containerRef}
@@ -3754,12 +4154,21 @@ function hello() {
                         <footer class="footer">
                             <!-- Botón de configuración de línea -->
                             <button id="config-line-button" class="config-line-button hidden">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z" fill="currentColor"/>
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                >
+                                    <path
+                                        d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64z"
+                                        fill="currentColor"
+                                    />
                                 </svg>
                                 <span id="config-line-text">Configurar línea</span>
                             </button>
-                            
+
                             <!-- Panel de asistencia de configuración -->
                             <div id="config-assistant" class="config-assistant hidden">
                                 <div class="config-assistant-header">
@@ -3781,170 +4190,170 @@ function hello() {
             // Configuration assistance system
             let currentBlockType = null;
             let currentLineNumber = null;
-            
+
             // Configuration definitions for different block types
             const blockConfigurations = {
                 animation: {
-                    title: 'Animation Configuration',
+                    title: "Animation Configuration",
                     sections: [
                         {
-                            title: 'Options',
-                            type: 'options',
-                            options: ['-loop', '-autoplay']
+                            title: "Options",
+                            type: "options",
+                            options: ["-loop", "-autoplay"],
                         },
                         {
-                            title: 'Custom Style',
-                            type: 'custom',
-                            placeholder: 'height:15em; width:100%;',
-                            pattern: 'style="{value}"'
+                            title: "Custom Style",
+                            type: "custom",
+                            placeholder: "height:15em; width:100%;",
+                            pattern: 'style="{value}"',
                         },
                         {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Use loop and autoplay options to control the animation. Use custom style to adjust size and appearance.'
-                        }
-                    ]
+                            title: "Information",
+                            type: "info",
+                            info: "Use loop and autoplay options to control the animation. Use custom style to adjust size and appearance.",
+                        },
+                    ],
                 },
                 svg: {
-                    title: 'SVG Configuration',
+                    title: "SVG Configuration",
                     sections: [
                         {
-                            title: 'Custom Style',
-                            type: 'custom',
-                            placeholder: 'height:20em; width:100%;',
-                            pattern: 'style="{value}"'
+                            title: "Custom Style",
+                            type: "custom",
+                            placeholder: "height:20em; width:100%;",
+                            pattern: 'style="{value}"',
                         },
                         {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Add custom styles to control the size and appearance of the SVG.'
-                        }
-                    ]
+                            title: "Information",
+                            type: "info",
+                            info: "Add custom styles to control the size and appearance of the SVG.",
+                        },
+                    ],
                 },
                 grid: {
-                    title: 'Grid Configuration',
+                    title: "Grid Configuration",
                     sections: [
                         {
-                            title: 'Columns',
-                            type: 'options',
-                            options: ['cols-1', 'cols-2', 'cols-3', 'cols-4', 'cols-5', 'cols-6']
+                            title: "Columns",
+                            type: "options",
+                            options: ["cols-1", "cols-2", "cols-3", "cols-4", "cols-5", "cols-6"],
                         },
                         {
-                            title: 'Spacing',
-                            type: 'options',
-                            options: ['gap-1', 'gap-2', 'gap-3', 'gap-4', 'gap-5', 'gap-6']
+                            title: "Spacing",
+                            type: "options",
+                            options: ["gap-1", "gap-2", "gap-3", "gap-4", "gap-5", "gap-6"],
                         },
                         {
-                            title: 'Behavior',
-                            type: 'options',
-                            options: ['responsive', 'auto-fit', 'equal-height']
+                            title: "Behavior",
+                            type: "options",
+                            options: ["responsive", "auto-fit", "equal-height"],
                         },
                         {
-                            title: 'Minimum Width in px (with auto-fit)',
-                            type: 'custom',
-                            placeholder: '250',
-                            pattern: 'min-{value}'
+                            title: "Minimum Width in px (with auto-fit)",
+                            type: "custom",
+                            placeholder: "250",
+                            pattern: "min-{value}",
                         },
                         {
-                            title: 'Custom Style',
-                            type: 'custom',
-                            placeholder: 'background: #f0f0f0; padding: 1rem;',
-                            pattern: 'style="{value}"'
+                            title: "Custom Style",
+                            type: "custom",
+                            placeholder: "background: #f0f0f0; padding: 1rem;",
+                            pattern: 'style="{value}"',
                         },
                         {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Use grid-advanced or grid-dashboard for custom layouts with HTML and CSS.'
-                        }
-                    ]
+                            title: "Information",
+                            type: "info",
+                            info: "Use grid-advanced or grid-dashboard for custom layouts with HTML and CSS.",
+                        },
+                    ],
                 },
                 note: {
-                    title: 'Note Configuration',
+                    title: "Note Configuration",
                     sections: [
                         {
-                            title: 'Available Options',
-                            type: 'info',
-                            info: 'Note blocks do not require additional configuration. Just use :::note to create a note.'
-                        }
-                    ]
+                            title: "Available Options",
+                            type: "info",
+                            info: "Note blocks do not require additional configuration. Just use :::note to create a note.",
+                        },
+                    ],
                 },
                 warning: {
-                    title: 'Warning Configuration',
+                    title: "Warning Configuration",
                     sections: [
                         {
-                            title: 'Available Options',
-                            type: 'info',
-                            info: 'Warning blocks do not require additional configuration. Just use :::warning to create a warning.'
-                        }
-                    ]
+                            title: "Available Options",
+                            type: "info",
+                            info: "Warning blocks do not require additional configuration. Just use :::warning to create a warning.",
+                        },
+                    ],
                 },
                 details: {
-                    title: 'Details Configuration',
+                    title: "Details Configuration",
                     sections: [
                         {
-                            title: 'Options',
-                            type: 'options',
-                            options: ['-open']
+                            title: "Options",
+                            type: "options",
+                            options: ["-open"],
                         },
                         {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Use -open to make the block appear open by default. Example: :::details -open Title'
-                        }
-                    ]
+                            title: "Information",
+                            type: "info",
+                            info: "Use -open to make the block appear open by default. Example: :::details -open Title",
+                        },
+                    ],
                 },
                 iframe: {
-                    title: 'Iframe Configuration',
+                    title: "Iframe Configuration",
                     sections: [
                         {
-                            title: 'Custom Style',
-                            type: 'custom',
-                            placeholder: 'display:none; border:none;',
-                            pattern: 'style="{value}"'
-                        },                            
-                        {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Customize the iframe with height, styles and other HTML attributes. The URL goes inside the block.'
-                        }
-                    ]
-                },
-                float: {
-                    title: 'Float Configuration',
-                    sections: [
-                        {
-                            title: 'Information',
-                            type: 'info',
-                            info: 'Floating blocks require a unique ID. Example: :::float-my-id'
+                            title: "Custom Style",
+                            type: "custom",
+                            placeholder: "display:none; border:none;",
+                            pattern: 'style="{value}"',
                         },
                         {
-                            title: 'Identifier',
-                            type: 'custom',
+                            title: "Information",
+                            type: "info",
+                            info: "Customize the iframe with height, styles and other HTML attributes. The URL goes inside the block.",
+                        },
+                    ],
+                },
+                float: {
+                    title: "Float Configuration",
+                    sections: [
+                        {
+                            title: "Information",
+                            type: "info",
+                            info: "Floating blocks require a unique ID. Example: :::float-my-id",
+                        },
+                        {
+                            title: "Identifier",
+                            type: "custom",
                             inputs: [
                                 {
-                                    type: 'text',
-                                    id: 'float-id',
-                                    label: 'Floating element ID',
-                                    placeholder: 'Enter new ID',
-                                    data: 'float-id',
-                                    onChange: 'handleFloatIdChange'
-                                }
-                            ]
-                        }
-                    ]
-                }
+                                    type: "text",
+                                    id: "float-id",
+                                    label: "Floating element ID",
+                                    placeholder: "Enter new ID",
+                                    data: "float-id",
+                                    onChange: "handleFloatIdChange",
+                                },
+                            ],
+                        },
+                    ],
+                },
             };
 
             function checkForConfigurableBlock(position) {
                 const editor = window.currentEditor;
                 if (!editor) return;
-                
+
                 const model = editor.getModel();
                 const lineContent = model.getLineContent(position.lineNumber).trim();
-                
+
                 // Detectar tipo de bloque
                 let blockType = null;
-                
+
                 // Usar expresiones regulares para mejor detección
                 const gridMatch = lineContent.match(/^:::grid/);
                 const noteMatch = lineContent.match(/^:::note/);
@@ -3954,25 +4363,25 @@ function hello() {
                 const floatMatch = lineContent.match(/^:::float-/);
                 const animationMatch = lineContent.match(/^```animation/);
                 const svgMatch = lineContent.match(/^```svg/);
-                
+
                 if (gridMatch) {
-                    blockType = 'grid';
+                    blockType = "grid";
                 } else if (noteMatch) {
-                    blockType = 'note';
+                    blockType = "note";
                 } else if (warningMatch) {
-                    blockType = 'warning';
+                    blockType = "warning";
                 } else if (detailsMatch) {
-                    blockType = 'details';
+                    blockType = "details";
                 } else if (iframeMatch) {
-                    blockType = 'iframe';
+                    blockType = "iframe";
                 } else if (floatMatch) {
-                    blockType = 'float';
+                    blockType = "float";
                 } else if (animationMatch) {
-                    blockType = 'animation';
+                    blockType = "animation";
                 } else if (svgMatch) {
-                    blockType = 'svg';
+                    blockType = "svg";
                 }
-                
+
                 if (blockType) {
                     currentBlockType = blockType;
                     currentLineNumber = position.lineNumber;
@@ -3982,47 +4391,47 @@ function hello() {
                     currentBlockType = null;
                     currentLineNumber = null;
                     hideConfigButton();
-                    
+
                     // También cerrar el asistente si está abierto
-                    const assistant = document.getElementById('config-assistant');
-                    if (assistant && !assistant.classList.contains('hidden')) {
+                    const assistant = document.getElementById("config-assistant");
+                    if (assistant && !assistant.classList.contains("hidden")) {
                         hideConfigAssistant();
                     }
                 }
             }
 
             function showConfigButton(blockType) {
-                const button = document.getElementById('config-line-button');
-                const text = document.getElementById('config-line-text');
-                
-                button.classList.remove('hidden');
+                const button = document.getElementById("config-line-button");
+                const text = document.getElementById("config-line-text");
+
+                button.classList.remove("hidden");
                 text.textContent = `Configure ${blockType}`;
             }
 
             function hideConfigButton() {
-                const button = document.getElementById('config-line-button');
-                button.classList.add('hidden');
+                const button = document.getElementById("config-line-button");
+                button.classList.add("hidden");
             }
 
             function showConfigAssistant(blockType, currentLine) {
-                const assistant = document.getElementById('config-assistant');
-                const title = document.getElementById('config-title');
-                const content = document.getElementById('config-content');
-                
+                const assistant = document.getElementById("config-assistant");
+                const title = document.getElementById("config-title");
+                const content = document.getElementById("config-content");
+
                 const config = blockConfigurations[blockType];
                 if (!config) return;
-                
+
                 title.textContent = config.title;
                 content.innerHTML = generateConfigContent(config, currentLine);
-                
-                assistant.classList.remove('hidden');
+
+                assistant.classList.remove("hidden");
                 hideConfigButton(); // Ocultar el botón cuando se abre el panel
             }
 
             function hideConfigAssistant() {
-                const assistant = document.getElementById('config-assistant');
-                assistant.classList.add('hidden');
-                
+                const assistant = document.getElementById("config-assistant");
+                assistant.classList.add("hidden");
+
                 // Si hay un bloque configurable en la línea actual, mostrar el botón de nuevo
                 // Solo si currentBlockType existe
                 if (currentBlockType && currentLineNumber) {
@@ -4037,122 +4446,133 @@ function hello() {
             }
 
             function generateConfigContent(config, currentLine) {
-                let html = '';
-                
+                let html = "";
+
                 // Parse current line to extract existing configurations
                 const parsed = parseExistingOptions(currentLine);
                 const existingOptions = parsed.options;
                 const remainingText = parsed.remainingText;
-                
+
                 // Store additional text to preserve it
                 window.currentRemainingText = remainingText;
-                
+
                 // Initialize custom options from existing line
-                window.customConfigOptions = existingOptions.filter(opt => 
-                    opt.includes('style=') || opt.includes('min-') || opt.includes('=')
+                window.customConfigOptions = existingOptions.filter(
+                    (opt) => opt.includes("style=") || opt.includes("min-") || opt.includes("=")
                 );
-                
-                config.sections.forEach(section => {
+
+                config.sections.forEach((section) => {
                     html += `<div class="config-section">`;
                     html += `<div class="config-section-title">${section.title}</div>`;
-                    
-                    if (section.type === 'options') {
+
+                    if (section.type === "options") {
                         html += `<div class="config-options">`;
-                        section.options.forEach(option => {
+                        section.options.forEach((option) => {
                             const isActive = existingOptions.includes(option);
-                            html += `<div class="config-option ${isActive ? 'active' : ''}" data-option="${option}">${option}</div>`;
+                            html += `<div class="config-option ${
+                                isActive ? "active" : ""
+                            }" data-option="${option}">${option}</div>`;
                         });
                         html += `</div>`;
-                    } else if (section.type === 'custom') {
+                    } else if (section.type === "custom") {
                         // Check if we have inputs array (new format)
                         if (section.inputs && Array.isArray(section.inputs)) {
                             html += `<div class="config-custom-input">`;
-                            
-                            section.inputs.forEach(input => {
-                                if (input.type === 'text') {
-                                    let existingValue = '';
-                                    
+
+                            section.inputs.forEach((input) => {
+                                if (input.type === "text") {
+                                    let existingValue = "";
+
                                     // Si estamos en un bloque float, intentamos extraer el ID
-                                    if (input.data === 'float-id' && currentBlockType === 'float') {
+                                    if (input.data === "float-id" && currentBlockType === "float") {
                                         // Extraer el ID del nombre del float (:::float-ID)
                                         const floatMatch = currentLine.match(/^:::float-(\S+)/);
                                         if (floatMatch && floatMatch[1]) {
                                             existingValue = floatMatch[1];
-                                            
+
                                             // Guardar el ID original para referencia
                                             window.originalFloatId = existingValue;
                                         }
                                     }
-                                    
+
                                     html += `<label for="${input.id}">${input.label}</label>`;
                                     html += `<input autocomplete="off" type="text" id="${input.id}" placeholder="${input.placeholder}" 
                                         data-input="${input.data}" value="${existingValue}" 
                                         oninput="window.${input.onChange}(this)">`;
                                 }
                             });
-                            
+
                             html += `</div>`;
-                        } 
+                        }
                         // El formato antiguo para compatibilidad
                         else {
                             html += `<div class="config-custom-input">`;
-                            
-                            // Get existing value for this specific pattern type
-                            let existingValue = '';
-                            let matchingOption = null;
-                            
-                            // Pattern matching that works with actual pattern values
-                            if (section.pattern.includes('style=')) {
-                                // Look for style= options
-                                matchingOption = existingOptions.find(opt => opt.includes('style='));
-                            } else if (section.pattern.includes('height=')) {
-                                // Look for height= options
-                                matchingOption = existingOptions.find(opt => opt.includes('height='));
-                            } else if (section.pattern.includes('min-')) {
-                                // Look for min- options
-                                matchingOption = existingOptions.find(opt => opt.startsWith('min-'));
-                            } else if (section.pattern === '{value}') {
-                                // Look for generic attribute options (like iframe attributes)
-                                matchingOption = existingOptions.find(opt => 
-                                    /^width\s*=\s*".+"$/i.test(opt) &&
-                                    !opt.includes('style=') &&
-                                    !opt.includes('height=') &&
-                                    !opt.startsWith('min-') &&
-                                    !opt.startsWith('cols-') &&
-                                    !opt.startsWith('gap-')
-                                );
 
+                            // Get existing value for this specific pattern type
+                            let existingValue = "";
+                            let matchingOption = null;
+
+                            // Pattern matching that works with actual pattern values
+                            if (section.pattern.includes("style=")) {
+                                // Look for style= options
+                                matchingOption = existingOptions.find((opt) => opt.includes("style="));
+                            } else if (section.pattern.includes("height=")) {
+                                // Look for height= options
+                                matchingOption = existingOptions.find((opt) => opt.includes("height="));
+                            } else if (section.pattern.includes("min-")) {
+                                // Look for min- options
+                                matchingOption = existingOptions.find((opt) => opt.startsWith("min-"));
+                            } else if (section.pattern === "{value}") {
+                                // Look for generic attribute options (like iframe attributes)
+                                matchingOption = existingOptions.find(
+                                    (opt) =>
+                                        /^width\s*=\s*".+"$/i.test(opt) &&
+                                        !opt.includes("style=") &&
+                                        !opt.includes("height=") &&
+                                        !opt.startsWith("min-") &&
+                                        !opt.startsWith("cols-") &&
+                                        !opt.startsWith("gap-")
+                                );
                             }
-                            
+
                             if (matchingOption) {
-                                if (section.pattern.includes('style=') && matchingOption.includes('style="')) {
+                                if (
+                                    section.pattern.includes("style=") &&
+                                    matchingOption.includes('style="')
+                                ) {
                                     const match = matchingOption.match(/style="([^"]*)"/);
-                                    existingValue = match ? match[1] : '';
-                                } else if (section.pattern.includes('height=') && matchingOption.includes('height=')) {
+                                    existingValue = match ? match[1] : "";
+                                } else if (
+                                    section.pattern.includes("height=") &&
+                                    matchingOption.includes("height=")
+                                ) {
                                     // Extraer valor de height="valor" o height='valor'
                                     const match = matchingOption.match(/height=["']?([^"']*)["']?/);
-                                    existingValue = match ? match[1] : '';
-                                } else if (section.pattern.includes('min-') && matchingOption.startsWith('min-')) {
-                                    existingValue = matchingOption.replace('min-', '');
-                                } else if (section.pattern === '{value}') {
-                                    existingValue = matchingOption.replace(/"/g, '&#34;').trim();
+                                    existingValue = match ? match[1] : "";
+                                } else if (
+                                    section.pattern.includes("min-") &&
+                                    matchingOption.startsWith("min-")
+                                ) {
+                                    existingValue = matchingOption.replace("min-", "");
+                                } else if (section.pattern === "{value}") {
+                                    existingValue = matchingOption.replace(/"/g, "&#34;").trim();
                                 }
                             }
-                            
+
                             html += `<input type="text" placeholder="${section.placeholder}" data-pattern="${section.pattern}" value="${existingValue}" oninput="window.handleCustomInput(this)">`;
                             html += `</div>`;
                         }
-                    } else if (section.type === 'info') {
+                    } else if (section.type === "info") {
                         html += `<div class="config-info">${section.info}</div>`;
                     }
-                    
+
                     html += `</div>`;
                 });
-                
+
                 // Current line preview
                 html += `<div class="config-preview" id="config-preview">${currentLine}</div>`;
                 html += `<button class="config-apply" onclick="window.applyConfiguration()">Apply Changes</button>`;
-                
+
                 return html;
             }
 
@@ -4160,41 +4580,40 @@ function hello() {
                 // Extract options from a line like ":::grid cols-2 gap-4 responsive style="background: red" additional title"
                 // or "```animation-loop-autoplay style="height:15em;" title"
                 let match;
-                let restOfLine = '';
-                
-                if (currentLine.startsWith(':::')) {
+                let restOfLine = "";
+
+                if (currentLine.startsWith(":::")) {
                     // Para bloques que empiezan con :::
                     const blockRegex = /^:::([a-z-]+)(.*)$/;
                     match = currentLine.match(blockRegex);
-                    
-                    if (!match) return { options: [], remainingText: '' };
+
+                    if (!match) return { options: [], remainingText: "" };
                     restOfLine = match[2].trim();
-                    
-                } else if (currentLine.startsWith('```')) {
+                } else if (currentLine.startsWith("```")) {
                     // Para bloques que empiezan con ``` (animation, svg, etc)
                     const blockRegex = /^```([a-z-]+)(.*)$/;
                     match = currentLine.match(blockRegex);
-                    
-                    if (!match) return { options: [], remainingText: '' };
+
+                    if (!match) return { options: [], remainingText: "" };
                     restOfLine = match[2].trim();
                 } else {
-                    return { options: [], remainingText: '' };
+                    return { options: [], remainingText: "" };
                 }
-                
-                if (!restOfLine) return { options: [], remainingText: '' };
-                
+
+                if (!restOfLine) return { options: [], remainingText: "" };
+
                 // Separate options from additional text
                 // First, parse considering quotes for styles
                 const options = [];
-                let current = '';
+                let current = "";
                 let inQuotes = false;
-                let quoteChar = '';
-                let remainingText = '';
+                let quoteChar = "";
+                let remainingText = "";
                 let foundEndOfOptions = false;
-                
+
                 for (let i = 0; i < restOfLine.length; i++) {
                     const char = restOfLine[i];
-                    
+
                     if ((char === '"' || char === "'") && !inQuotes) {
                         inQuotes = true;
                         quoteChar = char;
@@ -4202,14 +4621,14 @@ function hello() {
                     } else if (char === quoteChar && inQuotes) {
                         inQuotes = false;
                         current += char;
-                        quoteChar = '';
-                    } else if (char === ' ' && !inQuotes) {
+                        quoteChar = "";
+                    } else if (char === " " && !inQuotes) {
                         if (current.trim()) {
                             // Check if this word is a valid option or additional text
                             const trimmedCurrent = current.trim();
                             if (isValidOption(trimmedCurrent)) {
                                 options.push(trimmedCurrent);
-                                current = '';
+                                current = "";
                             } else {
                                 // It's additional text, capture the rest
                                 foundEndOfOptions = true;
@@ -4221,7 +4640,7 @@ function hello() {
                         current += char;
                     }
                 }
-                
+
                 // Process the last token
                 if (current.trim() && !foundEndOfOptions) {
                     const trimmedCurrent = current.trim();
@@ -4231,38 +4650,47 @@ function hello() {
                         remainingText = trimmedCurrent;
                     }
                 }
-                
+
                 return { options, remainingText };
             }
-            
+
             function isValidOption(text) {
                 // List of known valid options
-                const validPrefixes = ['cols-', 'gap-', 'min-', 'style='];
-                const validStandalone = ['responsive', 'auto-fit', 'equal-height', '-open', 'loop', 'autoplay'];
-                
+                const validPrefixes = ["cols-", "gap-", "min-", "style="];
+                const validStandalone = [
+                    "responsive",
+                    "auto-fit",
+                    "equal-height",
+                    "-open",
+                    "loop",
+                    "autoplay",
+                ];
+
                 // Check if it's a valid standalone option
                 if (validStandalone.includes(text)) {
                     return true;
                 }
-                
+
                 // Check if it starts with a valid prefix
-                if (validPrefixes.some(prefix => text.startsWith(prefix))) {
+                if (validPrefixes.some((prefix) => text.startsWith(prefix))) {
                     return true;
                 }
-                
+
                 // For other special cases that could be options
                 // Like HTML attributes for iframe, etc.
-                if (text.includes('=') && !text.startsWith(':::') && !text.startsWith('```')) {
+                if (text.includes("=") && !text.startsWith(":::") && !text.startsWith("```")) {
                     return true;
                 }
-                
+
                 // Additional check for combined options (like animation-loop-autoplay)
-                if (text.startsWith('animation-') || 
-                    text.includes('-loop') || 
-                    text.includes('-autoplay')) {
+                if (
+                    text.startsWith("animation-") ||
+                    text.includes("-loop") ||
+                    text.includes("-autoplay")
+                ) {
                     return true;
                 }
-                
+
                 return false;
             }
 
@@ -4273,9 +4701,9 @@ function hello() {
                 // Avoid multiple initialization
                 if (configAssistantInitialized) return;
                 configAssistantInitialized = true;
-                
+
                 // Click on configuration button
-                document.getElementById('config-line-button').addEventListener('click', () => {
+                document.getElementById("config-line-button").addEventListener("click", () => {
                     if (currentBlockType && currentLineNumber) {
                         const editor = window.currentEditor;
                         const model = editor.getModel();
@@ -4283,22 +4711,25 @@ function hello() {
                         showConfigAssistant(currentBlockType, lineContent);
                     }
                 });
-                
+
                 // Close assistant
-                document.getElementById('config-close').addEventListener('click', hideConfigAssistant);
-                
+                document.getElementById("config-close").addEventListener("click", hideConfigAssistant);
+
                 // Event delegation for config options (visual toggles only)
-                document.getElementById('config-assistant').addEventListener('click', (e) => {
-                    if (e.target.classList.contains('config-option') && !e.target.classList.contains('remove-option')) {
+                document.getElementById("config-assistant").addEventListener("click", (e) => {
+                    if (
+                        e.target.classList.contains("config-option") &&
+                        !e.target.classList.contains("remove-option")
+                    ) {
                         e.preventDefault();
                         e.stopPropagation();
                         toggleConfigOption(e.target);
                     }
                 });
-                
+
                 // Escape key to close
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape') {
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "Escape") {
                         hideConfigAssistant();
                     }
                 });
@@ -4306,35 +4737,35 @@ function hello() {
 
             function toggleConfigOption(optionElement) {
                 const option = optionElement.dataset.option;
-                const isCurrentlyActive = optionElement.classList.contains('active');
-                
+                const isCurrentlyActive = optionElement.classList.contains("active");
+
                 // For mutually exclusive options (same prefix)
-                if (option.startsWith('cols-') || option.startsWith('gap-')) {
-                    const prefix = option.split('-')[0] + '-';
-                    
+                if (option.startsWith("cols-") || option.startsWith("gap-")) {
+                    const prefix = option.split("-")[0] + "-";
+
                     if (isCurrentlyActive) {
                         // If already active, just deactivate it (allow deselection)
-                        optionElement.classList.remove('active');
+                        optionElement.classList.remove("active");
                     } else {
                         // If not active, deactivate all from group and activate this one
-                        document.querySelectorAll('.config-option').forEach(opt => {
+                        document.querySelectorAll(".config-option").forEach((opt) => {
                             if (opt.dataset.option && opt.dataset.option.startsWith(prefix)) {
-                                opt.classList.remove('active');
+                                opt.classList.remove("active");
                             }
                         });
-                        
-                        optionElement.classList.add('active');
+
+                        optionElement.classList.add("active");
                     }
                 } else {
                     // For non-mutually exclusive options, simply toggle
 
                     if (isCurrentlyActive) {
-                        optionElement.classList.remove('active');
+                        optionElement.classList.remove("active");
                     } else {
-                        optionElement.classList.add('active');
+                        optionElement.classList.add("active");
                     }
                 }
-                
+
                 updatePreview();
             }
 
@@ -4342,46 +4773,46 @@ function hello() {
                 if (!currentBlockType || !currentLineNumber) {
                     return;
                 }
-                
+
                 const editor = window.currentEditor;
                 if (!editor) {
                     return;
                 }
-                
+
                 // Determinar el prefijo correcto basado en el tipo de bloque
                 let blockStart;
-                if (currentBlockType === 'animation' || currentBlockType === 'svg') {
+                if (currentBlockType === "animation" || currentBlockType === "svg") {
                     blockStart = `\`\`\`${currentBlockType}`;
                 } else {
                     blockStart = `:::${currentBlockType}`;
                 }
-                
+
                 // Get active options from visual toggles
-                const activeOptions = Array.from(document.querySelectorAll('.config-option.active'))
-                    .map(el => el.dataset.option)
-                    .filter(option => option && option.trim() !== '');
-                
+                const activeOptions = Array.from(document.querySelectorAll(".config-option.active"))
+                    .map((el) => el.dataset.option)
+                    .filter((option) => option && option.trim() !== "");
+
                 // Add custom options that were added via input
                 if (window.customConfigOptions && window.customConfigOptions.length > 0) {
                     activeOptions.push(...window.customConfigOptions);
                 }
-                
+
                 // Remove duplicates and filter empty options
                 const uniqueOptions = [...new Set(activeOptions)];
-                
+
                 // Build new line
                 let newLine = blockStart;
                 if (uniqueOptions.length > 0) {
-                    newLine += ' ' + uniqueOptions.join(' ');
+                    newLine += " " + uniqueOptions.join(" ");
                 }
-                
+
                 // Add additional text if it exists
                 if (window.currentRemainingText && window.currentRemainingText.trim()) {
-                    newLine += ' ' + window.currentRemainingText;
+                    newLine += " " + window.currentRemainingText;
                 }
-                
+
                 // Update preview
-                const preview = document.getElementById('config-preview');
+                const preview = document.getElementById("config-preview");
                 if (preview) {
                     preview.textContent = newLine;
                 }
@@ -4389,52 +4820,58 @@ function hello() {
 
             function applyConfiguration() {
                 if (!currentBlockType || !currentLineNumber) return;
-                
+
                 const editor = window.currentEditor;
                 if (!editor) return;
 
-                const preview = document.getElementById('config-preview');
+                const preview = document.getElementById("config-preview");
                 const newLine = preview.textContent;
 
                 const model = editor.getModel();
-                
+
                 // Caso especial para cambios de ID en bloques float
-                if (currentBlockType === 'float' && window.originalFloatId) {
+                if (currentBlockType === "float" && window.originalFloatId) {
                     // Extraer el nuevo ID del texto actualizado
                     const floatMatch = newLine.match(/^:::float-(\S+)/);
                     if (floatMatch && floatMatch[1]) {
                         const newFloatId = floatMatch[1];
-                        
+
                         if (newFloatId !== window.originalFloatId) {
                             // Verificar si el nuevo ID ya existe en otro elemento
                             if (!isFloatIdUnique(newFloatId, window.originalFloatId, editor)) {
-                                alert(`An element with the ID "${newFloatId}" already exists. The changes will not be applied. Please choose a unique ID.`);
+                                alert(
+                                    `An element with the ID "${newFloatId}" already exists. The changes will not be applied. Please choose a unique ID.`
+                                );
                                 return;
                             }
-                            
+
                             // Buscar y reemplazar todos los puntos de activación (?=originalId)
                             const fullText = model.getValue();
-                            const updatedText = fullText.replace(
-                                new RegExp(`\\(\\?=${window.originalFloatId}\\)`, 'g'),
-                                `(?=${newFloatId})`
-                            ).replace(
-                                new RegExp(`:::float-${window.originalFloatId}(?=[ \\n])`, 'g'),
-                                `:::float-${newFloatId}`
-                            );
-                            
+                            const updatedText = fullText
+                                .replace(
+                                    new RegExp(`\\(\\?=${window.originalFloatId}\\)`, "g"),
+                                    `(?=${newFloatId})`
+                                )
+                                .replace(
+                                    new RegExp(`:::float-${window.originalFloatId}(?=[ \\n])`, "g"),
+                                    `:::float-${newFloatId}`
+                                );
+
                             if (fullText !== updatedText) {
                                 // Solo aplicar si hay cambios
                                 const fullRange = {
                                     startLineNumber: 1,
                                     startColumn: 1,
                                     endLineNumber: model.getLineCount(),
-                                    endColumn: model.getLineMaxColumn(model.getLineCount())
+                                    endColumn: model.getLineMaxColumn(model.getLineCount()),
                                 };
-                                
-                                editor.executeEdits('', [{
-                                    range: fullRange,
-                                    text: updatedText
-                                }]);
+
+                                editor.executeEdits("", [
+                                    {
+                                        range: fullRange,
+                                        text: updatedText,
+                                    },
+                                ]);
                             }
                         }
                     }
@@ -4442,27 +4879,28 @@ function hello() {
                     editor.focus();
                     return;
                 }
-                
+
                 // Apply changes to editor
                 const range = {
                     startLineNumber: currentLineNumber,
                     startColumn: 1,
                     endLineNumber: currentLineNumber,
-                    endColumn: model.getLineMaxColumn(currentLineNumber)
+                    endColumn: model.getLineMaxColumn(currentLineNumber),
                 };
-                
-                editor.executeEdits('', [{
-                    range: range,
-                    text: newLine
-                }]);
-                
-                
+
+                editor.executeEdits("", [
+                    {
+                        range: range,
+                        text: newLine,
+                    },
+                ]);
+
                 // Close assistant only, but keep button visible
                 hideConfigAssistant();
-                
+
                 // Keep configurable block state
                 // Don't clear currentBlockType and currentLineNumber
-                
+
                 // Focus back to editor
                 editor.focus();
             }
@@ -4479,7 +4917,7 @@ function hello() {
                 if (inputDebounceTimer) {
                     clearTimeout(inputDebounceTimer);
                 }
-                
+
                 // Set new timer with longer debounce to prevent multiple executions
                 inputDebounceTimer = setTimeout(() => {
                     if (!isProcessingInput) {
@@ -4493,86 +4931,87 @@ function hello() {
                 if (isProcessingInput) {
                     return;
                 }
-                
+
                 isProcessingInput = true;
-                
+
                 const pattern = inputElement.dataset.pattern;
                 const value = inputElement.value.trim();
-                
+
                 try {
                     if (!pattern) {
-                        console.error('No pattern found for input');
+                        console.error("No pattern found for input");
                         return;
                     }
-                    
+
                     // Initialize custom options array if not exists
                     window.customConfigOptions = window.customConfigOptions || [];
-                    
+
                     // Remove ALL existing options with the same pattern type (aggressive filtering)
                     const originalLength = window.customConfigOptions.length;
-                    window.customConfigOptions = window.customConfigOptions.filter(opt => {
+                    window.customConfigOptions = window.customConfigOptions.filter((opt) => {
                         let shouldRemove = false;
-                        
-                        // Check if this is a style pattern (any pattern containing "style")
-                        if (pattern.includes('style=')) {
-                            // Remove ANY option that contains 'style=' 
-                            if (opt.includes('style=')) {
-                                shouldRemove = true;
-                            }
-                        } else if (pattern.includes('height=')) {
-                            // Remove ANY option that contains 'height='
-                            if (opt.includes('height=')) {
-                                shouldRemove = true;
-                            }
-                        } else if (pattern.includes('min-')) {
-                            // Remove ANY option that starts with 'min-'
-                            if (opt.startsWith('min-')) {
-                                shouldRemove = true;
-                            }
-                        } else if (pattern === '{value}') {
-                            // Remove generic attributes (but not style=, height= or min-)
-                            if (opt.includes('=') && 
-                                !opt.includes('style=') && 
-                                !opt.includes('height=') && 
-                                !opt.startsWith('min-') && 
-                                !opt.startsWith('cols-') && 
-                                !opt.startsWith('gap-')) {
 
+                        // Check if this is a style pattern (any pattern containing "style")
+                        if (pattern.includes("style=")) {
+                            // Remove ANY option that contains 'style='
+                            if (opt.includes("style=")) {
+                                shouldRemove = true;
+                            }
+                        } else if (pattern.includes("height=")) {
+                            // Remove ANY option that contains 'height='
+                            if (opt.includes("height=")) {
+                                shouldRemove = true;
+                            }
+                        } else if (pattern.includes("min-")) {
+                            // Remove ANY option that starts with 'min-'
+                            if (opt.startsWith("min-")) {
+                                shouldRemove = true;
+                            }
+                        } else if (pattern === "{value}") {
+                            // Remove generic attributes (but not style=, height= or min-)
+                            if (
+                                opt.includes("=") &&
+                                !opt.includes("style=") &&
+                                !opt.includes("height=") &&
+                                !opt.startsWith("min-") &&
+                                !opt.startsWith("cols-") &&
+                                !opt.startsWith("gap-")
+                            ) {
                                 shouldRemove = true;
                             }
                         }
-                        
+
                         return !shouldRemove; // Keep options that should NOT be removed
                     });
-                                        
+
                     // If value is not empty, add new option
                     if (value) {
                         let optionText;
-                        
+
                         // Handle different pattern types with pattern detection
-                        if (pattern.includes('style=')) {
+                        if (pattern.includes("style=")) {
                             // For styles, construct with quotes
                             optionText = `style="${value}"`;
-                        } else if (pattern.includes('height=')) {
+                        } else if (pattern.includes("height=")) {
                             // Para altura, sin comillas para facilitar el uso
                             optionText = `height="${value}"`;
-                        } else if (pattern.includes('min-')) {
+                        } else if (pattern.includes("min-")) {
                             // For min values
                             optionText = `min-${value}`;
-                        } else if (pattern === '{value}') {
+                        } else if (pattern === "{value}") {
                             // For generic attributes
                             optionText = value;
                         } else {
                             // Fallback for other patterns
-                            optionText = pattern.replace('{value}', value);
+                            optionText = pattern.replace("{value}", value);
                         }
-                        
+
                         // Double-check for duplicates before adding
                         if (!window.customConfigOptions.includes(optionText)) {
                             window.customConfigOptions.push(optionText);
                         }
                     }
-                    
+
                     updatePreview();
                 } finally {
                     // Always release the processing flag
@@ -4591,33 +5030,33 @@ function hello() {
             // Función para verificar si un ID de elemento flotante ya existe
             function isFloatIdUnique(newId, currentId = null, editor = window.currentEditor) {
                 if (!editor || !newId) return false;
-                
+
                 const currentContent = editor.getValue();
-                
+
                 // Patrones para buscar elementos con el ID especificado
                 const triggerPattern = new RegExp(`\\(?=\\s*${newId}\\s*\\)`, "i");
                 const floatPattern = new RegExp(`:::float-\\s*${newId}\\s*$`, "mi");
-                
+
                 return !(triggerPattern.test(currentContent) || floatPattern.test(currentContent));
             }
-            
+
             // Función para cambiar el ID de elementos flotantes
             function handleFloatIdChange(inputElement) {
                 // Clear previous timer
                 if (inputDebounceTimer) {
                     clearTimeout(inputDebounceTimer);
                 }
-                
+
                 // Set new timer with longer debounce to prevent multiple executions
                 inputDebounceTimer = setTimeout(() => {
                     if (!isProcessingInput) {
                         isProcessingInput = true;
                         try {
                             const newId = inputElement.value.trim();
-                            
+
                             if (newId && window.originalFloatId && newId !== window.originalFloatId) {
                                 // Actualizar solo en la vista previa
-                                const preview = document.getElementById('config-preview');
+                                const preview = document.getElementById("config-preview");
                                 if (preview) {
                                     preview.textContent = ":::float-" + newId;
                                 }

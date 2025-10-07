@@ -29,9 +29,9 @@ function ThemeToggle() {
             window.currentEditor.updateOptions({
                 theme: getCurrentThemeData()?.monacoTheme || 'vs-dark'
             });
-        }else{
-            document.documentElement.setAttribute('monaco-theme', getCurrentThemeData()?.monacoTheme || 'vs-dark');
         }
+
+        document.documentElement.setAttribute('monaco-theme', getCurrentThemeData()?.monacoTheme || 'vs-dark');
 
         // Save to localStorage
         localStorage.setItem('theme', currentTheme);

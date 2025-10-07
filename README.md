@@ -256,6 +256,7 @@ The editor includes several advanced creation tools:
    - Settings → Pages
    - Source: Deploy from branch
    - Branch: main / docs
+3. Changue https://s4mc.github.io/Files/Blog-Code for your url 
 
 ### Static Hosting
 Deploy the `docs/` folder to any static hosting service:
