@@ -18,7 +18,8 @@
                 "imports": {
                     "preact": "./cdn/preact/preact.mjs",
                     "preact/hooks": "./cdn/preact/hooks.mjs",
-                    "htm/preact": "./cdn/preact/htm-preact.mjs"
+                    "htm/preact": "./cdn/preact/htm-preact.mjs",
+                    "config": "./config.js"
                 }
             }
         </script>
@@ -38,6 +39,7 @@
                 manageEscapeIframe,
                 manageClickFloatButton,
             } from "./components/markdownProcessor.js";
+            import CONFIG, { resolveContentPath } from "config";
 
             // Handler for Escape key
             document.addEventListener("keydown", function (e) {
@@ -55,6 +57,67 @@
                 const [title, setTitle] = useState("");
                 const [loading, setLoading] = useState(true);
                 const [error, setError] = useState(null);
+                const [allowedPosts, setAllowedPosts] = useState(null);
+
+                /**
+                 * Load allowed posts from search.json if strict mode is enabled
+                 */
+                useEffect(() => {
+                    if (CONFIG.security.strictMode) {
+                        fetch(`${CONFIG.contentUrl}/search.json`)
+                            .then(res => res.json())
+                            .then(data => {
+                                // Resolve relative paths and create set
+                                const paths = data.entries.map(entry => resolveContentPath(entry.path));
+                                setAllowedPosts(new Set(paths));
+                            })
+                            .catch(err => {
+                                console.error('[Strict Mode] Failed to load search.json:', err);
+                                setAllowedPosts(new Set()); // Empty set = no posts allowed
+                            });
+                    }
+                }, []);
+
+                /**
+                 * Validates if a URL is from an allowed domain
+                 * @param {string} url - The URL to validate
+                 * @returns {boolean} - True if allowed, false otherwise
+                 */
+                const isAllowedDomain = (url) => {
+                    try {
+                        // Allow relative paths (local files)
+                        if (url.startsWith('./') || url.startsWith('../') || !url.includes('://')) {
+                            return true;
+                        }
+
+                        const urlObj = new URL(url);
+                        const origin = urlObj.origin;
+
+                        return CONFIG.security.allowedDomains.some(domain => origin.startsWith(domain));
+                    } catch (e) {
+                        console.error('[Security] Invalid URL:', url);
+                        return false;
+                    }
+                };
+
+                /**
+                 * Validates if a post is in the allowed list (strict mode)
+                 * @param {string} path - The post path to validate
+                 * @returns {boolean} - True if allowed, false otherwise
+                 */
+                const isAllowedPost = (path) => {
+                    if (!CONFIG.security.strictMode) {
+                        return true; // Strict mode disabled, allow all
+                    }
+
+                    if (allowedPosts === null) {
+                        return false; // Still loading, deny for now
+                    }
+
+                    const isAllowed = allowedPosts.has(path);
+
+                    return isAllowed;
+                };
 
                 const handleNavigateToEntry = (entry) => {
                     window.location.href = `./post.html?path=${encodeURIComponent(entry.path)}`;
@@ -64,7 +127,7 @@
                     const urlParams = new URLSearchParams(
                         window.location.search
                     );
-                    const entryPath = urlParams.get("path");
+                    let entryPath = urlParams.get("path");
 
                     if (!entryPath) {
                         setError("Entry path not specified");
@@ -72,8 +135,34 @@
                         return;
                     }
 
+                    // Resolve relative paths to absolute URLs
+                    const resolvedPath = resolveContentPath(entryPath);
+
+                    // Security check 1: Validate domain whitelist
+                    if (!isAllowedDomain(resolvedPath)) {
+                        setError(`Security Error: Domain not allowed. Only posts from authorized domains can be loaded.`);
+                        setLoading(false);
+                        console.error('[Security] Attempted to load post from unauthorized domain:', resolvedPath);
+                        return;
+                    }
+
+                    // Security check 2: Validate against search.json (strict mode)
+                    if (CONFIG.security.strictMode) {
+                        if (allowedPosts === null) {
+                            // Still loading search.json, wait
+                            return;
+                        }
+
+                        if (!isAllowedPost(resolvedPath)) {
+                            setError(`Security Error: Post not found in authorized list. Only posts listed in search.json can be loaded.`);
+                            setLoading(false);
+                            console.error('[Security - Strict Mode] Attempted to load unlisted post:', resolvedPath);
+                            return;
+                        }
+                    }
+
                     // Load Markdown file
-                    fetch(entryPath)
+                    fetch(resolvedPath)
                         .then((response) => {
                             if (!response.ok) {
                                 throw new Error(
@@ -87,7 +176,7 @@
                             let finalJS = "";
                             let finalHtml = "";
 
-                            if (entryPath.endsWith(".html")) {
+                            if (resolvedPath.endsWith(".html")) {
                                 // Handle HTML content
                                 setContent(markdownContent);
                                 // Extract title from <title> tag
@@ -98,7 +187,7 @@
                                 const firstH1 = doc.querySelector("h1");
                                 if (firstH1) {
                                     setTitle(firstH1.textContent);
-                                    document.title = firstH1.textContent + " - Blog Code";
+                                    document.title = firstH1.textContent + " - " + CONFIG.app.name;
                                 }
 
                                 finalJS = doc.getElementById("entry-script").textContent;
@@ -116,7 +205,7 @@
                                     markdownContent.match(/^#\s+(.+)$/m);
                                 if (titleMatch) {
                                     setTitle(titleMatch[1]);
-                                    document.title = titleMatch[1] + " - Blog Code";
+                                    document.title = titleMatch[1] + " - " + CONFIG.app.name;
                                 }
                             }
 
@@ -136,7 +225,7 @@
                             setError(err.message);
                             setLoading(false);
                         });
-                }, []);
+                }, [allowedPosts]); // Re-run when allowedPosts changes
 
                 return html`
                     <div class="app">
@@ -167,7 +256,7 @@
                             `}
                         </main>
                         <footer class="footer">
-                            <p>© 2025 Blog Code.</p>
+                            <p>${CONFIG.app.copyright}</p>
                         </footer>
                     </div>
                 `;

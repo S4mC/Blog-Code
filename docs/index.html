@@ -1,4 +1,4 @@
-<!doctype html><html lang=en data-theme=dark><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Code</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><link rel=stylesheet href=cdn/prism/prism_vsc.css><script src=cdn/prism/prism.js></script><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs"}}</script><style>#sidebarToggle{display:none}</style><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar}from"./components/Sidebar.js";function BlogList({entries:e}){return html`
+<!doctype html><html lang=en data-theme=dark><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Code</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs","config":"./config.js"}}</script><style>#sidebarToggle{display:none}</style><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar}from"./components/Sidebar.js";import CONFIG,{resolveContentPath}from"config";document.title=CONFIG.app.name;function BlogList({entries:e}){return html`
                     <div class="blog-list">
                         ${e.map(e=>html`
                                 <article
@@ -34,7 +34,7 @@
                                 </article>
                             `)}
                     </div>
-                `}function App(){const[e,t]=useState([]);useEffect(()=>{fetch("./search.json").then(e=>e.json()).then(e=>t(e.entries||[])).catch(e=>console.error("Error loading entries:",e))},[]);const n=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`};return html`
+                `}function App(){const[e,t]=useState([]);useEffect(()=>{fetch(`${CONFIG.contentUrl}/search.json`).then(e=>e.json()).then(e=>{const n=(e.entries||[]).map(e=>({...e,path:resolveContentPath(e.path)}));t(n)}).catch(e=>console.error("Error loading entries:",e))},[]);const n=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`};return html`
                     <div class="app">
                         <${Header} showSearch=${!0} onNavigateToEntry=${n} />
 
@@ -44,7 +44,7 @@
                         </main>
 
                         <footer class="footer">
-                            <p>© 2025 Blog Code.</p>
+                            <p>${CONFIG.app.copyright}</p>
                         </footer>
                     </div>
                 `}render(html`<${App} />`,document.getElementById("app"))</script>

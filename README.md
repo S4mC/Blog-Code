@@ -1,127 +1,176 @@
 # Blog Code
 
-A modern, lightweight blog system built with Preact and vanilla JavaScript that stores posts in Markdown and renders them to HTML for display.
+A modern, lightweight blog system built with Preact and vanilla JavaScript. Supports Markdown posts with live preview editor and advanced rendering features.
 
-<img width="1918" height="862" alt="image" src="https://github.com/user-attachments/assets/8b165212-cfe0-4779-bbd5-ca9e2244cc48" />
+<img width="1918" alt="Blog Code Screenshot" src="https://github.com/user-attachments/assets/8b165212-cfe0-4779-bbd5-ca9e2244cc48" />
 
 
 ## Features
 
-- **Advanced Markdown Editor**: Monaco Editor with syntax highlighting, autocomplete, and live preview
-- **Multi-tab Management in editor**: Automatic persistence in localStorage with unsaved change detection
-- **Smart List Continuation in editor**: Automatic pattern detection for ordered and unordered lists
-- **Multiple Themes**: Dark, Light, and Dark Blue themes with system preference detection  
-- **Advanced Search**: Real-time search through blog entries with fuzzy matching
-- **Responsive Design**: Mobile-first approach with adaptive layouts
-- **Code Syntax Highlighting**: Powered by PrismJS with VS Code-style themes
-- **SVG Pan & Zoom**: Interactive SVG support with zoom controls
-- **Lottie Animations**: Bodymovin/Lottie animation support with play/pause/reset controls
-- **Visual Creation Tools**: Grid Creator Modal with Simple, Responsive, and Visual modes
-- **Advanced Link System**: Internal anchors, header navigation, text search, and custom selectors
+- **Monaco Editor** with syntax highlighting and live preview
+- **Multi-tab Management** with localStorage persistence
+- **Multiple Themes** (Dark, Light, Dark Blue) with system preference detection
+- **Real-time Search** with fuzzy matching
+- **Code Highlighting** powered by PrismJS
+- **Interactive SVG** with pan & zoom
+- **Lottie Animations** support
+- **Security**: Domain whitelist and strict mode
+- **Centralized Config** in `config.js`
+
+## Quick Start
+
+### Testing Locally
+```bash
+git clone https://github.com/S4mC/Blog-Code.git
+cd Blog-Code
+# Serve with any local server
+```
+
+Uses demo content from `https://s4mc.github.io/Files/Blog-Code` by default.
+
+### Your Own Blog
+1. Clone this repo
+2. Create content repository with `search.json` and `posts/`
+3. Edit `config.js` with your content URL
+4. Run `compile.bat`
+5. Deploy both repositories
 
 ## Architecture
 
-### Frontend Framework
-- **Preact** (~3KB) - Lightweight React alternative
-- **HTM** - JSX-like syntax without build step
-- **ES Modules** - Native browser module system
+### Split Architecture
+- **App Repository** (this repo): HTML, JS, CSS, components
+- **Content Repository** (external): `search.json` + `posts/*.md`
 
-### Core Technologies
-- **Monaco Editor** - VS Code's editor for Markdown editing
-- **Marked** - Fast Markdown parser and compiler
-- **PrismJS** - Syntax highlighting for code blocks
-- **SVG Pan & Zoom** - Interactive SVG manipulation
-- **Lottie/Bodymovin** - Animation rendering
+**Why?**
+- ✅ Update content without rebuilding
+- ✅ Share engine across multiple blogs
+- ✅ Better version control separation
 
-## Project Structure
+**Example:**
+- App: `https://username.github.io/Blog-Code/`
+- Content: `https://username.github.io/Files/Blog-Code/`
 
+## Configuration
+
+### config.js
+
+All settings in one place:
+
+```javascript
+const CONFIG = {
+    // Content location
+    contentUrl: ".",  // Use "." for same origin, or full URL for external
+
+    // Security
+    security: {
+        allowedDomains: ["https://s4mc.github.io"],  // Whitelist
+        strictMode: false,  // Only allow posts in search.json
+    },
+
+    // App metadata
+    app: {
+        name: "Blog Code",
+        copyright: "© 2025 Blog Code",
+        version: "1.0.0",
+    }
+};
 ```
-├── index.html              # Main blog listing page
-├── editor.html            # Markdown editor interface  
-├── post.html              # Individual blog post viewer
-├── search.json            # Blog entries metadata
-├── compile.bat            # Build and minification script
-│
-├── components/
-│   ├── Header.js           # Navigation and theme controls
-│   ├── Sidebar.js          # Search and navigation sidebar
-│   └── markdownProcessor.js # Custom Markdown renderer
-│
-├── styles/
-│   ├── global-styles.css   # Core theming and layout
-│   ├── editor-styles.css   # Editor-specific styles
-│   └── post-styles.css     # Blog post styling
-│
-├── posts/                  # Markdown blog entries
-├── public/                 # Static assets
-├── cdn/                    # Third-party libraries
-└── docs/                   # Compiled/minified output
+
+**After editing `config.js`, run:**
+```bash
+.\compile.bat
 ```
 
-## Key Technical Features
+### contentUrl Options
 
-### Theme System
-- **CSS Custom Properties**: Dynamic theme switching
-- **System Detection**: Automatic dark/light mode based on `prefers-color-scheme`
-- **LocalStorage Persistence**: Theme preference saved across sessions
-- **Monaco Integration**: Editor themes sync with site themes
+- **Same origin**: `contentUrl: "."`  
+  Posts served from same domain as app
 
-```css
-:root,
-[data-theme="dark"] {
-    --primary-color: #a5c14f;
-    --bg-color: #040506;
-    --text-color: #fafafa;
-    /* ... */
+- **External**: `contentUrl: "https://example.com/blog-content"`  
+  Posts served from different domain
+
+### Security Features
+
+**Domain Whitelist**  
+Only domains in `allowedDomains` can serve content. Prevents XSS attacks.
+
+**Strict Mode**  
+When enabled, only posts listed in `search.json` can be loaded. Prevents direct file access.
+
+## Writing Posts
+
+### search.json Structure
+
+```json
+{
+  "entries": [
+    {
+      "title": "Post Title",
+      "summary": "Brief description",
+      "path": "./posts/my-post.md",
+      "date": "2025-01-01",
+      "tags": ["tutorial", "guide"]
+    }
+  ]
 }
 ```
 
-### Custom Markdown Processor
-Enhanced Markdown parsing with custom extensions:
+**Fields:**
+- `title`: Post title (required)
+- `summary`: Short description (required)
+- `path`: File path - relative or absolute (required)
+- `date`: ISO date YYYY-MM-DD
+- `tags`: Array of tags
 
-- **Balanced Delimiter Processing**: Smart handling of nested syntax
-- **Interactive Elements**: Copy buttons, expandable sections
-- **SVG Support**: Pan and zoom functionality
-- **Code Highlighting**: Language-aware syntax highlighting
-- **Iframe Integration**: Safe external content embedding
+### Path Resolution
 
-### Search Implementation
-- **Fuzzy Search**: Intelligent matching algorithm
-- **Real-time Results**: Instant search as you type
-- **Content Indexing**: Full-text search through blog metadata
-- **Navigation Controls**: Previous/Next result traversal
-
-### Markdown Processing Pipeline
-
-The custom processor `renderMarkdown()` follows a multi-stage pipeline in `components/markdownProcessor.js`:
-
-1. **Code Block Extraction**: `processCodeBlocksAndTitles()` extracts and protects blocks with placeholders (`CODE_BLOCK_N_BLOCK_CODE`)
-2. **Inline Code Processing**: `processInlineCodeBlocks()` handles inline code with language prefixes (`INLINE_CODE_N_CODE_INLINE`)
-3. **Custom Blocks**: `processMarkdownBlocks()` converts extended syntax (`:::note`, `:::grid`, `:::iframe`) into structured HTML
-4. **Markdown Parsing**: Passes content through `marked.parse()` with custom renderers
-5. **Interactive JavaScript Generation**: Produces dynamic scripts for SVG viewers, Lottie animations, and collapsible blocks
-
-### Build System
-Automated compilation pipeline using `compile.bat`:
-
-```bat
-# Minification using tdewolff/minify
-# Source: . → Destination: docs/
-# Selective processing of components, styles, and assets
+**Relative paths** (recommended):
+```json
+"path": "./posts/hello.md"
 ```
+Automatically resolved to: `${CONFIG.contentUrl}/posts/hello.md`
 
-## Extended Markdown Syntax
+**Absolute URLs**:
+```json
+"path": "https://example.com/posts/hello.md"
+```
+Used as-is.
 
-The blog supports enhanced Markdown syntax beyond standard formatting:
+### Creating a Post
+
+1. **Create Markdown file** in `posts/`:
+   ```markdown
+   # My Post Title
+   
+   Your content here...
+   ```
+
+2. **Add to search.json**:
+   ```json
+   {
+     "title": "My Post Title",
+     "summary": "Description",
+     "path": "./posts/my-post.md",
+     "date": "2025-01-01",
+     "tags": ["example"]
+   }
+   ```
+
+3. **Deploy** your content repository
+
+## Extended Markdown
 
 ### Custom Blocks
-```markdown
-# Note blocks with styling
-:::note
-This is a custom note block with special styling
-:::
 
-# Responsive grid layouts
+**Notes:**
+```markdown
+:::note
+Special note with styling
+:::
+```
+
+**Grids:**
+```markdown
 :::grid cols-3 gap-4
 ---
 Item 1
@@ -130,189 +179,111 @@ Item 2
 ---
 Item 3
 :::
+```
 
-# Embedded iframe content
+**Iframes:**
+```markdown
 :::iframe
 https://example.com
 :::
 ```
 
-### Interactive SVG
+### Interactive Elements
+
+**SVG with pan/zoom:**
 ```markdown
-# SVG with pan/zoom controls
 ```svg style="height:15em;"
 <svg>...</svg>
 ```⠀
 ```
 
-### Lottie Animations
+**Lottie animations:**
 ```markdown
-# Embedded Lottie animations with controls
 ```animation
-	public/bodymovin.json
+public/animation.json
 ```⠀
 ```
 
-### Advanced Link System
-- **Header Navigation**: `[Link Text](#h2=title2)` (jump to heading level 2 with text contains title2)
-- **Text Search**: `[Link Text](#text=Text to search)` (find and highlight text)
-- **Custom Selectors**: `[Link Text](#query=document.querySelector(".entry-content > p > a"))` (target specific elements)
+### Advanced Links
 
-## Getting Started
+- **Headers**: `[Link](#h2=Section Title)`
+- **Text search**: `[Link](#text=find this)`
+- **Custom selector**: `[Link](#query=.class-name)`
+## Development
 
-### Prerequisites
-- Modern web browser with ES modules support
-- Local web server (for development)
+### Project Structure
 
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/S4mC/Blog-Code.git
-   cd Blog-Code
-   ```
-
-2. **Serve locally**
-
-3. **Access the application**
-   - Main blog: `http://localhost:3000/index.html`
-   - Editor: `http://localhost:3000/editor.html`
-   - Individual posts: `http://localhost:3000/post.html?path=./posts/example.md`
-
-### Development Workflow
-
-1. **Add new blog posts**: Create `.md` files in the `posts/` directory
-2. **Update metadata**: Modify `search.json` with new entry information
-3. **Build for production**: Run `compile.bat` to generate minified output in `docs/`
-
-## Writing Blog Posts
-
-### Creating a New Post
-
-1. Create a new `.md` file in the `posts/` directory
-2. Add entry to `search.json`:
-
-```json
-{
-  "title": "Your Post Title",
-  "summary": "Brief description of your post",
-  "path": "./posts/your-post.md",
-  "date": "2025-01-01",
-  "tags": ["tag1", "tag2"]
-}
+```
+├── index.html              # Blog listing
+├── editor.html            # Markdown editor
+├── post.html              # Post viewer
+├── config.js              # Configuration
+├── compile.bat            # Build script
+│
+├── components/
+│   ├── Header.js
+│   ├── Sidebar.js
+│   └── markdownProcessor.js
+│
+├── styles/
+│   ├── global-styles.css
+│   ├── editor-styles.css
+│   └── post-styles.css
+│
+├── cdn/                   # Third-party libs
+├── public/                # Static assets
+└── docs/                  # Build output
 ```
 
-## Configuration
+### Build System
 
-### Theme Customization
-Modify CSS custom properties in `styles/global-styles.css`:
-
-```css
-[data-theme="custom"] {
-    --primary-color: #your-color;
-    --bg-color: #your-bg;
-    /* ... */
-}
-```
-
-Modify const themes in `components/Header.js`:
-```js
-const themes = [
-        ...
-        { value: 'theme-id', label: 'Icon in svg or emoji', title: 'Theme tittle' , monacoTheme: 'vs-dark (dark) or vs (light)' }
-    ];
-```
-
-### Visual Creation Tools
-The editor includes several advanced creation tools:
-
-- **Grid Creator Modal**: Three modes for different layout needs
-  - Simple Mode: Basic grid layouts
-  - Responsive Mode: Mobile-first responsive grids
-  - Visual Mode: Interactive grid builder
-- **CSS Selector Helper**: Copy CSS selectors for styling
-- **Contextual Assistant**: Help with custom markdown blocks
-- **Full Toolbar**: Formatting, links, images, callouts, and more
-
-## Build Process
-
-### Manual Build
 ```bash
-# Run the compilation script
 .\compile.bat
 ```
 
-### What gets processed:
-- **HTML**: Minified and optimized
-- **CSS**: Compressed with vendor prefixes
-- **JavaScript**: Minified ES modules
-- **Assets**: Copied
+Minifies and copies files from root to `docs/` using [tdewolff/minify](https://github.com/tdewolff/minify).
 
-## Deployment
+### Workflow
 
-### GitHub Pages
-1. Ensure `docs/` folder is built
-2. Configure repository settings:
-   - Settings → Pages
-   - Source: Deploy from branch
-   - Branch: main / docs
-3. Changue https://s4mc.github.io/Files/Blog-Code for your url 
+1. Edit `config.js` if needed
+2. Create posts in content repo
+3. Update `search.json`
+4. Run `compile.bat`
+5. Deploy `docs/` folder
 
-### Static Hosting
-Deploy the `docs/` folder to any static hosting service:
-- Netlify
-- Vercel  
-- AWS S3
-- Azure Static Web Apps
+## Tech Stack
 
-## Browser Support
+- **Preact** (~3KB) - Lightweight React alternative
+- **HTM** - JSX without build step
+- **Monaco Editor** - VS Code editor component
+- **Marked** - Markdown parser
+- **PrismJS** - Syntax highlighting
+- **SVG Pan & Zoom** - Interactive SVGs
+- **Lottie** - Animation rendering
 
-### Minimum Requirements:
-- **ES Modules**: Chrome 61+, Firefox 60+, Safari 10.1+
-- **CSS Custom Properties**: Chrome 49+, Firefox 31+, Safari 9.1+
-- **Import Maps**: Chrome 89+, Firefox 108+, Safari 16.4+
+## Troubleshooting
 
-### Polyfill Support:
-For older browsers, consider adding:
-- ES Module shims
-- CSS Custom Properties polyfill
-- Import Maps polyfill
+### Posts not loading
+- Check `CONFIG.contentUrl` is correct
+- Verify `search.json` is accessible
+- Check browser console for errors
+- Ensure domain is in `allowedDomains`
 
-## Dependencies
+### Strict mode blocking posts
+- Verify post path exists in `search.json`
+- Check paths match exactly (case-sensitive)
+- Disable strict mode for testing: `strictMode: false`
 
-### Runtime Dependencies:
-- **Preact** (~3KB) - Component framework
-- **HTM** (~2KB) - JSX alternative
-- **Monaco Editor** (~1.7MB) - Code editor
-- **Marked** (~46KB) - Markdown parser
-- **PrismJS** (~12KB) - Syntax highlighting
-- **Lottie** (~150KB) - Animation library
-- **SVG Pan & Zoom** (~18KB) - SVG interaction
+### Build issues
+- Ensure `minify.exe` is present
+- Run `compile.bat` from project root
+- Check file permissions
 
-### Build Dependencies:
-- **tdewolff/minify** - Asset minification
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-### Development Guidelines:
-- Follow ES6+ standards
-- Use semantic HTML
-- Maintain accessibility standards
-- Write comments in English
-- Test across different browsers
+### CORS errors
+- Serve via proper web server (not `file://`)
+- Check CORS headers on content domain
+- Use same origin with `contentUrl: "."`
 
 ## License
 
 This project is open source and available under the [BSD-3-Clause license](LICENSE).
-
-## Links
-
-- **Demo**: [Live Demo](https://s4mc.github.io/Blog-Code)
-- **Repository**: [GitHub](https://github.com/S4mC/Blog-Code)
-- **Issues**: [Bug Reports](https://github.com/S4mC/Blog-Code/issues)

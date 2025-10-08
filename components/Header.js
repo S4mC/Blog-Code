@@ -1,5 +1,6 @@
 import { html } from "htm/preact";
 import { useState, useEffect, useRef, useMemo } from "preact/hooks";
+import CONFIG, { resolveContentPath } from "../config.js";
 
 // Cache para los datos de búsqueda
 let searchDataCache = null;
@@ -91,10 +92,15 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
     useEffect(() => {
         if (!searchDataCache) {
             setIsLoading(true);
-            fetch("./search.json")
+            fetch(`${CONFIG.contentUrl}/search.json`)
                 .then((res) => res.json())
                 .then((data) => {
-                    searchDataCache = data.entries || [];
+                    // Resolve relative paths to absolute URLs
+                    const entriesWithResolvedPaths = (data.entries || []).map(entry => ({
+                        ...entry,
+                        path: resolveContentPath(entry.path)
+                    }));
+                    searchDataCache = entriesWithResolvedPaths;
                     setSearchData(searchDataCache);
                     setIsLoading(false);
                 })
@@ -296,7 +302,7 @@ export function Header({ showSearch = true, onNavigateToEntry }) {
                             <img
                                 src="./public/icon.webp"
                                 style="width: 34px; height: 30px; margin-right: 8px;"
-                            /><span id="header-title">Blog Code</span>
+                            /><span id="header-title">${CONFIG.app.name}</span>
                         </div>
                     </a>
                 </h1>

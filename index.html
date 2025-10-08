@@ -7,41 +7,21 @@
         <link rel="icon" type="image/png" sizes="32x32" href="public/icon.ico">
         <link rel="stylesheet" href="cdn/font/ubuntu-font.css" />
         <link rel="stylesheet" href="styles/global-styles.css" />
-        <link rel="stylesheet" href="cdn/prism/prism_vsc.css" />
-        <script src="cdn/prism/prism.js"></script>
         <script type="importmap">
             {
                 "imports": {
                     "preact": "./cdn/preact/preact.mjs",
                     "preact/hooks": "./cdn/preact/hooks.mjs",
-                    "htm/preact": "./cdn/preact/htm-preact.mjs"
+                    "htm/preact": "./cdn/preact/htm-preact.mjs",
+                    "config": "./config.js"
                 }
             }
         </script>
         <style>
-            #sidebarToggle{
+            /* Hide the sidebar toggle button in main page by default */
+            #sidebarToggle{ 
                 display: none;
             }
-            
-            /* Transitions between pages */
-            /* ::view-transition-old(root) {
-                animation: slide-out-to-right 0.5s forwards;
-                z-index: 2;
-            }
-
-            ::view-transition-new(root) {
-                animation: do-nothing-animation 0.5s forwards;
-                z-index: 1;
-            }
-
-            @keyframes slide-out-to-right {
-                from {
-                    transform: translate(0);
-                }
-                to {
-                    transform: translate(100%);
-                }
-            } */
         </style>
     </head>
     <body>
@@ -53,6 +33,10 @@
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
             import { Sidebar } from "./components/Sidebar.js";
+            import CONFIG, { resolveContentPath } from "config";
+
+            // Set the document title to the app copyright from config
+            document.title = CONFIG.app.name;
 
             function BlogList({ entries }) {
                 return html`
@@ -105,9 +89,16 @@
                 const [entries, setEntries] = useState([]);
 
                 useEffect(() => {
-                    fetch("./search.json")
+                    fetch(`${CONFIG.contentUrl}/search.json`)
                         .then((res) => res.json())
-                        .then((data) => setEntries(data.entries || []))
+                        .then((data) => {
+                            // Resolve relative paths to absolute URLs
+                            const entriesWithResolvedPaths = (data.entries || []).map(entry => ({
+                                ...entry,
+                                path: resolveContentPath(entry.path)
+                            }));
+                            setEntries(entriesWithResolvedPaths);
+                        })
                         .catch((err) =>
                             console.error("Error loading entries:", err)
                         );
@@ -129,7 +120,7 @@
                         </main>
 
                         <footer class="footer">
-                            <p>© 2025 Blog Code.</p>
+                            <p>${CONFIG.app.copyright}</p>
                         </footer>
                     </div>
                 `;

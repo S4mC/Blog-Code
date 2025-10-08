@@ -18,7 +18,7 @@ set FOLDERS=components styles .
 set INDIVIDUAL_FILES=cdn\prism\prism_vsc.css cdn\SVGpanzoom\svg-pan-zoom.js
 
 :: Define which subfolders\files should be copied without minifying (space-separated)
-set COPY_ONLY=cdn posts public search.json
+set COPY_ONLY=cdn public
 
 :: Define excluded js, html, and css files (space-separated)
 :: Supports three formats:
