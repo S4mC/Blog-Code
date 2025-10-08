@@ -20,7 +20,7 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                     </div>
                 `)}
         </div>
-    `}function SearchBar({onNavigateToEntry:e,isExpanded:t,onToggleExpand:n}){const[i,a]=useState(""),[s,o]=useState([]),[r,c]=useState(-1),[h,f]=useState(searchDataCache||[]),[v,d]=useState(!searchDataCache),u=useRef();useEffect(()=>{searchDataCache||(d(!0),fetch(`${CONFIG.contentUrl}/search.json`).then(e=>e.json()).then(e=>{const t=(e.entries||[]).map(e=>({...e,path:resolveContentPath(e.path)}));searchDataCache=t,f(searchDataCache),d(!1)}).catch(e=>{console.error("Error loading search data:",e),d(!1)}))},[]);function l(e){return e?.normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase()||""}useEffect(()=>{if(i.trim()){const e=l(i),t=h.filter(t=>{const n=l(t.title),s=l(t.summary),o=t.tags?.map(l)||[];return n.includes(e)||s.includes(e)||o.some(t=>t.includes(e))});o(t),c(t.length>0?0:-1)}else o([]),c(-1)},[i,h]),useEffect(()=>{s.length>0?document.body.style.overflow="hidden":document.body.style.overflow="auto"},[s]);const p=t=>{switch(t.key){case"ArrowDown":if(s.length===0)return;t.preventDefault(),c(e=>e<s.length-1?e+1:0);break;case"ArrowUp":if(s.length===0)return;t.preventDefault(),c(e=>e>0?e-1:s.length-1);break;case"Enter":if(s.length===0)return;t.preventDefault(),r>=0&&s[r]&&e(s[r]);break;case"Escape":a(""),o([]),u.current?.blur();break}},g=t=>{e(t)},m=()=>{a(""),o([]),n()};return html`
+    `}function SearchBar({onNavigateToEntry:e,isExpanded:t,onToggleExpand:n}){const[i,a]=useState(""),[s,o]=useState([]),[r,c]=useState(-1),[h,f]=useState(searchDataCache||[]),[v,u]=useState(!searchDataCache),d=useRef();useEffect(()=>{searchDataCache||(u(!0),fetch(`${CONFIG.contentUrl}/search.json`).then(e=>e.json()).then(e=>{const t=(e.entries||[]).map(e=>({...e,path:resolveContentPath(e.path)}));searchDataCache=t,f(searchDataCache),u(!1)}).catch(e=>{console.error("Error loading search data:",e),u(!1)}))},[]);function l(e){return e?.normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase()||""}useEffect(()=>{if(i.trim()){const e=l(i),t=h.filter(t=>{const n=l(t.title),s=l(t.summary),o=t.tags?.map(l)||[];return n.includes(e)||s.includes(e)||o.some(t=>t.includes(e))});o(t),c(t.length>0?0:-1)}else o([]),c(-1)},[i,h]),useEffect(()=>{s.length>0?document.body.style.overflow="hidden":document.body.style.overflow="auto"},[s]);const p=t=>{switch(t.key){case"ArrowDown":if(s.length===0)return;t.preventDefault(),c(e=>e<s.length-1?e+1:0);break;case"ArrowUp":if(s.length===0)return;t.preventDefault(),c(e=>e>0?e-1:s.length-1);break;case"Enter":if(s.length===0)return;t.preventDefault(),r>=0&&s[r]&&e(s[r]);break;case"Escape":a(""),o([]),d.current?.blur();break}},g=t=>{e(t)},m=()=>{a(""),o([]),n()};return html`
         <div class=${`search-container ${t?"mobile-expanded":""}`}>
             ${!t&&html`
                 <button
@@ -44,7 +44,7 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
             ${s.length>0&&html`
                 <div
                     class="search-overlay"
-                    onClick=${()=>{a(""),o([]),u.current?.blur(),t&&n()}}
+                    onClick=${()=>{a(""),o([]),d.current?.blur(),t&&n()}}
                 ></div>
             `}
             <div class=${`search-bar ${t?"expanded":""}`}>
@@ -68,7 +68,7 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                     </button>
                 `}
                 <input
-                    ref=${u}
+                    ref=${d}
                     type="text"
                     autocomplete="off"
                     placeholder="Search blog entries..."
@@ -78,7 +78,7 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                     class="search-input"
                     id="search-input"
                 />
-                <div class="search-icon">
+                <div class="search-icon" onClick=${()=>d.current?.focus()}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"

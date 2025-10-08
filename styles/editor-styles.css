@@ -963,3 +963,55 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     font-family: monospace;
     resize: vertical;
 }
+
+/* Loading spinner animation */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.loading-spinner {
+    display: inline-block;
+}
+
+/* Publish modal file list scrollbar */
+#publish-file-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+#publish-file-list::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 4px;
+}
+
+#publish-file-list::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+#publish-file-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* New file config modal scrollbar */
+#new-file-config-modal > div::-webkit-scrollbar {
+    width: 8px;
+}
+
+#new-file-config-modal > div::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+    border-radius: 4px;
+}
+
+#new-file-config-modal > div::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+#new-file-config-modal > div::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}

@@ -253,7 +253,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
                     class="search-input"
                     id="search-input"
                 />
-                <div class="search-icon">
+                <div class="search-icon" onClick=${() => inputRef.current?.focus()}>
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="24"
