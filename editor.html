@@ -40,7 +40,7 @@
                 showCopySuccess,
                 manageEscapeIframe,
                 manageClickFloatButton,
-            } from "./components/markdownProcessor.js";
+            } from "./components/MarkdownProcessor.js";
             import CONFIG, { resolveContentPath } from "config";
 
             // Configure Monaco Editor
@@ -2377,7 +2377,7 @@ function hello() {
                     
                     // Get the path if a matching entry is found
                     const entryPath = matchingEntry ? matchingEntry.path : null;
-                    let content = await loadFileContent(resolveContentPath(entryPath));
+                    let content = entryPath ? await loadFileContent(resolveContentPath(entryPath)) : null;
 
                     if (content) {
                         openDiffEditor(content, entryPath);
@@ -4042,6 +4042,8 @@ function hello() {
                                                 New Document
                                             </button>
 
+                                            <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;margin-block: 3px;"/>
+
                                             <button onClick=${showPublishModal}>
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="margin: -3px;"><path fill="currentColor" d="m11 11.85l-1.875 1.875q-.3.3-.712.288T7.7 13.7q-.275-.3-.288-.7t.288-.7l3.6-3.6q.15-.15.325-.212T12 8.425t.375.063t.325.212l3.6 3.6q.3.3.288.7t-.288.7q-.3.3-.712.313t-.713-.288L13 11.85V19q0 .425-.288.713T12 20t-.712-.288T11 19zM4 8V6q0-.825.588-1.412T6 4h12q.825 0 1.413.588T20 6v2q0 .425-.288.713T19 9t-.712-.288T18 8V6H6v2q0 .425-.288.713T5 9t-.712-.288T4 8"/></svg>
                                                 Manage & Publish Post
@@ -4829,7 +4831,7 @@ function hello() {
                                                 >
                                                     Comment
                                                 </button>
-                                                <hr style="border: 1px solid var(--border-muted)" />
+                                                <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;"/>
                                                 <button
                                                     onClick=${(e) => {
                                                         insertText("\n```\n    ", "\n```\n");

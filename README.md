@@ -277,7 +277,7 @@ Edit `cdn/prism/prism_vsc.css` to customize code syntax colors:
 ├── components/
 │   ├── Header.js
 │   ├── Sidebar.js
-│   └── markdownProcessor.js
+│   └── MarkdownProcessor.js
 │
 ├── styles/
 │   ├── global-styles.css
