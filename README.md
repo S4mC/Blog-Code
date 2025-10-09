@@ -209,6 +209,60 @@ public/animation.json
 - **Headers**: `[Link](#h2=Section Title)`
 - **Text search**: `[Link](#text=find this)`
 - **Custom selector**: `[Link](#query=.class-name)`
+
+## Creating a New Theme
+
+Follow these steps to add a custom theme to the blog:
+
+### 1. Add Theme Variables
+
+Edit `styles/global-styles.css` to define your theme's CSS variables:
+
+```css
+[data-theme="new-theme"] {
+    /* New theme style */
+    --bg: #your-color;
+    --text-color: #your-color;
+    /* Add all required CSS variables */
+}
+```
+
+### 2. Register Theme in Header
+
+Edit `components/Header.js` and add your theme to the `themes` array:
+
+```javascript
+const themes = [
+    // ... existing themes
+    { 
+        value: 'new-theme', 
+        label: '<svg>...</svg>', 
+        title: 'New Theme Title', 
+        monacoTheme: 'vs-dark' // or 'vs' for light themes
+    }
+];
+```
+
+**Parameters:**
+- `value`: Theme identifier (must match CSS `data-theme`)
+- `label`: SVG icon for theme selector
+- `title`: Display name shown on hover
+- `monacoTheme`: Monaco editor theme (`'vs-dark'` or `'vs'`)
+
+### 3. Customize Syntax Highlighting (Optional)
+
+Edit `cdn/prism/prism_vsc.css` to customize code syntax colors:
+
+```css
+[data-theme="new-theme"] {
+    /* Prism syntax highlighting colors for New Theme */
+    /* If not set, defaults to dark mode colors */
+    --prism-background: #your-color;
+    --prism-text: #your-color;
+    /* Add other Prism color variables */
+}
+```
+
 ## Development
 
 ### Project Structure

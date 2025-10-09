@@ -1,7 +1,5 @@
 /* Prism.js VSCode-style syntax highlighting with CSS variables support for multiple themes */
-:root,
-[data-theme="dark"],
-[data-theme="dark-blue"] {
+:root, [data-theme="dark"] {
     /* Prism syntax highlighting colors (Dark theme) */
     --prism-bg: #1f1f1f;
     --prism-text: #9cdcfe;
@@ -47,6 +45,7 @@
     --prism-bash: #e0e0e0;
     --prism-bash-function: #f5ffa8;
 }
+
 [data-theme="light"] {
     /* Prism syntax highlighting colors (Light theme) */
     --prism-bg: #f8fafc;
@@ -93,6 +92,7 @@
     --prism-bash: #1f2937;
     --prism-bash-function: #059669;
 }
+
 code[class*="language-"],
 pre[class*="language-"] {
     white-space: break-spaces;

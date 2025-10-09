@@ -37,7 +37,7 @@ body {
     height: 100%;
     overflow-y: auto;
     padding: var(--spacing-md);
-    background-color: var(--bg-color);
+    background-color: var(--bg);
 }
 
 /* Preview scrollbar styles */
@@ -50,7 +50,7 @@ body {
 }
 
 .markdown-preview::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
+    background-color: var(--border);
     border-radius: 3px;
 }
 
@@ -67,8 +67,8 @@ body {
 
 .editor-actions button {
     padding: var(--spacing-md) var(--spacing-lg);
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-color);
+    border: 1px solid var(--border);
+    background-color: var(--bg);
     color: var(--text-color);
     border-radius: var(--border-radius);
     cursor: pointer;
@@ -77,7 +77,7 @@ body {
 }
 
 .editor-actions button:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-highlight);
 }
 
 .editor-actions button.primary {
@@ -87,7 +87,7 @@ body {
 }
 
 .editor-actions button.primary:hover {
-    background-color: var(--primary-dark);
+    background-color: var(--bg-light);
 }
 
 .monaco-editor {
@@ -125,8 +125,8 @@ body {
 .editor-toolbar button {
     min-width: var(--spacing-lg);
     min-height: var(--spacing-lg);
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-color);
+    border: 1px solid var(--border);
+    background-color: var(--bg);
     color: var(--text-color);
     border-radius: 4px;
     cursor: pointer;
@@ -135,13 +135,13 @@ body {
 }
 
 .editor-toolbar button:hover {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-highlight);
 }
 
 .editor-toolbar button.active {
     background-color: var(--bg-hover);
     color: var(--text-color);
-    border-color: var(--secondary-color);
+    border-color: var(--bg-hover);
 }
 
 .editor-toolbar button.selecting {
@@ -159,13 +159,13 @@ body {
 
 .toolbar-separator {
     width: 1px;
-    background-color: var(--border-color);
+    background-color: var(--border);
     margin: 0 var(--spacing-sm);
 }
 
 .editor-content {
     flex: 1;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     display: grid;
     grid-template-columns: 1fr;
     min-height: 0;
@@ -193,6 +193,10 @@ body {
 .editor-content.right:not(.preview-hidden) .markdown-preview {
     position: relative;
     width: 100%;
+}
+
+.markdown-preview.entry-content {
+    position: relative;
 }
 
 /* Resize handle for right preview */
@@ -224,7 +228,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 .editor-tabs-vertical {
     max-height: 300px;
     overflow-y: auto;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
     margin-top: 8px;
     padding-top: 8px;
     padding-bottom: 4px;
@@ -245,7 +249,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 .editor-tabs-vertical::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
+    background-color: var(--border);
 }
 
 .editor-tab-vertical {
@@ -270,12 +274,12 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 .editor-tab-vertical.active {
     background-color: var(--bg-hover);
     color: var(--text-color);
-    border-left-color: var(--secondary-color);
+    border-left-color: var(--primary-color);
     font-weight: bold;
 }
 
 .editor-tab-vertical:hover {
-    background-color: var(--bg-tertiary);
+    background-color: var(--bg-hover);
 }
 
 .editor-tab-vertical-title {
@@ -305,10 +309,10 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 .menu-content {
     position: absolute;
-    top: 100%;
+    top: 105%;
     left: 0;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     z-index: 1000;
@@ -327,23 +331,24 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     text-align: left;
 }
 .menu-content button:hover {
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-highlight);
 }
 .editor-toolbar .editor-menu {
     position: relative;
 }
 .editor-toolbar .menu-content {
     position: absolute;
-    top: 100%;
+    top: 110%;
     left: 0;
-    background-color: var(--bg-color);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg);
+    border: 1px solid var(--border);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow);
     z-index: 1000;
     min-width: 180px;
-    max-height: 83vh;
+    max-height: 80vh;
     overflow: auto;
+    scrollbar-width: thin;
 }
 .editor-toolbar .menu-content button {
     width: 100%;
@@ -394,8 +399,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 .table-grid-cell {
     width: 22px;
     height: 22px;
-    background-color: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background-color: var(--bg-light);
+    border: 1px solid var(--border);
     cursor: pointer;
     transition: all 0.15s ease;
 }
@@ -431,7 +436,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     text-align: center;
     margin-top: 8px;
     padding-top: 8px;
-    border-top: 1px solid var(--border-color);
+    border-top: 1px solid var(--border);
 }
 
 .table-grid-custom button {
@@ -451,8 +456,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 
 /* Configuration Line Button Styles */
 .config-line-button {
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: var(--bg-light);
+    border: 1px solid var(--border);
     border-radius: 6px;
     padding: 2px 6px;
     display: inline-flex;
@@ -493,8 +498,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     bottom: 60px;
     width: 320px;
     max-height: 400px;
-    background: var(--bg-color);
-    border: 1px solid var(--border-color);
+    background: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
     z-index: 1000;
@@ -513,8 +518,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-light);
+    border-bottom: 1px solid var(--border);
 }
 
 .config-assistant-header h4 {
@@ -550,7 +555,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     max-height: 320px;
     overflow-y: auto;
     scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
+    scrollbar-color: var(--border) transparent;
 }
 
 .config-content::-webkit-scrollbar {
@@ -562,7 +567,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 .config-content::-webkit-scrollbar-thumb {
-    background-color: var(--border-color);
+    background-color: var(--border);
     border-radius: 6px;
 }
 
@@ -591,8 +596,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 
 .config-option {
     padding: 6px 10px;
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-color);
+    background: var(--bg-light);
+    border: 1px solid var(--border);
     border-radius: 4px;
     font-size: 11px;
     color: var(--text-primary);
@@ -673,9 +678,9 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 .config-custom-input input {
     flex: 1;
     padding: 6px 8px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--border);
     border-radius: 4px;
-    background: var(--bg-color);
+    background: var(--bg);
     color: var(--text-primary);
     font-size: 11px;
 }
@@ -698,7 +703,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 .config-preview {
     margin-top: 12px;
     padding: 8px;
-    background: var(--bg-secondary);
+    background: var(--bg-light);
     border-radius: 4px;
     font-size: 11px;
     font-family: monospace;
@@ -710,10 +715,10 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     margin-top: 12px;
     width: 100%;
     padding: 8px;
-    background: var(--success-color);
+    background: var(--bg-highlight);
     border: none;
     border-radius: 4px;
-    color: white;
+    color: var(--text-color);
     font-size: 12px;
     font-weight: 600;
     cursor: pointer;
@@ -721,11 +726,11 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 .config-apply:hover {
-    background: var(--success-color-hover);
+    background: var(--bg-hover);
 }
 
 .config-apply:disabled {
-    background: var(--border-color);
+    background: var(--border);
     cursor: not-allowed;
 }
 
@@ -734,7 +739,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     color: var(--text-secondary);
     line-height: 1.4;
     padding: 8px;
-    background: var(--bg-secondary);
+    background: var(--bg-light);
     border-radius: 4px;
     border-left: 3px solid var(--primary-color);
 }
@@ -752,18 +757,18 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     justify-content: center;
 }
 .modal-content {
-    background-color: #1e1e1e;
+    background-color: var(--bg-dark);
     border-radius: 5px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
     width: 800px;
     max-width: 90%;
     max-height: 90vh;
     overflow-y: auto;
-    color: #e0e0e0;
+    color: var(--text-color);
+    scrollbar-width: thin;
 }
 .modal-header {
     padding: 10px 15px;
-    border-bottom: 1px solid #333;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -776,7 +781,6 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 .modal-footer {
     padding: 10px 15px;
-    border-top: 1px solid #333;
     display: flex;
     justify-content: flex-end;
     gap: 10px;
@@ -785,9 +789,6 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     cursor: pointer;
     font-size: 24px;
     color: #888;
-}
-.close-modal:hover {
-    color: #fff;
 }
 .grid-options-container {
     display: flex;
@@ -806,7 +807,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 .param-group {
     padding: 10px;
-    border: 1px solid #333;
+    background-color: var(--bg-light);
     border-radius: 4px;
     display: flex;
     flex-direction: column;
@@ -822,14 +823,14 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 .grid-preview-container {
     padding: 15px;
-    border: 1px solid #333;
+    background-color: var(--bg-light);
     border-radius: 4px;
     min-height: 200px;
 }
 #grid-preview {
     margin-top: 10px;
     min-height: 150px;
-    background-color: #252525;
+    background-color: var(--bg-light);
     padding: 10px;
     border-radius: 4px;
 }
@@ -855,8 +856,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     min-height: 150px;
 }
 .preview-grid-item {
-    background-color: #2f2f2f;
-    border: 1px solid #565656;
+    background-color: var(--bg-highlight);
+    border: 1px solid var(--border);
     border-radius: 4px;
     padding: 10px;
 }
@@ -868,19 +869,19 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     display: grid;
     width: 100%;
     min-height: 400px;
-    background-color: #252525;
-    border: 1px solid #333;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--bg-dark);
     margin: 10px 0;
     position: relative;
 }
 .grid-cell {
-    background-color: #333;
-    border: 1px solid #444;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--border);
     position: relative;
     transition: background-color 0.2s;
 }
 .grid-cell:hover {
-    background-color: #3a3a3a;
+    background-color: var(--bg-hover);
     cursor: pointer;
 }
 .grid-area {
@@ -940,7 +941,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     justify-content: space-between;
     align-items: center;
     padding: 8px;
-    background-color: #333;
+    background-color: var(--bg-highlight);
     border-radius: 4px;
 }
 .grid-area-item button {
@@ -952,7 +953,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     cursor: pointer;
 }
 .preview-grid-item:hover {
-    background-color: #4a4a4a;
+    background-color: var(--bg-hover);
 }
 #custom-grid-css {
     background-color: #252525;
@@ -989,7 +990,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 #publish-file-list::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: var(--border);
     border-radius: 4px;
 }
 
@@ -1008,10 +1009,14 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 #new-file-config-modal > div::-webkit-scrollbar-thumb {
-    background: var(--border-color);
+    background: var(--border);
     border-radius: 4px;
 }
 
 #new-file-config-modal > div::-webkit-scrollbar-thumb:hover {
     background: var(--text-secondary);
+}
+
+#delete-selected-btn:hover {
+    background-color: #f44336 !important;
 }

@@ -1091,7 +1091,7 @@ function hello() {
                                 };\n`;
                                 gridMarkdown += `\t\tgrid-row: ${area.startY + 1} / ${area.endY + 2};\n`;
                                 gridMarkdown += `\t\tbackground-color: var(--card-background);\n`;
-                                gridMarkdown += `\t\tborder: 1px solid var(--border-color);\n`;
+                                gridMarkdown += `\t\tborder: 1px solid var(--border);\n`;
                                 gridMarkdown += `\t\tpadding: 1rem;\n`;
                                 gridMarkdown += `\t\tborder-radius: 8px;\n`;
                                 gridMarkdown += "\t}\n";
@@ -1533,7 +1533,7 @@ function hello() {
                                 grid-column: ${area.startX + 1} / ${area.endX + 2};
                                 grid-row: ${area.startY + 1} / ${area.endY + 2};
                                 background-color: var(--card-background);
-                                border: 1px solid var(--border-color);
+                                border: 1px solid var(--border);
                             `;
 
                             previewHTML += `<div class="preview-grid-item" style="${style}">${area.name}</div>`;
@@ -2104,24 +2104,24 @@ function hello() {
 
                     diffContainer.innerHTML = `
                         <div style="width: 96%; height: 96%; background: var(--bg-primary); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--border-color);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: var(--spacing-md); border-bottom: 1px solid var(--border);">
                                 <h3 style="margin: 0; color: #fafafa; border-radius: 8px; margin-right: 20px; padding: 10px;">Compare Changes: "${originalTitle.split("/").pop()}" vs "${currentTitle}"</h3>
                                 <div style="display: flex; gap: 10px; align-items: center;">
                                     <button id="diff-view-split" class="diff-view-toggle ${
                                         savedViewMode === "split" ? "active" : ""
                                     }" style="padding: 6px 12px; background: ${
-                        savedViewMode === "split" ? "var(--bg-hover)" : "var(--bg-secondary)"
-                    }; border: 0px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
+                        savedViewMode === "split" ? "var(--bg-hover)" : "var(--bg-light)"
+                    }; border: 0px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
                                         Split View
                                     </button>
                                     <button id="diff-view-inline" class="diff-view-toggle ${
                                         savedViewMode === "inline" ? "active" : ""
                                     }" style="padding: 6px 12px; background: ${
-                        savedViewMode === "inline" ? "var(--bg-hover)" : "var(--bg-secondary)"
-                    }; border: 0px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
+                        savedViewMode === "inline" ? "var(--bg-hover)" : "var(--bg-light)"
+                    }; border: 0px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">
                                         Inline View
                                     </button>
-                                    <div style="display: flex; gap: 5px; align-items: center; margin-left: 10px; padding: 4px 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius);">
+                                    <div style="display: flex; gap: 5px; align-items: center; margin-left: 10px; padding: 4px 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius);">
                                         <button id="diff-nav-prev" style="background: none; border: none; color: var(--text-color); cursor: pointer; padding: 4px 8px; font-size: 16px;" title="Previous change">↑</button>
                                         <span id="diff-changes-info" style="color: var(--text-color); font-size: 14px; min-width: 60px; text-align: center;">Loading...</span>
                                         <button id="diff-nav-next" style="background: none; border: none; color: var(--text-color); cursor: pointer; padding: 4px 8px; font-size: 16px;" title="Next change">↓</button>
@@ -2190,11 +2190,11 @@ function hello() {
                             // Update button styles
                             if (mode === "split") {
                                 splitBtn.style.background = "var(--bg-hover)";
-                                inlineBtn.style.background = "var(--bg-secondary)";
+                                inlineBtn.style.background = "var(--bg-light)";
                                 splitBtn.classList.add("active");
                                 inlineBtn.classList.remove("active");
                             } else {
-                                splitBtn.style.background = "var(--bg-secondary)";
+                                splitBtn.style.background = "var(--bg-light)";
                                 inlineBtn.style.background = "var(--bg-hover)";
                                 splitBtn.classList.remove("active");
                                 inlineBtn.classList.add("active");
@@ -2362,16 +2362,25 @@ function hello() {
                         return;
                     }
 
-                    let defaultFileName = `${CONFIG.contentUrl}/posts/${title}.md`;
-                    let content = await loadFileContent(defaultFileName);
-
-                    if (!content) {
-                        defaultFileName = `${CONFIG.contentUrl}/posts/${title}.html`;
-                        content = await loadFileContent(defaultFileName);
+                    const search_json = await fetch(`${CONFIG.contentUrl}/search.json`);
+                    if (!search_json.ok) {
+                        throw new Error("Failed to fetch posts list");
                     }
+                    const data_search = await search_json.json();
+                    
+                    // Find the entry whose title matches the extracted title
+                    const matchingEntry = data_search.entries.find(entry => 
+                        entry.title === title || 
+                        entry.title.toLowerCase() === title.toLowerCase() ||
+                        entry.title.replace(/\s+/g, "-") === title
+                    );
+                    
+                    // Get the path if a matching entry is found
+                    const entryPath = matchingEntry ? matchingEntry.path : null;
+                    let content = await loadFileContent(resolveContentPath(entryPath));
 
                     if (content) {
-                        openDiffEditor(content, defaultFileName);
+                        openDiffEditor(content, entryPath);
                     } else {
                         // If file not found, show file list
                         showCompareFileList();
@@ -2403,21 +2412,21 @@ function hello() {
                         menu.id = "compare-file-menu";
                         menu.className = "menu-content";
                         menu.style.cssText =
-                            "position: fixed; display: block; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);";
+                            "position: fixed; display: block; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);min-width: 150px;width: max-content;";
                         document.body.appendChild(menu);
                     }
 
                     // Position menu near the compare button
                     if (compareButton) {
                         const rect = compareButton.getBoundingClientRect();
-                        menu.style.top = `${rect.bottom + 5}px`;
+                        menu.style.top = `${rect.bottom + 1.5}px`;
                         menu.style.left = `${rect.left}px`;
                     }
 
                     menu.innerHTML = files
                         .map(
                             (file) => `
-                        <button onclick="window.compareWithFile('${file}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
+                        <button onclick="window.compareWithFile('${file}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
                             ${file.split("/").pop()}
                         </button>
                     `
@@ -2481,7 +2490,7 @@ function hello() {
                         "display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;";
                     
                     publishModal.innerHTML = `
-                        <div style="width: 500px; max-height: 90%; background: var(--bg-color); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                        <div style="width: 500px; max-height: 90%; background: var(--bg); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                 <h2 style="margin: 0; color: var(--text-color);">Manage & Publish Post</h2>
                                 <button onclick="document.getElementById('publish-modal').remove()" style="background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
@@ -2490,8 +2499,8 @@ function hello() {
                             <div style="margin-bottom: 15px;">
                                 <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px;">GitHub API Key:</label>
                                 <div style="display: flex; gap: 5px;">
-                                    <input type="password" id="github-api-key" value="${savedApiKey}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex: 1; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
-                                    <button id="toggle-api-key" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">👁️</button>
+                                    <input type="password" id="github-api-key" value="${savedApiKey}" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="flex: 1; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <button id="toggle-api-key" style="padding: 8px 12px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style=" margin: -5px; "><path fill="currentColor" d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"></path></svg></button>
                                 </div>
                                 <small style="color: var(--text-secondary); font-size: 12px; line-height: 1.2;">
                                 Get your token at:
@@ -2501,8 +2510,8 @@ function hello() {
                                 </small>
                                 <br><small style="color: var(--text-secondary); font-size: 12px; line-height: 1.2;">
                                 Repository permissions:
-                                ✅ Read access to metadata
-                                ✅ Read and Write access to code, deployments, and pages
+                                ✔️ Read access to metadata
+                                ✔️ Read and Write access to code, deployments, and pages
                                 </small>
 
                             </div>
@@ -2511,7 +2520,7 @@ function hello() {
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                     <label style="color: var(--text-color); font-size: 14px;">Select or create file:</label>
                                     <div style="display: flex; gap: 8px;">
-                                        <button id="delete-selected-btn" style="padding: 4px 10px; background: transparent; border: 1px solid #f44336; border-radius: var(--border-radius); color: #f44336; cursor: pointer; font-size: 12px; font-weight: bold; display: none; transition: all 0.2s;" onclick="window.deleteSelectedFiles()" onmouseover="this.style.background='#f44336'; this.style.color='white';" onmouseout="this.style.background='transparent'; this.style.color='#f44336';">🗑️ Delete Selected (0)</button>
+                                        <button id="delete-selected-btn" style="padding: 4px 10px; background: rgb(192 36 25); border: 1px solid rgb(192 36 25); border-radius: var(--border-radius); color: oklch(0.96 0.03 246); cursor: pointer; font-size: 12px; font-weight: bold; display: none; transition: all 0.2s;" onclick="window.deleteSelectedFiles()">🗑️ Delete Selected (0)</button>
                                         <button id="create-new-file-btn" style="padding: 4px 10px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 12px; font-weight: bold;">+ New File</button>
                                     </div>
                                 </div>
@@ -2521,12 +2530,12 @@ function hello() {
                                     id="file-search-input" 
                                     placeholder="Search files..."
                                     autocomplete="off" 
-                                    style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; margin-bottom: 8px;"
+                                    style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; margin-bottom: 8px;"
                                 />
                                 
-                                <div id="publish-file-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius); background: var(--bg-secondary);height: 30vh;">
+                                <div id="publish-file-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--border-radius); background: var(--bg-light);height: 30vh;">
                                     <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
-                                        <div class="loading-spinner" style="border: 3px solid var(--border-color); border-top: 3px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                                        <div class="loading-spinner" style="border: 3px solid var(--border); border-top: 3px solid var(--accent-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
                                         <p style="margin-top: 10px;">Loading files...</p>
                                     </div>
                                 </div>
@@ -2535,7 +2544,7 @@ function hello() {
                             <div id="publish-status" style="margin-bottom: 15px; padding: 10px; border-radius: var(--border-radius); display: none;"></div>
                             
                             <div id="publish-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button onclick="document.getElementById('publish-modal').remove()" style="padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
+                                <button onclick="document.getElementById('publish-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
                                 <button id="publish-button" onclick="window.publishToGitHub()" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Publish</button>
                             </div>
                         </div>
@@ -2550,10 +2559,10 @@ function hello() {
                         const button = document.getElementById("toggle-api-key");
                         if (input.type === "password") {
                             input.type = "text";
-                            button.textContent = "🔒";
+                            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style=" margin: -5px; "><path fill="currentColor" d="M6 22q-.825 0-1.412-.587T4 20V10q0-.825.588-1.412T6 8h1V6q0-2.075 1.463-3.537T12 1t3.538 1.463T17 6v2h1q.825 0 1.413.588T20 10v10q0 .825-.587 1.413T18 22zm6-5q.825 0 1.413-.587T14 15t-.587-1.412T12 13t-1.412.588T10 15t.588 1.413T12 17M9 8h6V6q0-1.25-.875-2.125T12 3t-2.125.875T9 6z"/></svg>';
                         } else {
                             input.type = "password";
-                            button.textContent = "👁️";
+                            button.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style=" margin: -5px; "><path fill="currentColor" d="M12 9a3 3 0 0 0-3 3a3 3 0 0 0 3 3a3 3 0 0 0 3-3a3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5a5 5 0 0 1 5-5a5 5 0 0 1 5 5a5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"></path></svg>';
                         }
                     });
                     
@@ -2590,7 +2599,7 @@ function hello() {
                             const isSelected = window.selectedFiles.has(file);
                             
                             return `
-                                <div class="file-item" data-file="${file}" style="display: flex; align-items: center; background: ${isMatch ? "var(--bg-hover)" : "transparent"}; transition: background 0.2s; border-bottom: 1px solid var(--border-color); cursor: pointer; padding: 10px 15px;" 
+                                <div class="file-item" data-file="${file}" style="display: flex; align-items: center; background: ${isMatch ? "var(--bg-hover)" : "transparent"}; transition: background 0.2s; border-bottom: 1px solid var(--border); cursor: pointer; padding: 10px 15px;" 
                                      onmouseover="this.style.background='var(--bg-hover)'"
                                      onmouseout="if (!this.querySelector('.file-checkbox').checked) this.style.background='${isMatch ? "var(--bg-hover)" : "transparent"}'"
                                      onclick="window.toggleFileSelection(this)">
@@ -2605,18 +2614,18 @@ function hello() {
                                     />
                                     <div style="flex: 1; color: var(--text-color); font-size: 14px;">
                                         📄 ${fileName}
-                                        ${isMatch ? '<span style="color: var(--accent-color); margin-left: 10px;">✓ Match</span>' : ""}
+                                        ${isMatch ? '<span style="color: var(--accent-color); filter: brightness(1.7); margin-left: 10px;">✓ Match</span>' : ""}
                                     </div>
                                     <button 
                                         class="edit-metadata-btn"
                                         data-file="${file}"
                                         onclick="window.editFileMetadata(this, event)"
-                                        style="padding: 6px 10px; margin-right: 10px; background: transparent; border: 1px solid var(--accent-color); border-radius: var(--border-radius); color: var(--accent-color); cursor: pointer; font-size: 12px; transition: all 0.2s;"
+                                        style="margin-right: 10px; background: transparent; border: none; border-radius: var(--border-radius); color: var(--accent-color); cursor: pointer; font-size: 12px; transition: all 0.2s;"
                                         onmouseover="this.style.background='var(--accent-color)'; this.style.color='white';"
                                         onmouseout="this.style.background='transparent'; this.style.color='var(--accent-color)';"
                                         title="Edit metadata in search.json"
                                     >
-                                        ✏️
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 21v-4.25L16.2 3.575q.3-.275.663-.425t.762-.15t.775.15t.65.45L20.425 5q.3.275.438.65T21 6.4q0 .4-.137.763t-.438.662L7.25 21zM17.6 7.8L19 6.4L17.6 5l-1.4 1.4z"/></svg>
                                     </button>
                                 </div>
                             `;
@@ -2662,7 +2671,7 @@ function hello() {
                         const today = new Date().toISOString().split('T')[0];
                         
                         newFileModal.innerHTML = `
-                            <div style="width: 550px; max-height: 90%; background: var(--bg-color); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow-y: auto; padding: 25px;">
+                            <div style="width: 550px; max-height: 90%; background: var(--bg); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow-y: auto; padding: 25px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                     <h2 style="margin: 0; color: var(--text-color);">New Post Configuration</h2>
                                     <button onclick="document.getElementById('new-file-config-modal').remove()" style="background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
@@ -2670,21 +2679,21 @@ function hello() {
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">File Name: *</label>
-                                    <input type="text" id="new-file-name" placeholder="my-post.md or my-post.html" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <input type="text" id="new-file-name" placeholder="my-post.md or my-post.html" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     <small style="color: var(--text-secondary); font-size: 12px;">Must end with .md or .html</small>
                                 </div>
                                 
-                                <div style="border-top: 1px solid var(--border-color); padding-top: 15px; margin-bottom: 15px;">
+                                <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 15px;">
                                     <h3 style="margin: 0 0 15px 0; color: var(--text-color); font-size: 16px;">search.json Entry Configuration</h3>
                                     
                                     <div style="margin-bottom: 12px;">
                                         <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px;">Title: *</label>
-                                        <input type="text" id="new-post-title" placeholder="Post Title" value="${extractTitleFromMarkdown(markdown)}" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                        <input type="text" id="new-post-title" placeholder="Post Title" value="${extractTitleFromMarkdown(markdown)}" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     </div>
                                     
                                     <div style="margin-bottom: 12px;">
                                         <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px;">Summary: *</label>
-                                        <textarea id="new-post-summary" placeholder="Brief description of the post" rows="3" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; resize: vertical;"></textarea>
+                                        <textarea id="new-post-summary" placeholder="Brief description of the post" rows="3" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; resize: vertical;"></textarea>
                                     </div>
                                     
                                     <div style="margin-bottom: 12px;">
@@ -2695,18 +2704,18 @@ function hello() {
                                                 <span>Exclude date from search.json</span>
                                             </label>
                                         </div>
-                                        <input type="date" id="new-post-date" value="${today}" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                        <input type="date" id="new-post-date" value="${today}" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     </div>
                                     
                                     <div style="margin-bottom: 12px;">
                                         <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px;">Tags:</label>
-                                        <input type="text" id="new-post-tags" placeholder="tag1, tag2, tag3" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                        <input type="text" id="new-post-tags" placeholder="tag1, tag2, tag3" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                         <small style="color: var(--text-secondary); font-size: 12px;">Separate tags with commas</small>
                                     </div>
                                 </div>
                                 
                                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                    <button onclick="document.getElementById('new-file-config-modal').remove()" style="padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
+                                    <button onclick="document.getElementById('new-file-config-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
                                     <button id="create-file-confirm-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Create Post</button>
                                 </div>
                             </div>
@@ -2879,20 +2888,22 @@ function hello() {
                     
                     // Update publish button text and state
                     if (publishBtn) {
+                        const icon_publish = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="margin: -4px; margin-right: 2px;"><path fill="currentColor" d="M11 20v-8.15l-2.6 2.6L7 13l5-5l5 5l-1.4 1.45l-2.6-2.6V20zM4 9V6q0-.825.588-1.412T6 4h12q.825 0 1.413.588T20 6v3h-2V6H6v3z"/></svg>'
+
                         if (selectedCount === 0) {
-                            publishBtn.innerHTML = "📤 Publish to GitHub";
+                            publishBtn.innerHTML = `${icon_publish} Publish to GitHub`;
                             publishBtn.disabled = true;
                             publishBtn.style.opacity = "0.5";
                             publishBtn.style.cursor = "not-allowed";
                             publishBtn.title = "Please select at least one file to publish";
                         } else if (selectedCount === 1) {
-                            publishBtn.innerHTML = "📤 Update 1 File";
+                            publishBtn.innerHTML = `${icon_publish} Update 1 File`;
                             publishBtn.disabled = false;
                             publishBtn.style.opacity = "1";
                             publishBtn.style.cursor = "pointer";
                             publishBtn.title = "";
                         } else {
-                            publishBtn.innerHTML = `📤 Update ${selectedCount} Files`;
+                            publishBtn.innerHTML = `${icon_publish} Update ${selectedCount} Files`;
                             publishBtn.disabled = false;
                             publishBtn.style.opacity = "1";
                             publishBtn.style.cursor = "pointer";
@@ -2904,7 +2915,7 @@ function hello() {
                     document.querySelectorAll('.file-item').forEach(item => {
                         const cb = item.querySelector('.file-checkbox');
                         if (cb.checked) {
-                            item.style.background = 'var(--accent-color-opacity, rgba(97, 218, 251, 0.1))';
+                            item.style.background = 'var(--bg-hover)';
                         } else {
                             item.style.background = 'transparent';
                         }
@@ -2962,8 +2973,7 @@ function hello() {
                         
                         // Find the entry for this file
                         const entry = searchContent.entries.find(e => {
-                            const entryPath = e.path.startsWith("http") ? e.path : `${contentUrl}/${e.path}`;
-                            return entryPath === filePath;
+                            return resolveContentPath(e.path) === filePath;
                         });
                         
                         if (!entry) {
@@ -2973,10 +2983,10 @@ function hello() {
                         // Create edit modal
                         const editModal = document.createElement("div");
                         editModal.id = "edit-metadata-modal";
-                        editModal.style.cssText = "display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 10002; align-items: center; justify-content: center;";
+                        editModal.style.cssText = "display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 10002; align-items: center; justify-content: center;";
                         
                         editModal.innerHTML = `
-                            <div style="width: 550px; max-height: 90%; background: var(--bg-color)); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow-y: auto; padding: 25px;">
+                            <div style="width: 550px; max-height: 90%; background: var(--bg)); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow-y: auto; padding: 25px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                     <h2 style="margin: 0; color: var(--text-color);">Edit Metadata: ${fileName}</h2>
                                     <button onclick="document.getElementById('edit-metadata-modal').remove()" style="background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
@@ -2984,12 +2994,12 @@ function hello() {
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">Title: *</label>
-                                    <input type="text" id="edit-title" value="${entry.title || ''}" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <input type="text" id="edit-title" value="${entry.title || ''}" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                 </div>
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">Summary: *</label>
-                                    <textarea id="edit-summary" rows="3" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; resize: vertical;">${entry.summary || ''}</textarea>
+                                    <textarea id="edit-summary" rows="3" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; resize: vertical;">${entry.summary || ''}</textarea>
                                 </div>
                                 
                                 <div style="margin-bottom: 15px;">
@@ -3000,19 +3010,19 @@ function hello() {
                                             <span>Exclude date from search.json</span>
                                         </label>
                                     </div>
-                                    <input type="date" id="edit-date" value="${entry.date || ''}" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <input type="date" id="edit-date" value="${entry.date || ''}" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                 </div>
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">Tags:</label>
-                                    <input type="text" id="edit-tags" value="${entry.tags ? entry.tags.join(', ') : ''}" placeholder="tag1, tag2, tag3" style="width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <input type="text" id="edit-tags" value="${entry.tags ? entry.tags.join(', ') : ''}" placeholder="tag1, tag2, tag3" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     <small style="color: var(--text-secondary); font-size: 12px;">Separate tags with commas</small>
                                 </div>
                                 
                                 <div id="edit-metadata-status" style="display: none; padding: 10px; border-radius: var(--border-radius); margin-bottom: 15px; font-size: 14px;"></div>
                                 
                                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                    <button onclick="document.getElementById('edit-metadata-modal').remove()" style="padding: 8px 16px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
+                                    <button onclick="document.getElementById('edit-metadata-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
                                     <button id="save-metadata-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Save Changes</button>
                                 </div>
                             </div>
@@ -3919,7 +3929,7 @@ function hello() {
                             <${Sidebar} />
                             <div class="editor-container">
                                 <div
-                                    style="display: flex; gap: var(--spacing-sm); padding: var(--spacing-sm); background-color: var(--bg-secondary); border-bottom: none; border-radius: var(--border-radius) var(--border-radius) 0 0; align-items: center;justify-content: space-between;"
+                                    style="display: flex; gap: var(--spacing-sm); padding: var(--spacing-sm); background-color: var(--bg-light); border-bottom: none; border-radius: var(--border-radius) var(--border-radius) 0 0; align-items: center;justify-content: space-between;"
                                 >
                                     <div class="editor-menu">
                                         <button
@@ -4188,7 +4198,7 @@ function hello() {
                                             </svg>
                                             <div class="menu-content" style="display: none;">
                                                 <button
-                                                    style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
+                                                    style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${(e) => {
                                                         // Primero verificar si estamos en una línea de lista
                                                         if (!editorRef.current) return;
@@ -4348,7 +4358,7 @@ function hello() {
                                                     Bulleted list
                                                 </button>
                                                 <button
-                                                    style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; background: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
+                                                    style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${(e) => {
                                                         // Primero verificar si estamos en una línea de lista
                                                         if (!editorRef.current) return;
@@ -4819,7 +4829,7 @@ function hello() {
                                                 >
                                                     Comment
                                                 </button>
-                                                <hr style="border: 1px solid #2d2d2d" />
+                                                <hr style="border: 1px solid var(--border-muted)" />
                                                 <button
                                                     onClick=${(e) => {
                                                         insertText("\n```\n    ", "\n```\n");
@@ -5122,7 +5132,7 @@ function hello() {
                                                                     }
                                                                 });
                                                                 if (dimensionsEl) {
-                                                                    dimensionsEl.textContent = `${cols}x${rows}`;
+                                                                    dimensionsEl.textContent = `${rows}x${cols}`;
                                                                 }
                                                             };
 
@@ -5140,7 +5150,11 @@ function hello() {
                                                                 };
 
                                                                 tableGrid.clickHandler = (event) => {
-                                                                    const cell = event.target;
+                                                                    let cell = event.target;
+                                                                    if (cell.className=="table-grid-container") {
+                                                                        let cells = cell.querySelectorAll(".table-grid-cell.active");
+                                                                        cell = cells[cells.length - 1];
+                                                                    }
                                                                     if (cell.classList.contains("table-grid-cell")) {
                                                                         const index = Array.from(tableGrid.children).indexOf(cell);
                                                                         const rows = Math.floor(index / 10) + 1;
@@ -5178,7 +5192,7 @@ function hello() {
                                                                     }
                                                                 });
                                                                 if (dimensionsEl) {
-                                                                    dimensionsEl.textContent = `${cols}x${rows}`;
+                                                                    dimensionsEl.textContent = `${rows}x${cols}`;
                                                                 }
                                                             };
 

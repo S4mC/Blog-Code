@@ -15,7 +15,6 @@
         max-height: calc(100vh - 120px); /* Adjustable height according to header and other elements */
         overflow-y: auto; /* Add vertical scrollbar when content exceeds height */
         scrollbar-width: thin; /* Firefox */
-        scrollbar-color: var(--border-color) transparent; /* Firefox */
     }
     
     /* Scrollbar style for Chrome, Edge, Safari */
@@ -28,7 +27,7 @@
     }
     
     .sidebar-component .sidebar-content::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
+        background-color: var(--border);
         border-radius: 6px;
     }
 
@@ -102,7 +101,7 @@
         max-height: calc(100vh - 120px);
         overflow-y: auto;
         scrollbar-width: thin;
-        scrollbar-color: var(--border-color) transparent;
+        scrollbar-color: var(--border) transparent;
     }
     
     /* Scrollbar style for Chrome, Edge, Safari on mobile */
@@ -111,7 +110,7 @@
     }
     
     .sidebar-component .sidebar-content::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
+        background-color: var(--border);
         border-radius: 4px;
     }
 }

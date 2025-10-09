@@ -28,7 +28,7 @@ export function Sidebar() {
         <div class="sidebar-component open" id="sidebar">
             <div class="sidebar-header">
                 <div class="search-container">
-                    <input type="text" autocomplete="off" class="search-input" placeholder="Search..." id="searchInput"/>
+                    <input type="text" autocomplete="off" class="search-input" placeholder="Search..." id="sidebarSearchInput"/>
                     <button class="clear-button" id="clearButton">×</button>
                 </div>
                 <div class="search-controls" id="searchControls">
@@ -380,7 +380,7 @@ class SidebarClass {
         const sidebar = document.getElementById('sidebar');
         const toggle = document.getElementById('sidebarToggle');
         const overlay = document.getElementById('sidebarOverlay');
-        const searchInput = document.getElementById('searchInput');
+        const sidebarSearchInput = document.getElementById('sidebarSearchInput');
         const clearBtn = document.getElementById('clearButton');
         const prevBtn = document.getElementById('prevBtn');
         const nextBtn = document.getElementById('nextBtn');
@@ -418,11 +418,11 @@ class SidebarClass {
         });
 
         // Search
-        if (searchInput) {
-            searchInput.addEventListener('input', (e) => this.search(e.target.value));
+        if (sidebarSearchInput) {
+            sidebarSearchInput.addEventListener('input', (e) => this.search(e.target.value));
             
             // Keyboard
-            searchInput.addEventListener('keydown', (e) => {
+            sidebarSearchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     e.shiftKey ? this.navigatePrev() : this.navigateNext();
@@ -574,7 +574,7 @@ class SidebarClass {
             domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
             // Add temporary highlight to DOM element
-            domElement.style.backgroundColor = 'var(--bg-color)';
+            domElement.style.backgroundColor = 'var(--bg)';
             domElement.style.color = 'var(--text-color)';
             domElement.style.filter = 'invert(1)';
             domElement.style.transition = 'background-color 0.3s ease';
@@ -862,7 +862,7 @@ class SidebarClass {
             this.updateCounter();
         } else {
             controls.classList.remove('active');
-            if (!document.getElementById('searchInput').value) {
+            if (!document.getElementById('sidebarSearchInput').value) {
                 clearBtn.classList.remove('visible');
             }
         }
@@ -876,7 +876,7 @@ class SidebarClass {
     }
 
     clearSearch() {
-        document.getElementById('searchInput').value = '';
+        document.getElementById('sidebarSearchInput').value = '';
         document.getElementById('clearButton').classList.remove('visible');
         this.searchResults = [];
         this.currentResultIndex = -1;
