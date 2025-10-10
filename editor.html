@@ -2042,7 +2042,6 @@ function hello() {
                 };
 
                 // Function to get list of posts files
-                // Function to get list of posts files
                 const getPostsFiles = async () => {
                     try {
                         // Fetch the search.json file which contains all posts
@@ -2361,6 +2360,441 @@ function hello() {
                     }, 100);
                 };
 
+                // Translation functions
+
+                // Common languages
+                const languages = {
+                    'en': 'English',
+                    'es': 'Spanish',
+                    'fr': 'French',
+                    'de': 'German',
+                    'it': 'Italian',
+                    'pt': 'Portuguese',
+                    'ru': 'Russian',
+                    'ja': 'Japanese',
+                    'ko': 'Korean',
+                    'zh-CN': 'Chinese (Simplified)',
+                    'zh-TW': 'Chinese (Traditional)',
+                    'ar': 'Arabic',
+                    'hi': 'Hindi',
+                    'nl': 'Dutch',
+                    'pl': 'Polish',
+                    'tr': 'Turkish',
+                    'vi': 'Vietnamese',
+                    'th': 'Thai',
+                    'sv': 'Swedish',
+                    'da': 'Danish',
+                    'fi': 'Finnish',
+                    'no': 'Norwegian',
+                    'cs': 'Czech',
+                    'el': 'Greek',
+                    'he': 'Hebrew',
+                    'id': 'Indonesian',
+                    'ms': 'Malay',
+                    'ro': 'Romanian',
+                    'uk': 'Ukrainian'
+                };
+
+                // Function to detect language of text (Google API)
+                const detectLanguageGoogle = async (text) => {
+                    try {
+                        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`);
+                        const data = await response.json();
+                        // The detected language is in data[2]
+                        return data[2] || 'en';
+                    } catch (error) {
+                        console.error('Error detecting language:', error);
+                        return 'en'; // Default to English if detection fails
+                    }
+                };
+
+                // Function to detect language using Browser API
+                const detectLanguageBrowser = async (text) => {
+                    try {
+                        if (!('LanguageDetector' in self)) {
+                            return 'en';
+                        }
+                        
+                        const detector = await self.LanguageDetector.create();
+                        const results = await detector.detect(text);
+                        
+                        if (results && results.length > 0) {
+                            return results[0].detectedLanguage;
+                        }
+                        return 'en';
+                    } catch (error) {
+                        console.error('Error detecting language with Browser API:', error);
+                        return 'en';
+                    }
+                };
+
+                // Function to translate text using Google Translate API
+                const translateTextGoogle = async (text, targetLang, sourceLang = 'auto') => {
+                    try {
+                        const response = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+                        const data = await response.json();
+                        
+                        // The translation is in data[0][0][0]
+                        if (data && data[0] && data[0][0]) {
+                            return data[0].map(item => item[0]).join('');
+                        }
+                        return text;
+                    } catch (error) {
+                        console.error('Error translating text with Google API:', error);
+                        throw error;
+                    }
+                };
+
+                // Function to translate text using Browser Translation API
+                const translateTextBrowser = async (text, targetLang, sourceLang = 'auto') => {
+                    try {
+                        if (!('Translator' in self)) {
+                            throw new Error('Browser Translation API not available');
+                        }
+
+                        // If sourceLang is auto, detect it first
+                        if (sourceLang === 'auto') {
+                            sourceLang = await detectLanguageBrowser(text);
+                        }
+
+                        // Normalize language codes for Browser API (remove regional variants)
+                        const normalizeLangCode = (code) => {
+                            if (code === 'zh-CN') return 'zh';
+                            if (code === 'zh-TW') return 'zh-Hant';
+                            return code.split('-')[0];
+                        };
+
+                        const normalizedSource = normalizeLangCode(sourceLang);
+                        const normalizedTarget = normalizeLangCode(targetLang);
+
+                        // Create translator with the new API
+                        const translator = await self.Translator.create({
+                            sourceLanguage: normalizedSource,
+                            targetLanguage: normalizedTarget
+                        });
+
+                        console.log('Translator created, translating...');
+
+                        // Translate
+                        const translatedText = await translator.translate(text);
+                        return translatedText;
+                    } catch (error) {
+                        console.error('Error translating text with Browser API:', error);
+                        throw error;
+                    }
+                };
+
+                // Unified function to detect language
+                const detectLanguage = async (text) => {
+                    const useOnlineAPI = localStorage.getItem('translateUseOnlineAPI') !== 'false';
+                    
+                    if (useOnlineAPI) {
+                        return await detectLanguageGoogle(text);
+                    } else {
+                        return await detectLanguageBrowser(text);
+                    }
+                };
+
+                // Unified function to translate text
+                const translateText = async (text, targetLang, sourceLang = 'auto') => {
+                    const useOnlineAPI = localStorage.getItem('translateUseOnlineAPI') !== 'false';
+                    
+                    if (useOnlineAPI) {
+                        return await translateTextGoogle(text, targetLang, sourceLang);
+                    } else {
+                        return await translateTextBrowser(text, targetLang, sourceLang);
+                    }
+                };
+
+                // Function to handle translation
+                window.handleTranslate = async () => {
+                    if (!editorRef.current) return;
+
+                    const editor = editorRef.current;
+                    const selection = editor.getSelection();
+                    const selectedText = editor.getModel().getValueInRange(selection);
+
+                    if (!selectedText || selectedText.trim() === '') {
+                        alert('Please select text to translate');
+                        return;
+                    }
+
+                    // Get target language from localStorage (default to English)
+                    const targetLang = localStorage.getItem('translateTargetLang') || 'en';
+                    const useOnlineAPI = localStorage.getItem('translateUseOnlineAPI') !== 'false';
+
+                    // Show loading indicator in button
+                    const translateButton = document.querySelector('[title*="Translate Selection"]');
+                    if (translateButton) {
+                        const originalHTML = translateButton.innerHTML;
+                        translateButton.innerHTML = '<span style="pointer-events: none;">⏳</span>';
+                        translateButton.disabled = true;
+
+                        try {
+                            // Detect source language
+                            const sourceLang = await detectLanguage(selectedText);
+                            
+                            // Don't translate if already in target language
+                            if (sourceLang === targetLang) {
+                                alert(`Text is already in ${languages[targetLang] || targetLang}`);
+                                return;
+                            }
+
+                            // Translate the text
+                            const translatedText = await translateText(selectedText, targetLang, sourceLang);
+
+                            editor.pushUndoStop();
+                            editor.executeEdits(`translate`, [{
+                                range: selection,
+                                text: translatedText
+                            }]);
+
+                            // Keep the selection on the translated text
+                            // Calculate new selection based on translated text length
+                            const translatedLines = translatedText.split('\n');
+                            const lastLineLength = translatedLines[translatedLines.length - 1].length;
+                            
+                            const newSelection = {
+                                startLineNumber: selection.startLineNumber,
+                                startColumn: selection.startColumn,
+                                endLineNumber: selection.startLineNumber + translatedLines.length - 1,
+                                endColumn: translatedLines.length === 1 
+                                    ? selection.startColumn + lastLineLength 
+                                    : lastLineLength + 1
+                            };
+                            editor.setSelection(newSelection);
+                            editor.focus();
+
+                        } catch (error) {
+                            console.error('Translation error:', error);
+                            
+                            // Suggest switching to the other API
+                            const apiName = useOnlineAPI ? 'Online Google Translate API' : 'Browser Translation API';
+                            const alternativeAPI = useOnlineAPI ? 'Browser Translation API (offline)' : 'Online Google Translate API';
+                            
+                            const switchAPI = confirm(
+                                `Translation failed using ${apiName}.\n\n` +
+                                `Error: ${error.message || 'Unknown error'}\n\n` +
+                                `Would you like to try switching to ${alternativeAPI}?\n` +
+                                `(You can also change this in the language settings by right-clicking the translate button)`
+                            );
+                            
+                            if (switchAPI) {
+                                localStorage.setItem('translateUseOnlineAPI', (!useOnlineAPI).toString());
+                                alert(`Switched to ${alternativeAPI}. Please try translating again.`);
+                            }
+                        } finally {
+                            // Restore button
+                            translateButton.innerHTML = originalHTML;
+                            translateButton.disabled = false;
+                        }
+                    }
+                };
+
+                // Function to handle language selection
+                window.handleTranslateLanguageSelect = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Get current target language
+                    const currentLang = localStorage.getItem('translateTargetLang') || 'en';
+                    const useOnlineAPI = localStorage.getItem('translateUseOnlineAPI') !== 'false';
+
+                    // Create modal
+                    let modal = document.getElementById('translate-language-modal');
+                    if (modal) {
+                        modal.remove();
+                    }
+
+                    modal = document.createElement('div');
+                    modal.id = 'translate-language-modal';
+                    modal.className = 'modal-container';
+                    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 10000;';
+
+                    const languageOptions = Object.entries(languages).map(([code, name]) => {
+                        const isSelected = code === currentLang;
+                        return `
+                            <button 
+                                onclick="window.selectTranslateLanguage('${code}')"
+                                style="
+                                    padding: 10px 15px;
+                                    background: ${isSelected ? 'var(--accent-color)' : 'var(--bg-hover)'};
+                                    border: 1px solid var(--border);
+                                    border-radius: var(--border-radius);
+                                    color: var(--text-color);
+                                    cursor: pointer;
+                                    font-size: 14px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: space-between;
+                                    width: calc(100% - 5px);
+                                "
+                                onmouseover="this.style.background='var(--accent-color)'"
+                                onmouseout="this.style.background='${isSelected ? 'var(--accent-color)' : 'var(--bg-hover)'}'"
+                            >
+                                <span>${name}</span>
+                                ${isSelected ? '<span>✓</span>' : ''}
+                            </button>
+                        `;
+                    }).join('');
+
+                    modal.innerHTML = `
+                        <div style="
+                            background: var(--bg);
+                            border: 1px solid var(--border);
+                            border-radius: var(--border-radius);
+                            padding: 20px;
+                            max-width: 500px;
+                            width: 90%;
+                            max-height: 95vh;
+                            overflow-y: auto;
+                            display: flex;
+                            flex-direction: column;
+                        ">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: var(--text-color);">Translation Settings</h3>
+                                <button 
+                                    onclick="document.getElementById('translate-language-modal').remove()"
+                                    style="
+                                        background: transparent;
+                                        border: none;
+                                        color: var(--text-color);
+                                        cursor: pointer;
+                                        font-size: 24px;
+                                        padding: 0;
+                                        width: 30px;
+                                        height: 30px;
+                                    "
+                                >×</button>
+                            </div>
+
+                            <!-- API Selection Section -->
+                            <div style="
+                                background: var(--bg-light);
+                                border: 1px solid var(--border);
+                                border-radius: var(--border-radius);
+                                padding: 15px;
+                                margin-bottom: 20px;
+                            ">
+                                <div style="margin-bottom: 10px; font-weight: bold; color: var(--text-color);">
+                                    Translation API:
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button 
+                                        onclick="window.toggleTranslationAPI(true)"
+                                        style="
+                                            flex: 1;
+                                            padding: 10px 15px;
+                                            background: ${useOnlineAPI ? 'var(--accent-color)' : 'var(--bg-hover)'};
+                                            border: 1px solid var(--border);
+                                            border-radius: var(--border-radius);
+                                            color: var(--text-color);
+                                            cursor: pointer;
+                                            font-size: 14px;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 5px;
+                                        "
+                                    >
+                                        <div>Online API</div>
+                                        <div style="font-size: 11px; opacity: 0.7;">(Google Translate)</div>
+                                    </button>
+                                    <button 
+                                        onclick="window.toggleTranslationAPI(false)"
+                                        style="
+                                            flex: 1;
+                                            padding: 10px 15px;
+                                            background: ${!useOnlineAPI ? 'var(--accent-color)' : 'var(--bg-hover)'};
+                                            border: 1px solid var(--border);
+                                            border-radius: var(--border-radius);
+                                            color: var(--text-color);
+                                            cursor: pointer;
+                                            font-size: 14px;
+                                            display: flex;
+                                            align-items: center;
+                                            gap: 5px;
+                                        "
+                                    >
+                                        <div>Browser API</div>
+                                        <div style="font-size: 11px; opacity: 0.7;">(Downloads models)</div>
+                                    </button>
+                                </div>
+                                <div style="margin-top: 10px; font-size: 12px; color: var(--text-muted); line-height: 1.4;">
+                                    ${useOnlineAPI 
+                                        ? '✓ Using online Google Translate API (requires internet)' 
+                                        : '✓ Using browser\'s built-in translation (works offline after model download)'}
+                                </div>
+                            </div>
+
+                            <!-- Language Selection Section -->
+                            <div style="margin-bottom: 10px; font-weight: bold; color: var(--text-color);">
+                                Target Language:
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto;">
+                                ${languageOptions}
+                            </div>
+                        </div>
+                    `;
+
+                    document.body.appendChild(modal);
+
+                    // Close on background click
+                    modal.addEventListener('click', (e) => {
+                        if (e.target === modal) {
+                            modal.remove();
+                        }
+                    });
+                };
+
+                // Function to toggle between translation APIs
+                window.toggleTranslationAPI = async (useOnline) => {
+                    const previousValue = localStorage.getItem('translateUseOnlineAPI') !== 'false';
+                    
+                    // If already using the selected API, do nothing
+                    if (previousValue === useOnline) {
+                        return;
+                    }
+
+                    // If switching to browser API, check availability first
+                    if (!useOnline) {
+                        const isAvailable = ('Translator' in self);
+                        if (!isAvailable) {
+                            alert(
+                                'Browser Translation API is not available in your browser.\n\n' +
+                                'This feature requires Chrome 127+ or Edge 127+ with the Translation API enabled.\n\n' +
+                                'To enable it:\n' +
+                                '1. Go to chrome://flags/#translation-api (or edge://flags/#translation-api)\n' +
+                                '2. Enable "Translation API"\n' +
+                                '3. Restart your browser\n\n' +
+                                'Continuing with Online API.'
+                            );
+                            return;
+                        }
+                    }
+
+                    localStorage.setItem('translateUseOnlineAPI', useOnline.toString());
+                    
+                    // Reload the modal to reflect changes
+                    const modal = document.getElementById('translate-language-modal');
+                    if (modal) {
+                        modal.remove();
+                    }
+                    
+                    // Show confirmation and reopen modal
+                    setTimeout(() => {
+                        window.handleTranslateLanguageSelect(new Event('click'));
+                    }, 100);
+                };
+
+                // Function to select a language
+                window.selectTranslateLanguage = (langCode) => {
+                    localStorage.setItem('translateTargetLang', langCode);
+                    const modal = document.getElementById('translate-language-modal');
+                    if (modal) {
+                        modal.remove();
+                    }
+                };
+
                 // Function to compare with default file
                 const compareWithDefault = async () => {
                     const title = extractTitleFromMarkdown(markdown).replace(/\s+/g, "-");
@@ -2528,7 +2962,7 @@ function hello() {
                                     <label style="color: var(--text-color); font-size: 14px;">Select or create file:</label>
                                     <div style="display: flex; gap: 8px;">
                                         <button id="delete-selected-btn" style="padding: 4px 10px; background: rgb(192 36 25); border: 1px solid rgb(192 36 25); border-radius: var(--border-radius); color: oklch(0.96 0.03 246); cursor: pointer; font-size: 12px; font-weight: bold; display: none; transition: all 0.2s;" onclick="window.deleteSelectedFiles()">🗑️ Delete Selected (0)</button>
-                                        <button id="create-new-file-btn" style="padding: 4px 10px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 12px; font-weight: bold;">+ New File</button>
+                                        <button id="create-new-file-btn" style="padding: 4px 10px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 12px; font-weight: bold;">+ New File</button>
                                     </div>
                                 </div>
                                 
@@ -2555,7 +2989,7 @@ function hello() {
                             
                             <div id="publish-actions" style="display: flex; gap: 10px; justify-content: flex-end;">
                                 <button onclick="document.getElementById('publish-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
-                                <button id="publish-button" onclick="window.publishToGitHub()" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Publish</button>
+                                <button id="publish-button" onclick="window.publishToGitHub()" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); var(--text-color); cursor: pointer; font-size: 14px; font-weight: bold;">Publish</button>
                             </div>
                         </div>
                     `;
@@ -2654,7 +3088,7 @@ function hello() {
                             
                             if (postsIndex !== -1 && pathParts.length > postsIndex + 2) {
                                 const folderPath = pathParts.slice(postsIndex + 1, -1).join('/');
-                                folderBadge = `<span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: var(--accent-color); opacity: 0.7; border-radius: 4px; font-size: 11px; color: white; font-weight: 500;">📁 ${folderPath}</span>`;
+                                folderBadge = `<span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: var(--accent-color); opacity: 0.7; border-radius: 4px; font-size: 11px; var(--text-color); font-weight: 500;">📁 ${folderPath}</span>`;
                             }
                             
                             return `
@@ -2774,7 +3208,7 @@ function hello() {
                                 
                                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                     <button onclick="document.getElementById('new-file-config-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
-                                    <button id="create-file-confirm-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Create Post</button>
+                                    <button id="create-file-confirm-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); var(--text-color); cursor: pointer; font-size: 14px; font-weight: bold;">Create Post</button>
                                 </div>
                             </div>
                         `;
@@ -3097,7 +3531,7 @@ function hello() {
                                 
                                 <div style="display: flex; gap: 10px; justify-content: flex-end;">
                                     <button onclick="document.getElementById('edit-metadata-modal').remove()" style="padding: 8px 16px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); cursor: pointer; font-size: 14px;">Cancel</button>
-                                    <button id="save-metadata-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); color: white; cursor: pointer; font-size: 14px; font-weight: bold;">Save Changes</button>
+                                    <button id="save-metadata-btn" style="padding: 8px 16px; background: var(--accent-color); border: none; border-radius: var(--border-radius); var(--text-color); cursor: pointer; font-size: 14px; font-weight: bold;">Save Changes</button>
                                 </div>
                             </div>
                         `;
@@ -3737,11 +4171,13 @@ function hello() {
                             if (!menu.contains(event.target) && !button.contains(event.target)) {
                                 menu.style.display = "none";
                                 document.removeEventListener("click", closeMenu);
+                                document.removeEventListener("mouseup", closeMenu);
                                 document.removeEventListener("contextmenu", closeMenu);
                             }
                         };
                         setTimeout(() => {
                             document.addEventListener("click", closeMenu);
+                            document.addEventListener("mouseup", closeMenu);
                             document.addEventListener("contextmenu", closeMenu);
                         }, 0);
                     }
@@ -3779,19 +4215,48 @@ function hello() {
                                                             !e.target.contains(event.target)
                                                         ) {
                                                             menu.style.display = "none";
-                                                            document.removeEventListener(
-                                                                "click",
-                                                                closeMenu
-                                                            );
+                                                            document.removeEventListener("click", closeMenu);
+                                                            document.removeEventListener("mouseup", closeMenu);
+                                                            document.removeEventListener("contextmenu", closeMenu);
                                                         }
                                                     };
                                                     // Usar setTimeout para evitar que el evento click actual cierre inmediatamente el menú
                                                     setTimeout(
-                                                        () =>
-                                                            document.addEventListener(
-                                                                "click",
-                                                                closeMenu
-                                                            ),
+                                                        () => {
+                                                            document.addEventListener("click", closeMenu);
+                                                            document.addEventListener("mouseup", closeMenu);
+                                                            document.addEventListener("contextmenu", closeMenu);
+                                                        },
+                                                        0
+                                                    );
+                                                }
+                                            }}
+                                            onContextMenu=${(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                const menu = e.currentTarget.nextElementSibling;
+                                                const isVisible = menu.style.display === "block";
+                                                menu.style.display = isVisible ? "none" : "block";
+
+                                                if (!isVisible) {
+                                                    const closeMenu = (event) => {
+                                                        if (
+                                                            !menu.contains(event.target) &&
+                                                            !e.target.contains(event.target)
+                                                        ) {
+                                                            menu.style.display = "none";
+                                                            document.removeEventListener("click", closeMenu);
+                                                            document.removeEventListener("mouseup", closeMenu);
+                                                            document.removeEventListener("contextmenu", closeMenu);
+                                                        }
+                                                    };
+                                                    // Usar setTimeout para evitar que el evento click actual cierre inmediatamente el menú
+                                                    setTimeout(
+                                                        () => {
+                                                            document.addEventListener("click", closeMenu);
+                                                            document.addEventListener("mouseup", closeMenu);
+                                                            document.addEventListener("contextmenu", closeMenu);
+                                                        },
                                                         0
                                                     );
                                                 }
@@ -4730,7 +5195,7 @@ function hello() {
                                                 width="18"
                                                 height="18"
                                                 viewBox="0 0 23 18"
-                                                style="pointer-events: none;"
+                                                style="pointer-events: none; margin-left: 3px;"
                                             >
                                                 <path
                                                     fill="currentColor"
@@ -5153,6 +5618,24 @@ function hello() {
                                             </svg>
                                         </button>
                                         <div class="toolbar-separator"></div>
+                                        <button
+                                            onClick=${(e) => window.handleTranslate()}
+                                            onContextMenu=${(e) => window.handleTranslateLanguageSelect(e)}
+                                            title="Translate Selection (Right-click to change language)"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 18"
+                                                style="pointer-events: none;"
+                                            >
+                                                <path
+                                                    fill="currentColor"
+                                                    d="m12.87 15.07l-2.54-2.51l.03-.03A17.5 17.5 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35C8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5l3.11 3.11zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2zm-2.62 7l1.62-4.33L19.12 17z"
+                                                />
+                                            </svg>
+                                        </button>
                                         <button
                                             onClick=${() => {
                                                 copyElementSelector()

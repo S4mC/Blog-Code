@@ -1,4 +1,24 @@
-/* Variables CSS y Temas */
+:root {
+    /* Common variables for all themes */
+    --border-radius: 8px;
+    --shadow: rgba(0, 0, 0, 0.3) 0px 4px 12px;
+    --shadow-lg: rgba(0, 0, 0, 0.3) 0px 10px 15px -3px, rgba(0, 0, 0, 0.3) 0px 4px 6px -4px;
+
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 48px;
+
+    --header-height: 60px;
+
+    /* Custom Ubuntu font */
+    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Cantarell,
+        "Helvetica Neue", sans-serif;
+}
+
+/* Themes */
 :root,
 [data-theme="dark"] {
     /* Dark theme style */
@@ -195,26 +215,6 @@
 
     /* Connector colors */
     --connector-line-color: #00000052;
-}
-
-:root {
-    /* Common variables for all themes */
-    --border-radius: 8px;
-    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-
-    --spacing-xs: 4px;
-    --spacing-sm: 8px;
-    --spacing-md: 16px;
-    --spacing-lg: 24px;
-    --spacing-xl: 32px;
-    --spacing-2xl: 48px;
-
-    --header-height: 60px;
-
-    /* Custom Ubuntu font */
-    --font-family: "Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Cantarell,
-        "Helvetica Neue", sans-serif;
 }
 
 /* Reset and base */
