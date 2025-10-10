@@ -86,17 +86,31 @@ if (typeof window !== 'undefined') {
 /**
  * Helper function to resolve relative paths to absolute URLs
  * @param {string} path - The path from search.json (can be relative or absolute)
+ * @param {boolean} isFilenameOnly - If true, assumes path is just a filename and prepends 'posts/' automatically
  * @returns {string} - Absolute URL
  */
-export function resolveContentPath(path) {
+export function resolveContentPath(path, isFilenameOnly = false) {
     // If already an absolute URL (starts with http:// or https://), return as-is
     if (path.match(/^https?:\/\//)) {
         return path;
     }
     
+    // If isFilenameOnly is true and path doesn't contain directory separators, prepend 'posts/'
+    // This handles cases like: resolveContentPath("myfile.md", true) -> baseUrl/posts/myfile.md
+    let processedPath = path;
+    if (isFilenameOnly) {
+        // Clean any leading ./ or /
+        processedPath = path.replace(/^\.?\//, '');
+        
+        // If the path doesn't already start with 'posts/', prepend it
+        if (!processedPath.startsWith('posts/')) {
+            processedPath = 'posts/' + processedPath;
+        }
+    }
+    
     // If relative path, combine with contentUrl
     // Remove leading ./ if present
-    const cleanPath = path.replace(/^\.\//, '');
+    const cleanPath = processedPath.replace(/^\.\//, '');
     
     // Ensure contentUrl doesn't end with / and path doesn't start with /
     const baseUrl = CONFIG.contentUrl.replace(/\/$/, '');

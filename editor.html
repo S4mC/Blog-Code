@@ -2042,6 +2042,7 @@ function hello() {
                 };
 
                 // Function to get list of posts files
+                // Function to get list of posts files
                 const getPostsFiles = async () => {
                     try {
                         // Fetch the search.json file which contains all posts
@@ -2051,8 +2052,14 @@ function hello() {
                         }
                         const data = await response.json();
 
-                        // Extract unique file paths from the search index and resolve relative paths
-                        const files = [...new Set(data.entries.map((entry) => resolveContentPath(entry.path)))];
+                        // Return the entries with title and resolved path
+                        const files = data.entries.map((entry) => ({
+                            title: entry.title,
+                            // Use resolveContentPath to normalize all paths
+                            path: resolveContentPath(entry.path),
+                            summary: entry.summary || "",
+                            tags: entry.tags || []
+                        }));
 
                         return files;
                     } catch (error) {
@@ -2426,8 +2433,8 @@ function hello() {
                     menu.innerHTML = files
                         .map(
                             (file) => `
-                        <button onclick="window.compareWithFile('${file}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
-                            ${file.split("/").pop()}
+                        <button onclick="window.compareWithFile('${file.path}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
+                            ${file.title}
                         </button>
                     `
                         )
@@ -2460,7 +2467,7 @@ function hello() {
                 };
 
                 // Store all files for filtering
-                let allFiles = [];
+                let allFiles = {};
                 let renderFileList = [];
                 
                 // Make selectedFiles global so it's accessible from inline event handlers
@@ -2490,7 +2497,7 @@ function hello() {
                         "display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;";
                     
                     publishModal.innerHTML = `
-                        <div style="width: 500px; max-height: 90%; background: var(--bg); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
+                        <div style="width: 500px; max-height: 100%; background: var(--bg); border-radius: var(--border-radius); display: flex; flex-direction: column; overflow: hidden; padding: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                                 <h2 style="margin: 0; color: var(--text-color);">Manage & Publish Post</h2>
                                 <button onclick="document.getElementById('publish-modal').remove()" style="background: none; border: none; color: var(--text-color); font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
@@ -2530,8 +2537,11 @@ function hello() {
                                     id="file-search-input" 
                                     placeholder="Search files..."
                                     autocomplete="off" 
-                                    style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; margin-bottom: 8px;"
+                                    style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px; margin-bottom: 4px;"
                                 />
+                                <small style="color: var(--text-secondary); font-size: 11px; display: block; margin-bottom: 8px;">
+                                    <span style="color: var(--accent-color);">💡 Tip:</span> Use <code style="background: var(--bg-hover); padding: 1px 4px; border-radius: 3px;">folder=tutorials</code> to filter by folder
+                                </small>
                                 
                                 <div id="publish-file-list" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--border-radius); background: var(--bg-light);height: 30vh;">
                                     <div style="padding: 20px; text-align: center; color: var(--text-secondary);">
@@ -2575,10 +2585,50 @@ function hello() {
                     renderFileList = (files, searchTerm = "", isFirst = false) => {
                         const fileList = document.getElementById("publish-file-list");
                         
-                        // Filter files based on search term
-                        const filteredFiles = searchTerm 
-                            ? files.filter(file => file.split("/").pop().toLowerCase().includes(searchTerm.toLowerCase()))
-                            : files;
+                        // Check if search term contains folder filter (folder=something)
+                        let folderFilter = null;
+                        let actualSearchTerm = searchTerm;
+                        
+                        const folderMatch = searchTerm.match(/folder=([^\s;]+)/i);
+                        if (folderMatch) {
+                            folderFilter = folderMatch[1].toLowerCase();
+                            // Remove folder= part from search term to allow combined search
+                            actualSearchTerm = searchTerm.replace(/folder=[^\s;]+;?\s*/gi, '').trim();
+                        }
+                        
+                        // Filter files based on search term and folder filter
+                        let filteredFiles = files;
+                        
+                        if (folderFilter || actualSearchTerm) {
+                            filteredFiles = files.filter(file => {
+                                // Extract folder from file path
+                                // Path can be like: "https://domain/posts/folder/file.md" or "posts/folder/file.md"
+                                const pathParts = file.path.split('/');
+                                const postsIndex = pathParts.findIndex(part => part === 'posts');
+                                let fileFolder = null;
+                                
+                                if (postsIndex !== -1 && pathParts.length > postsIndex + 2) {
+                                    // There's a folder between 'posts' and the filename
+                                    fileFolder = pathParts.slice(postsIndex + 1, -1).join('/').toLowerCase();
+                                }
+                                
+                                // Apply folder filter
+                                if (folderFilter) {
+                                    if (!fileFolder || !fileFolder.includes(folderFilter)) {
+                                        return false;
+                                    }
+                                }
+                                
+                                // Apply text search
+                                if (actualSearchTerm) {
+                                    const titleMatch = file.title.toLowerCase().includes(actualSearchTerm.toLowerCase());
+                                    const folderMatch = fileFolder && fileFolder.includes(actualSearchTerm.toLowerCase());
+                                    return titleMatch || folderMatch;
+                                }
+                                
+                                return true;
+                            });
+                        }
                         
                         if (filteredFiles.length === 0) {
                             fileList.innerHTML = `<p style="padding: 20px; text-align: center; color: var(--text-secondary);">No files found</p>`;
@@ -2587,38 +2637,48 @@ function hello() {
 
                         
                         fileList.innerHTML = filteredFiles.map((file) => {
-                            const fileName = file.split("/").pop();
-                            const fileNameWithoutExt = fileName.replace(/\.(md|html)$/, "");
-                            const isMatch = currentTitle && fileNameWithoutExt.toLowerCase().includes(currentTitle.toLowerCase());
+                            const fileNameWithoutExt = file.title;
+                            const isMatch = currentTitle && fileNameWithoutExt.toLowerCase() == currentTitle.toLowerCase();
                             
                             if (isMatch && isFirst) {
-                                window.selectedFiles.add(file);
+                                window.selectedFiles.add(file.path);
                             }
 
                             // Check if this file is in the selected set
-                            const isSelected = window.selectedFiles.has(file);
+                            const isSelected = window.selectedFiles.has(file.path);
+                            
+                            // Extract folder from path
+                            const pathParts = file.path.split('/');
+                            const postsIndex = pathParts.findIndex(part => part === 'posts');
+                            let folderBadge = '';
+                            
+                            if (postsIndex !== -1 && pathParts.length > postsIndex + 2) {
+                                const folderPath = pathParts.slice(postsIndex + 1, -1).join('/');
+                                folderBadge = `<span style="display: inline-block; margin-left: 8px; padding: 2px 8px; background: var(--accent-color); opacity: 0.7; border-radius: 4px; font-size: 11px; color: white; font-weight: 500;">📁 ${folderPath}</span>`;
+                            }
                             
                             return `
-                                <div class="file-item" data-file="${file}" style="display: flex; align-items: center; background: ${isMatch ? "var(--bg-hover)" : "transparent"}; transition: background 0.2s; border-bottom: 1px solid var(--border); cursor: pointer; padding: 10px 15px;" 
+                                <div class="file-item" data-file="${file.path}" style="display: flex; align-items: center; background: ${isMatch ? "var(--bg-hover)" : "transparent"}; transition: background 0.2s; border-bottom: 1px solid var(--border); cursor: pointer; padding: 10px 15px;" 
                                      onmouseover="this.style.background='var(--bg-hover)'"
                                      onmouseout="if (!this.querySelector('.file-checkbox').checked) this.style.background='${isMatch ? "var(--bg-hover)" : "transparent"}'"
                                      onclick="window.toggleFileSelection(this)">
                                     <input 
                                         type="checkbox" 
                                         class="file-checkbox"
-                                        data-file="${file}"
+                                        data-file="${file.path}"
                                         style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;"
                                         onclick="event.stopPropagation()"
                                         onchange="(function(cb) { if(cb.checked) { window.selectedFiles.add(cb.dataset.file); } else { window.selectedFiles.delete(cb.dataset.file); } window.updateSelectionUI(false); })(this)"
                                         ${(isMatch && isFirst) || isSelected ? 'checked' : ''}
                                     />
-                                    <div style="flex: 1; color: var(--text-color); font-size: 14px;">
-                                        📄 ${fileName}
+                                    <div style="flex: 1; color: var(--text-color); font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                                        <span>📄 ${fileNameWithoutExt}</span>
+                                        ${folderBadge}
                                         ${isMatch ? '<span style="color: var(--accent-color); filter: brightness(1.7); margin-left: 10px;">✓ Match</span>' : ""}
                                     </div>
                                     <button 
                                         class="edit-metadata-btn"
-                                        data-file="${file}"
+                                        data-file="${file.path}"
                                         onclick="window.editFileMetadata(this, event)"
                                         style="margin-right: 10px; background: transparent; border: none; border-radius: var(--border-radius); color: var(--accent-color); cursor: pointer; font-size: 12px; transition: all 0.2s;"
                                         onmouseover="this.style.background='var(--accent-color)'; this.style.color='white';"
@@ -2654,11 +2714,6 @@ function hello() {
                         renderFileList(allFiles, e.target.value);
                     });
                     
-                    // Also trigger on keyup for better responsiveness
-                    managerSearchInput.addEventListener("keyup", (e) => {
-                        renderFileList(allFiles, e.target.value);
-                    });
-                    
                     // Create new file button handler
                     document.getElementById("create-new-file-btn").addEventListener("click", () => {
                         // Create a modal for new file configuration
@@ -2679,8 +2734,11 @@ function hello() {
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">File Name: *</label>
-                                    <input type="text" id="new-file-name" placeholder="my-post.md or my-post.html" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
-                                    <small style="color: var(--text-secondary); font-size: 12px;">Must end with .md or .html</small>
+                                    <input type="text" id="new-file-name" placeholder="my-post.md or folder/my-post.md" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <small style="color: var(--text-secondary); font-size: 12px;">
+                                        Must end with .md or .html<br>
+                                        <span style="color: var(--accent-color);">💡 Tip:</span> You can include folders: <code style="background: var(--bg-hover); padding: 2px 4px; border-radius: 3px;">tutorials/my-post.md</code>
+                                    </small>
                                 </div>
                                 
                                 <div style="border-top: 1px solid var(--border); padding-top: 15px; margin-bottom: 15px;">
@@ -2688,7 +2746,7 @@ function hello() {
                                     
                                     <div style="margin-bottom: 12px;">
                                         <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px;">Title: *</label>
-                                        <input type="text" id="new-post-title" placeholder="Post Title" value="${extractTitleFromMarkdown(markdown)}" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                        <input type="text" id="new-post-title" placeholder="Post Title" value="${extractTitleFromMarkdown(markdown)}" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     </div>
                                     
                                     <div style="margin-bottom: 12px;">
@@ -2761,9 +2819,15 @@ function hello() {
                                 ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
                                 : [];
                             
+                            // Normalize the file path:
+                            // - Remove leading ./ or /
+                            // - If it starts with a folder path (e.g., "folder/file.md"), keep it
+                            // - Use resolveContentPath with isFilenameOnly=true to prepend 'posts/' and build full URL
+                            let normalizedFileName = fileName.replace(/^\.?\//, '');
+                            const fullPath = resolveContentPath(normalizedFileName, true);
+                            
                             // Check if file already exists
-                            const fullPath = `${CONFIG.contentUrl}/posts/${fileName}`;
-                            if (allFiles.includes(fullPath)) {
+                            if (allFiles.some(file => file.path === fullPath)) {
                                 alert("A file with this name already exists. Please choose a different name.");
                                 return;
                             }
@@ -2771,10 +2835,14 @@ function hello() {
                             document.getElementById("file-search-input").value = "";
 
                             // Store the search.json configuration
+                            // For search.json, store the relative path (e.g., "posts/folder/file.md" or "./posts/file.md")
+                            // We'll store it as a relative path starting with posts/
+                            const relativePath = `./posts/${normalizedFileName}`;
+                            
                             const searchConfig = {
                                 title: title,
                                 summary: summary,
-                                path: fullPath,
+                                path: relativePath, // Store relative path in search.json
                                 tags: tags
                             };
                             
@@ -2785,8 +2853,13 @@ function hello() {
                             
                             window.newFileSearchConfig = searchConfig;
                             
-                            // Add to files list
-                            allFiles.unshift(fullPath);
+                            // Add to files list (with full URL for internal tracking)
+                            allFiles.push({
+                                title: title,
+                                path: fullPath,
+                                summary: summary || "",
+                                tags: tags || []
+                            });
                             
                             // Re-render list
                             renderFileList(allFiles, document.getElementById("file-search-input").value);
@@ -2797,7 +2870,8 @@ function hello() {
                                 newFileItem.dataset.isNew = "true";
                                 const fileDiv = newFileItem.querySelector('div[style*="flex: 1"]');
                                 if (fileDiv) {
-                                    fileDiv.innerHTML = `✨ ${fileName} <span style="color: var(--accent-color); margin-left: 10px;">NEW</span>`;
+                                    // Display the user-entered filename (which may include folders)
+                                    fileDiv.innerHTML = `✨ ${normalizedFileName} <span style="color: var(--accent-color); margin-left: 10px;">NEW</span>`;
                                 }
                                 
                                 // Auto-check the checkbox
@@ -3133,8 +3207,12 @@ function hello() {
                     }
                     
                     // Confirm deletion
-                    const fileList = filesToDelete.map(f => f.split("/").pop()).join("\n- ");
-                    if (!confirm(`Are you sure you want to delete ${filesToDelete.length} file(s) from GitHub?\n\n- ${fileList}\n\nThis action cannot be undone!`)) {
+                    const titles = Array.from(filesToDelete).map((path) => {
+                        const match = allFiles.find(file => file.path === path);
+                        return match ? match.title : "(Sin título)";
+                    }).join("\n- ");
+
+                    if (!confirm(`Are you sure you want to delete ${filesToDelete.length} file(s) from GitHub?\n\n- ${titles}\n\nThis action cannot be undone!`)) {
                         return;
                     }
                     
@@ -3174,6 +3252,8 @@ function hello() {
                     // Delete each file
                     for (const filePath of filesToDelete) {
                         try {
+                            // Convert full URL path to repository path
+                            // Handle paths that may include folders
                             let pathInRepo = filePath.replace(contentUrl, "").replace(/^\/+/, "");
                             if (basePath) {
                                 pathInRepo = basePath + "/" + pathInRepo;
@@ -3216,7 +3296,8 @@ function hello() {
                             });
                             
                             if (!deleteResponse.ok) {
-                                throw new Error(`Failed to delete: ${deleteResponse.statusText}`);
+                                const errorData = await deleteResponse.json();
+                                throw new Error(errorData.message || `Failed to delete file: ${deleteResponse.statusText}`);
                             }
                             
                             results.deleted.push(filePath);
@@ -3244,11 +3325,12 @@ function hello() {
                             const searchContent = JSON.parse(atob(searchData.content));
                             
                             // Filter out deleted entries
+                            // Compare by resolving paths from search.json entries
                             const allDeletedPaths = [...results.deleted, ...results.notFound];
                             searchContent.entries = searchContent.entries.filter(entry => {
                                 const entryFullPath = entry.path.startsWith("http") 
                                     ? entry.path 
-                                    : `${contentUrl}/${entry.path}`;
+                                    : resolveContentPath(entry.path);
                                 return !allDeletedPaths.includes(entryFullPath);
                             });
                             
@@ -3278,7 +3360,7 @@ function hello() {
                     // Remove from local list
                     const allDeletedPaths = [...results.deleted, ...results.notFound];
                     allDeletedPaths.forEach(path => {
-                        const index = allFiles.indexOf(path);
+                        const index = allFiles.findIndex(file => file.path === path);
                         if (index > -1) {
                             allFiles.splice(index, 1);
                         }
@@ -3310,259 +3392,6 @@ function hello() {
                     deleteBtn.disabled = false;
                     deleteBtn.textContent = "🗑️ Delete Selected (0)";
                     deleteBtn.style.display = "none";
-                };
-
-                // Function to delete a single file
-                window.deleteSingleFile = async (button, event) => {
-                    event.stopPropagation();
-                    
-                    const filePath = button.dataset.file;
-                    const fileName = filePath.split("/").pop();
-                    
-                    if (!confirm(`Are you sure you want to delete "${fileName}" from GitHub?\n\nThis action cannot be undone!`)) {
-                        return;
-                    }
-                    
-                    const apiKey = document.getElementById("github-api-key")?.value.trim();
-                    
-                    if (!apiKey) {
-                        alert("❌ Please enter your GitHub API key first");
-                        return;
-                    }
-                    
-                    button.disabled = true;
-                    button.innerHTML = "⏳";
-                    
-                    try {
-                        const contentUrl = CONFIG.contentUrl;
-                        const githubMatch = contentUrl.match(/https?:\/\/([^.]+)\.github\.io\/([^\/]+)(?:\/(.*))?/);
-                        
-                        if (!githubMatch) {
-                            throw new Error("Could not extract repository info");
-                        }
-                        
-                        const repoOwner = githubMatch[1];
-                        const repoName = githubMatch[2];
-                        const basePath = githubMatch[3] || "";
-                        
-                        let pathInRepo = filePath.replace(contentUrl, "").replace(/^\/+/, "");
-                        if (basePath) {
-                            pathInRepo = basePath + "/" + pathInRepo;
-                        }
-                        
-                        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${pathInRepo}`;
-                        
-                        let fileDeleted = false;
-                        let fileSha = null;
-                        
-                        // Try to get file SHA
-                        const getResponse = await fetch(apiUrl, {
-                            headers: {
-                                "Authorization": `token ${apiKey}`,
-                                "Accept": "application/vnd.github.v3+json",
-                            },
-                        });
-                        
-                        if (getResponse.status === 404) {
-                            // File doesn't exist, will only remove from search.json
-                            console.log("File not found on GitHub, will remove from search.json only");
-                        } else if (getResponse.ok) {
-                            const fileData = await getResponse.json();
-                            fileSha = fileData.sha;
-                            
-                            // Delete file
-                            const deleteResponse = await fetch(apiUrl, {
-                                method: "DELETE",
-                                headers: {
-                                    "Authorization": `token ${apiKey}`,
-                                    "Accept": "application/vnd.github.v3+json",
-                                    "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                    message: `Delete ${fileName} from Blog Editor`,
-                                    sha: fileSha,
-                                }),
-                            });
-                            
-                            if (!deleteResponse.ok) {
-                                const errorData = await deleteResponse.json();
-                                throw new Error(errorData.message || `Failed to delete file`);
-                            }
-                            
-                            fileDeleted = true;
-                        } else {
-                            throw new Error(`Failed to check file: ${getResponse.statusText}`);
-                        }
-                        
-                        // Update search.json
-                        try {
-                            const searchJsonPath = basePath ? `${basePath}/search.json` : "search.json";
-                            const searchJsonUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${searchJsonPath}`;
-                            
-                            const searchResponse = await fetch(searchJsonUrl, {
-                                headers: {
-                                    "Authorization": `token ${apiKey}`,
-                                    "Accept": "application/vnd.github.v3+json",
-                                },
-                            });
-                            
-                            if (searchResponse.ok) {
-                                const searchData = await searchResponse.json();
-                                const searchContent = JSON.parse(atob(searchData.content));
-                                
-                                // Remove entry
-                                searchContent.entries = searchContent.entries.filter(entry => {
-                                    const entryFullPath = entry.path.startsWith("http") 
-                                        ? entry.path 
-                                        : `${contentUrl}/${entry.path}`;
-                                    return entryFullPath !== filePath;
-                                });
-                                
-                                // Update
-                                const updateResponse = await fetch(searchJsonUrl, {
-                                    method: "PUT",
-                                    headers: {
-                                        "Authorization": `token ${apiKey}`,
-                                        "Accept": "application/vnd.github.v3+json",
-                                        "Content-Type": "application/json",
-                                    },
-                                    body: JSON.stringify({
-                                        message: `Remove ${fileName} from search.json`,
-                                        content: btoa(JSON.stringify(searchContent, null, 2)),
-                                        sha: searchData.sha,
-                                    }),
-                                });
-                                
-                                if (!updateResponse.ok) {
-                                    console.error("Failed to update search.json");
-                                }
-                            }
-                        } catch (error) {
-                            console.error("Error updating search.json:", error);
-                        }
-                        
-                        // Remove from local list
-                        const index = allFiles.indexOf(filePath);
-                        if (index > -1) {
-                            allFiles.splice(index, 1);
-                        }
-                        
-                        renderFileList(allFiles, document.getElementById("file-search-input").value);
-                        
-                        const message = fileDeleted 
-                            ? `✅ "${fileName}" has been deleted from GitHub and removed from search.json!`
-                            : `✅ "${fileName}" was not found on GitHub but has been removed from search.json!`;
-                        alert(message);
-                        
-                    } catch (error) {
-                        console.error("Delete error:", error);
-                        alert(`❌ Error: ${error.message}`);
-                        button.disabled = false;
-                        button.innerHTML = "🗑️";
-                    }
-                };
-
-                // Function to delete a file from GitHub (OLD - keeping for compatibility)
-                window.deleteFileFromList = async (button, event) => {
-                    event.stopPropagation(); // Prevent selecting the file when clicking delete
-                    
-                    const filePath = button.dataset.file;
-                    const fileName = filePath.split("/").pop();
-                    
-                    // Confirm deletion
-                    if (!confirm(`Are you sure you want to delete "${fileName}" from GitHub?\n\nThis action cannot be undone!`)) {
-                        return;
-                    }
-                    
-                    const apiKey = document.getElementById("github-api-key")?.value.trim();
-                    
-                    if (!apiKey) {
-                        alert("❌ Please enter your GitHub API key first");
-                        return;
-                    }
-                    
-                    // Show loading state
-                    button.disabled = true;
-                    button.innerHTML = "⏳";
-                    button.style.cursor = "not-allowed";
-                    
-                    try {
-                        // Extract repository info from contentUrl
-                        const contentUrl = CONFIG.contentUrl;
-                        const githubMatch = contentUrl.match(/https?:\/\/([^.]+)\.github\.io\/([^\/]+)(?:\/(.*))?/);
-                        
-                        if (!githubMatch) {
-                            throw new Error("Could not extract repository info from contentUrl");
-                        }
-                        
-                        const repoOwner = githubMatch[1];
-                        const repoName = githubMatch[2];
-                        const basePath = githubMatch[3] || "";
-                        
-                        // Convert full URL path to repository path
-                        let pathInRepo = filePath.replace(contentUrl, "").replace(/^\/+/, "");
-                        
-                        if (basePath) {
-                            pathInRepo = basePath + "/" + pathInRepo;
-                        }
-                        
-                        // GitHub API endpoint
-                        const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${pathInRepo}`;
-                        
-                        // Get file SHA (required for deletion)
-                        const getResponse = await fetch(apiUrl, {
-                            headers: {
-                                "Authorization": `token ${apiKey}`,
-                                "Accept": "application/vnd.github.v3+json",
-                            },
-                        });
-                        
-                        if (!getResponse.ok) {
-                            throw new Error(`Failed to get file info: ${getResponse.statusText}`);
-                        }
-                        
-                        const fileData = await getResponse.json();
-                        const sha = fileData.sha;
-                        
-                        // Delete file
-                        const deleteResponse = await fetch(apiUrl, {
-                            method: "DELETE",
-                            headers: {
-                                "Authorization": `token ${apiKey}`,
-                                "Accept": "application/vnd.github.v3+json",
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                message: `Delete ${fileName} from Blog Editor`,
-                                sha: sha,
-                            }),
-                        });
-                        
-                        if (!deleteResponse.ok) {
-                            const errorData = await deleteResponse.json();
-                            throw new Error(errorData.message || `Failed to delete file: ${deleteResponse.statusText}`);
-                        }
-                        
-                        // Remove from local list and re-render
-                        const index = allFiles.indexOf(filePath);
-                        if (index > -1) {
-                            allFiles.splice(index, 1);
-                        }
-                        
-                        // Re-render the list
-                        renderFileList(allFiles, document.getElementById("file-search-input").value);
-                        
-                        alert(`✅ "${fileName}" has been successfully deleted from GitHub!`);
-                        
-                    } catch (error) {
-                        console.error("Delete error:", error);
-                        alert(`❌ Error deleting file: ${error.message}`);
-                        
-                        // Restore button
-                        button.disabled = false;
-                        button.innerHTML = "🗑️";
-                        button.style.cursor = "pointer";
-                    }
                 };
 
                 // Function to publish to GitHub
@@ -3663,11 +3492,14 @@ function hello() {
                                 }
                                 
                                 // Convert full URL path to repository path
+                                // Handle paths that may include folders (e.g., posts/tutorials/file.md)
                                 let pathInRepo = filePath.replace(contentUrl, "").replace(/^\/+/, "");
                                 if (basePath) {
                                     pathInRepo = basePath + "/" + pathInRepo;
                                 }
                                 
+                                // GitHub API automatically creates necessary directories when you PUT a file
+                                // No need to manually create directories
                                 const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/${pathInRepo}`;
                                 
                                 let sha = null;
@@ -3749,6 +3581,7 @@ function hello() {
                                     const searchJsonData = await searchJsonResponse.json();
                                     const currentSearchJson = JSON.parse(atob(searchJsonData.content));
                                     
+                                    // Add the new entry with relative path (already stored correctly in newFileSearchConfig)
                                     currentSearchJson.entries.unshift(window.newFileSearchConfig);
                                     
                                     const updateSearchJsonResponse = await fetch(searchJsonUrl, {
