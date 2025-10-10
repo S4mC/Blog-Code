@@ -167,7 +167,7 @@ function processCodeBlocksAndTitles(text) {
                 // End of code block
                 inCodeBlock = false;
 
-                let spaceTitle = line.replace(trimmedLine, "");
+                let spaceTitle = line.match(/^\s*/)[0];
                 
                 // Check if all lines have common leading whitespace and remove it if they do
                 let processedCode = currentCode;
