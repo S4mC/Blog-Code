@@ -99,7 +99,7 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
 
     // Filter only simple backticks
     const singleBackticks = allBackticks.filter((pos) => {
-        const before = pos > 0 && text[pos - 1] === "`";
+        const before = pos > 0 && (text[pos - 1] === "`" || text[pos - 1] === "\\"); // You can use \` to use a literal backtick in inline code
         const after = pos < text.length - 1 && text[pos + 1] === "`";
         return !before && !after;
     });
@@ -116,7 +116,7 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
 
             if (langMatch) {
                 const lang = langMatch[1];
-                const code = text.substring(start + 1, end);
+                const code = text.substring(start + 1, end).replace(/\\`/g, "`"); // Allow escaped backticks inside code
                 validBlocks.push({
                     start: start - langMatch[0].length + 1,
                     end: end + 1,
@@ -155,7 +155,7 @@ function processCodeBlocksAndTitles(text) {
     const lines = text.split("\n");
 
     for (let line of lines) {
-
+        line = line.replace(/\t/g, "    "); // Remove tabs if present for avoiding issues
         const trimmedLine = line.trim();
         if (trimmedLine.startsWith("```")) {
             if (!inCodeBlock) {
@@ -182,7 +182,7 @@ function processCodeBlocksAndTitles(text) {
                         for (const line of nonEmptyLines) {
                             let indentation = 0;
                             for (let i = 0; i < line.length; i++) {
-                                if (line[i] === ' ' || line[i] === '\t') {
+                                if (line[i] === ' ') {
                                     indentation++;
                                 } else {
                                     break;
@@ -260,7 +260,7 @@ function processMarkdownBlocks(markdownContent) {
         for (const line of nonEmptyLines) {
             let indentation = 0;
             for (let i = 0; i < line.length; i++) {
-                if (line[i] === ' ' || line[i] === '\t') {
+                if (line[i] === ' ') {
                     indentation++;
                 } else {
                     break;
@@ -326,32 +326,33 @@ function processMarkdownBlocks(markdownContent) {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmedLine = line.trim();
+        let spaceTitle = line.match(/^\s*/)[0];
 
-        if (trimmedLine.startsWith(":::conector")) {
-            processedLines.push("");
-            processedLines.push(
-                `<div class="content-conector">`
-            );
+        if (trimmedLine.startsWith(":::connector")) {
+            let attributes = obtainAttributes(trimmedLine);
+
+            processedLines.push(spaceTitle);
+            processedLines.push(spaceTitle + '<div class="content-connector" ' + attributes + '>');
 
             // Process nested content
             const [blockContent, endIndex] = processNestedBlocks(i + 1);
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
             }
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             i = endIndex;
-            processedLines.push("</div>");
-            processedLines.push("");
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle);
 
         } else if (trimmedLine.startsWith(":::float-")) {
             const floatId = trimmedLine.substring(":::float-".length);
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             processedLines.push(
-                `<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`
+                spaceTitle + `<div class="float-container" id="float-${floatId}"><button class="float-close">×</button>`
             );
 
             // Process nested content
@@ -359,64 +360,64 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
             }
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             i = endIndex;
-            processedLines.push("</div>");
-            processedLines.push("");
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle);
             
         } else if (trimmedLine.startsWith(":::note")) {
-            processedLines.push('<div class="note-callout">');
-            processedLines.push('<div class="callout-header">');
+            processedLines.push(spaceTitle + '<div class="note-callout">');
+            processedLines.push(spaceTitle + '<div class="callout-header">');
             processedLines.push(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'
+                spaceTitle + '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 20H7.197c-1.118 0-1.678 0-2.105-.218a2 2 0 0 1-.874-.874C4 18.48 4 17.92 4 16.8V7.2c0-1.12 0-1.68.218-2.108c.192-.377.497-.682.874-.874C5.52 4 6.08 4 7.2 4h9.6c1.12 0 1.68 0 2.107.218c.377.192.683.497.875.874c.218.427.218.987.218 2.105V13m-7 7c.286-.003.466-.014.639-.055q.308-.075.578-.24c.202-.124.375-.296.72-.642l4.126-4.125c.346-.346.518-.52.642-.721q.165-.271.24-.579c.04-.172.051-.352.054-.638M13 20v-5.4c0-.56 0-.84.109-1.054a1 1 0 0 1 .437-.437C13.76 13 14.04 13 14.6 13H20"/></svg>'
             );
-            processedLines.push("<span>Note</span>");
-            processedLines.push("</div>");
-            processedLines.push('<div class="callout-content">');
+            processedLines.push(spaceTitle + '<span>Note</span>');
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle + '<div class="callout-content">');
 
             // Process nested content
             const [blockContent, endIndex] = processNestedBlocks(i + 1);
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
             }
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             
             i = endIndex;
-            processedLines.push("</div>");
-            processedLines.push("</div>");
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle + "</div>");
             
         } else if (trimmedLine.startsWith(":::warning")) {
-            processedLines.push('<div class="warning-callout">');
-            processedLines.push('<div class="callout-header">');
+            processedLines.push(spaceTitle + '<div class="warning-callout">');
+            processedLines.push(spaceTitle + '<div class="callout-header">');
             processedLines.push(
-                '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'
+                spaceTitle + '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'
             );
-            processedLines.push("<span>Warning</span>");
-            processedLines.push("</div>");
-            processedLines.push('<div class="callout-content">');
+            processedLines.push(spaceTitle + "<span>Warning</span>");
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle + '<div class="callout-content">');
 
             // Process nested content
             const [blockContent, endIndex] = processNestedBlocks(i + 1);
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
             }
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             
             i = endIndex;
-            processedLines.push("</div>");
-            processedLines.push("</div>");
+            processedLines.push(spaceTitle + "</div>");
+            processedLines.push(spaceTitle + "</div>");
             
         } else if (trimmedLine.startsWith(":::grid")) {
             // Extract grid configuration from the line
@@ -467,7 +468,7 @@ function processMarkdownBlocks(markdownContent) {
                 gridClasses += " responsive-grid";
             }
 
-            processedLines.push(`<div class="${gridClasses}" style="display: grid; ${gridStyles}">`);
+            processedLines.push(spaceTitle + `<div class="${gridClasses}" style="display: grid; ${gridStyles}">`);
 
             // Process nested content
             const [blockContent, endIndex] = processNestedBlocks(i + 1);
@@ -477,12 +478,19 @@ function processMarkdownBlocks(markdownContent) {
             const gridItems = [];
             let currentItem = [];
             let inItem = false;
+            let inBlock = false;
             
             for (let j = 0; j < blockContent.length; j++) {
                 const line = blockContent[j];
                 const trimmed = line.trim();
-                
-                if (trimmed === "---" || trimmed.startsWith("--- ")) {
+
+                if (trimmed.startsWith(":::") && trimmed !== ":::") {
+                    inBlock += 1;
+                } else if (trimmed === ":::") {
+                    inBlock -= 1;
+                }
+
+                if (inBlock == 0 && (trimmed === "---" || trimmed.startsWith("--- "))) {
                     // Save current item if it has content
                     if (currentItem.length > 0) {
                         gridItems.push(currentItem.join("\n"));
@@ -507,6 +515,8 @@ function processMarkdownBlocks(markdownContent) {
             if (currentItem.length > 0) {
                 gridItems.push(currentItem.join("\n"));
             }
+
+            console.log("Grid items:", gridItems);
             
             // If no explicit items found, treat the whole content as one item per paragraph
             if (gridItems.length === 0) {
@@ -517,21 +527,21 @@ function processMarkdownBlocks(markdownContent) {
             // Process each grid item
             gridItems.forEach((item, index) => {
                 const itemClass = gridConfig.includes('equal-height') ? 'grid-item equal-height' : 'grid-item';
-                processedLines.push(`<div class="${itemClass}">`);
+                processedLines.push(`${spaceTitle}<div class="${itemClass}">`);
                 
                 // Recursively process the content inside each grid item
                 const itemProcessed = processMarkdownBlocks(item.trim());
-                processedLines.push("");
+                processedLines.push(spaceTitle);
                 for (const line of itemProcessed.split("\n")) {
-                    processedLines.push(line);
+                    processedLines.push(spaceTitle + line);
                 }
-                processedLines.push("");
-                
-                processedLines.push("</div>");
+                processedLines.push(spaceTitle);
+
+                processedLines.push(spaceTitle + "</div>");
             });
             
             i = endIndex;
-            processedLines.push("</div>");
+            processedLines.push(spaceTitle + "</div>");
             
         } else if (trimmedLine.startsWith(":::details")) {
             let nameSummary = trimmedLine.replace(":::details", "").trim();
@@ -540,7 +550,7 @@ function processMarkdownBlocks(markdownContent) {
                 nameSummary = nameSummary.replace("-open ", "");
                 openDefault = true;
             }
-            processedLines.push(`<details${openDefault ? " open" : ""}>
+            processedLines.push(spaceTitle + `<details${openDefault ? " open" : ""}>
                             <summary><p>${nameSummary}</p></summary>
                             <div class="content-wrapper-details">
                                 <div class="contentDetails">`);
@@ -550,15 +560,15 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
-            processedLines.push("");
+            processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
             }
-            processedLines.push("");
-            
+            processedLines.push(spaceTitle);
+
             i = endIndex;
-            processedLines.push("</div> </div> </details>");
-            processedLines.push("");
+            processedLines.push(spaceTitle + "</div> </div> </details>");
+            processedLines.push(spaceTitle);
             
         } else if (trimmedLine.startsWith(":::iframe")) {
             let attributes = obtainAttributes(line);
@@ -576,7 +586,7 @@ function processMarkdownBlocks(markdownContent) {
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>`;
             processedLines.push(
-                `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
+                spaceTitle + `<div class="iframe-container"><iframe src="${url}" frameborder="0" allowfullscreen ${attributes}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${expandIcon}</span><span class="contract-icon" style="display: none;">${contractIcon}</span></button></div>`
             );
         } else {
             processedLines.push(line);

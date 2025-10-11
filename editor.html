@@ -95,67 +95,7 @@
             });
 
             // Contenido por defecto para un Nuevo documento
-            const DEFAULT_MARKDOWN_CONTENT = `# New document
-
-This is an example of a **blog entry** with *italic text*.
-
-## Feature List
-
-- Support for **bold** and *italic*
-- Numbered and bullet lists
-- \`inline code\`
-- Links: [Example](https://example.com)
-
-:::details -open Collapsible Element
-\t### This item is open by default
-\tcontent
-:::
-
-### SVG Container
-
-\`\`\`svg style="height:15em;"
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M3 21q-.825 0-1.412-.587T1 19V5q0-.825.588-1.412T3 3h18q.825 0 1.413.588T23 5v14q0 .825-.587 1.413T21 21zm4-4h2V7H5v2h2zm4.5 0h2l1.75-3.175L17 17h2l-2.75-5L19 7h-2l-1.75 3.175L13.5 7h-2l2.75 5z"/></svg>
-\`\`\`
-
-### Code Block
-
-\`\`\`javascript
-function hello() {
-    console.log("Hello world!");
-}
-\`\`\`
-
-### Example Table
-
-| Column 1 | Column 2 | Column 3 |
-|----------|----------|----------|
-| Cell A   | Cell B   | Cell C   |
-| Cell D   | Cell E   | Cell F   |
-
-### Embedded Iframe
-
-:::iframe
-\thttps://example.com
-:::
-
-### Blockquote
-
-> This is a
-> blockquote
-
-### Note Callout
-
-:::note
-\tThis is a note callout with important information.
-\tYou can include **formatted text** here.
-:::
-
-### Warning Callout
-
-:::warning
-\tThis is a warning callout to highlight potential issues or important alerts.
-\tBe careful with this action!
-:::`;
+            const DEFAULT_MARKDOWN_CONTENT = `# New document\n\n`;
 
             function MarkdownEditor() {
                 const handleNavigateToEntry = (entry) => {
@@ -426,7 +366,7 @@ function hello() {
                                 fontSize: 16,
                                 lineNumbers: "on",
                                 roundedSelection: false,
-                                scrollBeyondLastLine: false,
+                                scrollBeyondLastLine: true,
                                 wordWrap: wordWrap, // Using the wordWrap state
                                 acceptSuggestionOnEnter: "off",
                                 automaticLayout: true,
@@ -468,23 +408,23 @@ function hello() {
                                     const shiftKey =
                                         ed._standaloneKeybindingService._currentChord?.[0]?.shiftKey;
 
-                                    // Regular expression to detect numbered lines (e.g., "1. ", "12. ")
-                                    const numberedListRegex = /^(\d+)\.(\s+)(.*)$/;
-                                    // Regular expression to detect bullet lists (e.g., "- ")
-                                    const bulletListRegex = /^(-|\*)(\s+)(.*)$/;
+                                    // Regular expression to detect numbered lines (e.g., "1. ", "12. ") with optional leading spaces
+                                    const numberedListRegex = /^(\s*)(\d+)\.(\s+)(.*)$/;
+                                    // Regular expression to detect bullet lists (e.g., "- ") with optional leading spaces
+                                    const bulletListRegex = /^(\s*)(-|\*)(\s+)(.*)$/;
+
+                                    const lineStartSpaces = lineContent.match(/^\s*/)[0];
 
                                     const numberedMatch = lineContent.match(numberedListRegex);
                                     const bulletMatch = lineContent.match(bulletListRegex);
 
-                                    // If Shift is being pressed, just insert a line break without continuing the list
-                                    if (shiftKey) {
-                                        editor.trigger("keyboard", "type", { text: "\n" });
-                                        return true;
-                                    }
+                                    // Check if cursor is at the end of the line
+                                    const isAtEndOfLine = position.column === model.getLineMaxColumn(position.lineNumber);
 
-                                    if (numberedMatch) {
+                                    // Only execute list logic if cursor is at the end of the line
+                                    if (isAtEndOfLine && numberedMatch) {
                                         // If the current line is empty after the number (e.g., "1. "), end the list
-                                        if (numberedMatch[3].trim() === "") {
+                                        if (numberedMatch[4].trim() === "") {
                                             // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
@@ -495,18 +435,18 @@ function hello() {
                                             editor.executeEdits("", [
                                                 {
                                                     range: range,
-                                                    text: "",
+                                                    text: lineStartSpaces,
                                                 },
                                             ]);
                                             return true; // Prevent default behavior
                                         }
 
-                                        const currentNumber = parseInt(numberedMatch[1], 10);
+                                        const currentNumber = parseInt(numberedMatch[2], 10);
                                         const nextNumber = currentNumber + 1;
-                                        const spacing = numberedMatch[2]; // Keep the same spacing
+                                        const spacing = numberedMatch[3]; // Keep the same spacing
 
                                         // Insert a new line with the next number
-                                        const text = "\n" + nextNumber + "." + spacing;
+                                        const text = "\n" + lineStartSpaces + nextNumber + "." + spacing;
                                         editor.executeEdits("", [
                                             {
                                                 range: {
@@ -526,15 +466,15 @@ function hello() {
                                         // Move the cursor to the new line after the number
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
-                                            column: (nextNumber + ".").length + spacing.length + 1,
+                                            column: lineStartSpaces.length + (nextNumber + ".").length + spacing.length + 1,
                                         });
 
                                         return true; // Completed
                                     }
 
-                                    if (bulletMatch) {
+                                    if (isAtEndOfLine && bulletMatch) {
                                         // If the current line is empty after the bullet (e.g., "- "), end the list
-                                        if (bulletMatch[3].trim() === "") {
+                                        if (bulletMatch[4].trim() === "") {
                                             // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
@@ -545,17 +485,17 @@ function hello() {
                                             editor.executeEdits("", [
                                                 {
                                                     range: range,
-                                                    text: "",
+                                                    text: lineStartSpaces,
                                                 },
                                             ]);
                                             return true; // Prevent default behavior
                                         }
 
-                                        const bulletChar = bulletMatch[1]; // "-" o "*"
-                                        const spacing = bulletMatch[2]; // Keep the same spacing
+                                        const bulletChar = bulletMatch[2]; // "-" o "*"
+                                        const spacing = bulletMatch[3]; // Keep the same spacing
 
                                         // Insert a new line with the same bullet
-                                        const text = "\n" + bulletChar + spacing;
+                                        const text = "\n" + lineStartSpaces + bulletChar + spacing;
                                         editor.executeEdits("", [
                                             {
                                                 range: {
@@ -575,7 +515,7 @@ function hello() {
                                         // Move the cursor to the new line after the bullet
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
-                                            column: bulletChar.length + spacing.length + 1,
+                                            column: lineStartSpaces.length + bulletChar.length + spacing.length + 1,
                                         });
 
                                         return true; // Completed
@@ -1035,7 +975,7 @@ function hello() {
                             }rem;">`;
 
                             for (let i = 0; i < items; i++) {
-                                previewHTML += `<div class="preview-grid-item">Elemento ${i + 1}</div>`;
+                                previewHTML += `<div class="preview-grid-item">Element ${i + 1}</div>`;
                             }
                         }
 
@@ -1113,9 +1053,9 @@ function hello() {
                             // Generate placeholder content for each item
                             for (let i = 0; i < items; i++) {
                                 if (i > 0) gridMarkdown += "\n\t---\n\n";
-                                gridMarkdown += `\t### Elemento ${i + 1}\n\n\tContenido para elemento ${
+                                gridMarkdown += `\t### Element ${i + 1}\n\n\tContent for element ${
                                     i + 1
-                                }. Reemplaza con tu propio contenido.\n`;
+                                }. Replace with your own content.\n`;
                             }
 
                             gridMarkdown += "\n:::\n";
@@ -1662,7 +1602,7 @@ function hello() {
                                 return null;
                             }
 
-                            // Verificar que entryContent existe y contiene el elemento
+                            // verify that the element is inside entry-content
                             if (!entryContent || !entryContent.contains(element)) {
                                 return null;
                             }
@@ -1752,7 +1692,7 @@ function hello() {
                                     if (siblings.length > 1) {
                                         const index = siblings.indexOf(current) + 1;
                                         if (index > 0) {
-                                            // Verificar que encontramos el elemento
+                                            // Verify that we found the element
                                             selector += `:nth-child(${index})`;
                                         }
                                     }
@@ -3344,16 +3284,6 @@ function hello() {
                     }
                 };
 
-                // OLD: Function to select a file for publishing (no longer used - now using checkboxes)
-                // window.selectPublishFile = (button) => {
-                //     document.querySelectorAll(".publish-file-option").forEach((btn) => {
-                //         btn.classList.remove("selected");
-                //         btn.style.background = "transparent";
-                //     });
-                //     button.classList.add("selected");
-                //     button.style.background = "var(--bg-hover)";
-                // };
-
                 // Function to toggle file selection when clicking on the item
                 window.toggleFileSelection = (item) => {
                     const checkbox = item.querySelector('.file-checkbox');
@@ -4824,7 +4754,7 @@ function hello() {
                                                 </button>
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n:::conector\n\t", "\n:::\n");
+                                                        insertText("\n:::connector\n    ", "\n:::\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -5140,15 +5070,15 @@ function hello() {
                                                     Code block
                                                 </button>
                                                 ${
-                                                    // Lista de lenguajes de programación para los bloques de código
+                                                    // List of programming languages ​​for code blocks
                                                     (() => {
-                                                        // Quitar lenguajes innecesarios cuando cambies codeLanguages
+                                                        // Remove unnecessary languages when changing codeLanguages
                                                         const codeLanguages =
                                                             "css+javascript+arduino+bash+c+csharp+cpp+docker+git+json+markdown+plsql+powershell+python+sql+typescript".split(
                                                                 "+"
                                                             );
                                                         return codeLanguages.map((lang) => {
-                                                            // Formatear el nombre del lenguaje para mostrar (primera letra en mayúscula)
+                                                            // Format the language name for display (capitalize first letter)
                                                             const displayName =
                                                                 lang.charAt(0).toUpperCase() +
                                                                 lang.slice(1);
@@ -5886,7 +5816,7 @@ function hello() {
                         </main>
 
                         <footer class="footer">
-                            <!-- Botón de configuración de línea -->
+                            <!-- Line configuration button -->
                             <button id="config-line-button" class="config-line-button hidden">
                                 <svg
                                     width="16"
@@ -5900,17 +5830,17 @@ function hello() {
                                         fill="currentColor"
                                     />
                                 </svg>
-                                <span id="config-line-text">Configurar línea</span>
+                                <span id="config-line-text">Configure line</span>
                             </button>
 
-                            <!-- Panel de asistencia de configuración -->
+                            <!-- Configuration Assistance Panel -->
                             <div id="config-assistant" class="config-assistant hidden">
                                 <div class="config-assistant-header">
-                                    <h4 id="config-title">Configuración disponible</h4>
+                                    <h4 id="config-title">Available Configuration</h4>
                                     <button id="config-close" class="config-close">×</button>
                                 </div>
                                 <div id="config-content" class="config-content">
-                                    <!-- El contenido se genera dinámicamente -->
+                                    <!-- Content is generated dynamically -->
                                 </div>
                             </div>
                             <p>${CONFIG.app.copyright}</p>
@@ -6076,6 +6006,22 @@ function hello() {
                         },
                     ],
                 },
+                connector: {
+                    title: "Connector Configuration",
+                    sections: [
+                        {
+                            title: "Custom Style",
+                            type: "custom",
+                            placeholder: "background: #f0f0f0; padding-top: 1rem;",
+                            pattern: 'style="{value}"',
+                        },
+                        {
+                            title: "Information",
+                            type: "info",
+                            info: "Customize the connector with styles and other HTML attributes.",
+                        },
+                    ],
+                },
             };
 
             function checkForConfigurableBlock(position) {
@@ -6085,18 +6031,18 @@ function hello() {
                 const model = editor.getModel();
                 const lineContent = model.getLineContent(position.lineNumber).trim();
 
-                // Detectar tipo de bloque
                 let blockType = null;
 
-                // Usar expresiones regulares para mejor detección
-                const gridMatch = lineContent.match(/^:::grid/);
-                const noteMatch = lineContent.match(/^:::note/);
-                const warningMatch = lineContent.match(/^:::warning/);
-                const detailsMatch = lineContent.match(/^:::details/);
-                const iframeMatch = lineContent.match(/^:::iframe/);
-                const floatMatch = lineContent.match(/^:::float-/);
-                const animationMatch = lineContent.match(/^```animation/);
-                const svgMatch = lineContent.match(/^```svg/);
+                // Use regular expressions for better detection
+                const gridMatch = lineContent.match(/^(\s*):::grid/);
+                const noteMatch = lineContent.match(/^(\s*):::note/);
+                const warningMatch = lineContent.match(/^(\s*):::warning/);
+                const detailsMatch = lineContent.match(/^(\s*):::details/);
+                const iframeMatch = lineContent.match(/^(\s*):::iframe/);
+                const connectorMatch = lineContent.match(/^(\s*):::connector/);
+                const floatMatch = lineContent.match(/^(\s*):::float-/);
+                const animationMatch = lineContent.match(/^(\s*)```animation/);
+                const svgMatch = lineContent.match(/^(\s*)```svg/);
 
                 if (gridMatch) {
                     blockType = "grid";
@@ -6108,6 +6054,8 @@ function hello() {
                     blockType = "details";
                 } else if (iframeMatch) {
                     blockType = "iframe";
+                } else if (connectorMatch) {
+                    blockType = "connector";
                 } else if (floatMatch) {
                     blockType = "float";
                 } else if (animationMatch) {
@@ -6121,12 +6069,12 @@ function hello() {
                     currentLineNumber = position.lineNumber;
                     showConfigButton(blockType);
                 } else {
-                    // Limpiar estado completamente cuando no hay bloque configurable
+                    // Clear state completely when there is no configurable block
                     currentBlockType = null;
                     currentLineNumber = null;
                     hideConfigButton();
 
-                    // También cerrar el asistente si está abierto
+                    // Also close the assistant if it's open
                     const assistant = document.getElementById("config-assistant");
                     if (assistant && !assistant.classList.contains("hidden")) {
                         hideConfigAssistant();
@@ -6217,14 +6165,14 @@ function hello() {
                                 if (input.type === "text") {
                                     let existingValue = "";
 
-                                    // Si estamos en un bloque float, intentamos extraer el ID
+                                    // If we are in a float block, we try to extract the ID
                                     if (input.data === "float-id" && currentBlockType === "float") {
-                                        // Extraer el ID del nombre del float (:::float-ID)
-                                        const floatMatch = currentLine.match(/^:::float-(\S+)/);
-                                        if (floatMatch && floatMatch[1]) {
-                                            existingValue = floatMatch[1];
+                                        // Extract the ID from the float name (:::float-ID)
+                                        const floatMatch = currentLine.match(/^(\s*):::float-(\S+)/);
+                                        if (floatMatch && floatMatch[2]) {
+                                            existingValue = floatMatch[2];
 
-                                            // Guardar el ID original para referencia
+                                            // Store the original ID for reference
                                             window.originalFloatId = existingValue;
                                         }
                                     }
@@ -6238,7 +6186,7 @@ function hello() {
 
                             html += `</div>`;
                         }
-                        // El formato antiguo para compatibilidad
+                        // The old format for compatibility
                         else {
                             html += `<div class="config-custom-input">`;
 
@@ -6280,7 +6228,7 @@ function hello() {
                                     section.pattern.includes("height=") &&
                                     matchingOption.includes("height=")
                                 ) {
-                                    // Extraer valor de height="valor" o height='valor'
+                                    // Extract value from height="value" or height='value'
                                     const match = matchingOption.match(/height=["']?([^"']*)["']?/);
                                     existingValue = match ? match[1] : "";
                                 } else if (
@@ -6316,20 +6264,20 @@ function hello() {
                 let match;
                 let restOfLine = "";
 
-                if (currentLine.startsWith(":::")) {
-                    // Para bloques que empiezan con :::
-                    const blockRegex = /^:::([a-z-]+)(.*)$/;
+                if (currentLine.trim().startsWith(":::")) {
+                    // For blocks that start with :::
+                    const blockRegex = /^(\s*):::([a-z-]+)(.*)$/;
                     match = currentLine.match(blockRegex);
 
                     if (!match) return { options: [], remainingText: "" };
-                    restOfLine = match[2].trim();
-                } else if (currentLine.startsWith("```")) {
-                    // Para bloques que empiezan con ``` (animation, svg, etc)
-                    const blockRegex = /^```([a-z-]+)(.*)$/;
+                    restOfLine = match[3].trim();
+                } else if (currentLine.trim().startsWith("```")) {
+                    // For blocks that start with ``` (animation, svg, etc)
+                    const blockRegex = /^(\s*)```([a-z-]+)(.*)$/;
                     match = currentLine.match(blockRegex);
 
                     if (!match) return { options: [], remainingText: "" };
-                    restOfLine = match[2].trim();
+                    restOfLine = match[3].trim();
                 } else {
                     return { options: [], remainingText: "" };
                 }
@@ -6513,12 +6461,16 @@ function hello() {
                     return;
                 }
 
-                // Determinar el prefijo correcto basado en el tipo de bloque
+                const preview = document.getElementById("config-preview");
+
+                let spacesStartPreview = preview.textContent.match(/^\s*/)[0] || "";
+
+                // Determine the correct prefix based on the block type
                 let blockStart;
                 if (currentBlockType === "animation" || currentBlockType === "svg") {
-                    blockStart = `\`\`\`${currentBlockType}`;
+                    blockStart = spacesStartPreview + `\`\`\`${currentBlockType}`;
                 } else {
-                    blockStart = `:::${currentBlockType}`;
+                    blockStart = spacesStartPreview + `:::${currentBlockType}`;
                 }
 
                 // Get active options from visual toggles
@@ -6546,7 +6498,7 @@ function hello() {
                 }
 
                 // Update preview
-                const preview = document.getElementById("config-preview");
+                
                 if (preview) {
                     preview.textContent = newLine;
                 }
@@ -6563,15 +6515,15 @@ function hello() {
 
                 const model = editor.getModel();
 
-                // Caso especial para cambios de ID en bloques float
+                // Special case for ID changes in float blocks
                 if (currentBlockType === "float" && window.originalFloatId) {
-                    // Extraer el nuevo ID del texto actualizado
-                    const floatMatch = newLine.match(/^:::float-(\S+)/);
-                    if (floatMatch && floatMatch[1]) {
-                        const newFloatId = floatMatch[1];
+                    // Extract the new ID from the updated text
+                    const floatMatch = newLine.match(/^(\s*):::float-(\S+)/);
+                    if (floatMatch && floatMatch[2]) {
+                        const newFloatId = floatMatch[2];
 
                         if (newFloatId !== window.originalFloatId) {
-                            // Verificar si el nuevo ID ya existe en otro elemento
+                            // Check if the new ID already exists in another element
                             if (!isFloatIdUnique(newFloatId, window.originalFloatId, editor)) {
                                 alert(
                                     `An element with the ID "${newFloatId}" already exists. The changes will not be applied. Please choose a unique ID.`
@@ -6579,7 +6531,7 @@ function hello() {
                                 return;
                             }
 
-                            // Buscar y reemplazar todos los puntos de activación (?=originalId)
+                            // Search and replace all activation points (?=originalId)
                             const fullText = model.getValue();
                             const updatedText = fullText
                                 .replace(
@@ -6587,12 +6539,12 @@ function hello() {
                                     `(?=${newFloatId})`
                                 )
                                 .replace(
-                                    new RegExp(`:::float-${window.originalFloatId}(?=[ \\n])`, "g"),
+                                    new RegExp(`:::float-${window.originalFloatId}(\\s*$)`, "gm"),
                                     `:::float-${newFloatId}`
                                 );
 
                             if (fullText !== updatedText) {
-                                // Solo aplicar si hay cambios
+                                // Only apply if there are changes
                                 const fullRange = {
                                     startLineNumber: 1,
                                     startColumn: 1,
@@ -6622,6 +6574,8 @@ function hello() {
                     endColumn: model.getLineMaxColumn(currentLineNumber),
                 };
 
+                console.log("Applying new line:", newLine);
+
                 editor.executeEdits("", [
                     {
                         range: range,
@@ -6638,9 +6592,6 @@ function hello() {
                 // Focus back to editor
                 editor.focus();
             }
-
-            // Hacer funciones globalmente accesibles
-            window.applyConfiguration = applyConfiguration;
 
             // Debounce timer and processing flag for input handling
             let inputDebounceTimer = null;
@@ -6761,20 +6712,20 @@ function hello() {
                 }
             }
 
-            // Función para verificar si un ID de elemento flotante ya existe
+            // Function to check if a floating element ID is unique
             function isFloatIdUnique(newId, currentId = null, editor = window.currentEditor) {
                 if (!editor || !newId) return false;
 
                 const currentContent = editor.getValue();
 
-                // Patrones para buscar elementos con el ID especificado
+                // Patterns to search for elements with the specified ID
                 const triggerPattern = new RegExp(`\\(?=\\s*${newId}\\s*\\)`, "i");
                 const floatPattern = new RegExp(`:::float-\\s*${newId}\\s*$`, "mi");
 
                 return !(triggerPattern.test(currentContent) || floatPattern.test(currentContent));
             }
 
-            // Función para cambiar el ID de elementos flotantes
+            // Function to change the ID of floating elements
             function handleFloatIdChange(inputElement) {
                 // Clear previous timer
                 if (inputDebounceTimer) {

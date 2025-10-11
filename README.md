@@ -263,6 +263,34 @@ Edit `cdn/prism/prism_vsc.css` to customize code syntax colors:
 }
 ```
 
+## Adding Custom Markdown Blocks
+
+This blog supports custom Markdown blocks (like `:::note`, `:::grid`, etc.). Follow these steps to add your own custom block type:
+
+### 1. Add Block Processing Logic
+
+Edit `components/MarkdownProcessor.js` and add the rendering behavior for your custom block. The best place is usually in the `processMarkdownBlocks` function
+
+### 2. Configure Editor Detection (if needed)
+
+If you want the Monaco editor to recognize and provide UI configuration for your custom block:
+
+#### 2.1 Add Regex Detection
+
+In `editor.html`, add a regex pattern to detect your block in the `checkForConfigurableBlock` function
+
+#### 2.2 Configure Block Parameters
+
+Add your block configuration to the `blockConfigurations` object
+
+#### 2.3 Add Configuration UI (if configurable)
+
+If your block has configurable parameters, implement the UI in the `generateConfigContent` function
+
+#### 2.4 Handle Configuration Application (if needed)
+
+If your block requires complex logic when applying configuration, add it to the `applyConfiguration` function
+
 ## Development
 
 ### Project Structure

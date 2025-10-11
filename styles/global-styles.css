@@ -139,8 +139,8 @@
     --bg-light: oklch(0.96 var(--chroma) var(--hue));
     --bg-highlight: oklch(0.9 var(--chroma) var(--hue));
     --bg-hover: oklch(0.86 0.01 var(--hue));
-    --text-color: oklch(0.2 0.02 var(--hue));
-    --text-secondary: oklch(0.4 0.02 var(--hue));
+    --text-color: oklch(0.1 0.02 var(--hue));
+    --text-secondary: oklch(0.2 0.02 var(--hue));
     --text-muted: #94a3b8;
     --border: oklch(0.7 0.01 var(--hue));
     --border-muted: oklch(0.8 0.01 var(--hue));
@@ -502,7 +502,7 @@ input, select {
 }
 
 .entry-content p {
-    color: var(--text-secondary);
+    color: inherit;
 }
 
 .entry-content ul,
@@ -512,7 +512,7 @@ input, select {
 }
 
 .entry-content li {
-    color: var(--text-secondary);
+    color: inherit;
     margin-top: 5px;
 }
 
@@ -1152,7 +1152,7 @@ details {
     border: 1px solid var(--details-border);
     color: var(--details-text-color);
     border-radius: 12px;
-    margin: 16px 0;
+    margin: 0.5rem 0;
     overflow: hidden;
     box-shadow: var(--details-shadow);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1257,7 +1257,7 @@ details::after {
 /* MDN-style callouts */
 .note-callout,
 .warning-callout {
-    margin: 1rem 0;
+    margin: 0.5rem 0;
     padding: 0.75rem;
     border-radius: 0.25rem;
     position: relative;
@@ -1308,7 +1308,7 @@ details::after {
 
 /* Grid Layout Styles */
 .markdown-grid {
-    margin: 1.5rem 0;
+    margin: 0.5rem 0;
     width: 100%;
 }
 
@@ -1462,16 +1462,33 @@ details::after {
     top: 50%;
 }
 
-/* Conector styles */
-.content-conector {
+/* Connector styles */
+.content-connector {
     margin-left: 10px;
     padding-left: 20px;
-    padding-top: 10px;
+    padding-top: 7px;
     border-left: 3px solid var(--connector-line-color);
     position: relative;
 }
 
-.content-conector h1::before {
+.content-connector .content-connector {
+    margin-left: 0px;
+}
+
+.content-connector > ol:only-child, .content-connector > ul:only-child {
+    margin-left: -15px;
+    & > li::before {
+        content: "";
+        position: absolute;
+        width: 10px;
+        height: 4px;
+        background: var(--connector-line-color);
+        left: 0px;
+        margin-top: 10px;
+    }
+}
+
+.content-connector h1::before {
     content: "";
     position: absolute;
     width: 11px;
@@ -1481,7 +1498,7 @@ details::after {
     margin-top: 27px;
 }
 
-.content-conector h2::before {
+.content-connector h2::before {
     content: "";
     position: absolute;
     width: 11px;
@@ -1491,7 +1508,7 @@ details::after {
     margin-top: 25px;
 }
 
-.content-conector h3::before {
+.content-connector h3::before {
     content: "";
     position: absolute;
     width: 11px;
@@ -1501,9 +1518,9 @@ details::after {
     margin-top: 12px;
 }
 
-.content-conector h4::before,
-.content-conector h5::before,
-.content-conector h6::before {
+.content-connector h4::before,
+.content-connector h5::before,
+.content-connector h6::before {
     content: "";
     position: absolute;
     width: 11px;

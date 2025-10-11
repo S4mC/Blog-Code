@@ -165,7 +165,6 @@ body {
 
 .editor-content {
     flex: 1;
-    border: 1px solid var(--border);
     display: grid;
     grid-template-columns: 1fr;
     min-height: 0;
@@ -488,7 +487,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 }
 
 .config-line-button.hidden {
-    display: none;
+    pointer-events: none;
+    opacity: 0.5;
 }
 
 /* Configuration Assistant Styles */
