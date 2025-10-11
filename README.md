@@ -2,7 +2,8 @@
 
 A modern, lightweight blog system built with Preact and vanilla JavaScript. Supports Markdown posts with live preview editor and advanced rendering features.
 
-<img width="1918" alt="Blog Code Screenshot" src="https://github.com/user-attachments/assets/8b165212-cfe0-4779-bbd5-ca9e2244cc48" />
+<img width="1915" alt="image" src="https://github.com/user-attachments/assets/ff1e38e6-eb21-4cce-a150-b3906825950a" />
+
 
 
 ## Features
