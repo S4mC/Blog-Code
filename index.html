@@ -29,7 +29,7 @@
 
         <script type="module">
             import { render } from "preact";
-            import { useState, useEffect } from "preact/hooks";
+            import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
             import { Sidebar } from "./components/Sidebar.js";
@@ -68,10 +68,13 @@
                                             <div class="entry-tags">
                                                 ${entry.tags.map(
                                                     (tag) => html`
-                                                        <span
+                                                        <a
                                                             key=${tag}
                                                             class="tag"
-                                                            >${tag}</span
+                                                            href=${`./index.html?tags=${encodeURIComponent(
+                                                                tag
+                                                            )}`}
+                                                            >${tag}</a
                                                         >
                                                     `
                                                 )}
@@ -87,27 +90,157 @@
 
             function App() {
                 const [entries, setEntries] = useState([]);
+                const [allEntries, setAllEntries] = useState([]);
+                const [filterTags, setFilterTags] = useState([]);
+                const [showAddTag, setShowAddTag] = useState(false);
+                const [newTagInput, setNewTagInput] = useState('');
+                const [availableTags, setAvailableTags] = useState([]);
+                const [selectedIndex, setSelectedIndex] = useState(-1);
+                const addTagInputRef = useRef(null);
+
+                useEffect(() => {
+                    // Get tags from URL parameters
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const tagsParam = urlParams.get('tags');
+                    const activeTags = tagsParam ? tagsParam.split(',').map(tag => tag.trim()) : [];
+                    setFilterTags(activeTags);
+                }, []);
 
                 useEffect(() => {
                     fetch(`${CONFIG.contentUrl}/search.json`)
                         .then((res) => res.json())
                         .then((data) => {
                             // Resolve relative paths to absolute URLs
-                            const entriesWithResolvedPaths = (data.entries || []).map(entry => ({
+                            let entriesWithResolvedPaths = (data.entries || []).map(entry => ({
                                 ...entry,
                                 path: resolveContentPath(entry.path)
                             }));
+
+                            // Store all entries for extracting all available tags
+                            setAllEntries(entriesWithResolvedPaths);
+
+                            // Filter entries by tags if tags parameter exists
+                            if (filterTags.length > 0) {
+                                entriesWithResolvedPaths = entriesWithResolvedPaths.filter(entry => {
+                                    if (!entry.tags || entry.tags.length === 0) return false;
+                                    // Check if entry has at least one of the filter tags
+                                    return entry.tags.some(tag => 
+                                        filterTags.some(filterTag => 
+                                            tag.toLowerCase() === filterTag.toLowerCase()
+                                        )
+                                    );
+                                });
+                            }
+
                             setEntries(entriesWithResolvedPaths);
                         })
                         .catch((err) =>
                             console.error("Error loading entries:", err)
                         );
-                }, []);
+                }, [filterTags]);
+
+                // Extract and filter available tags based on input
+                useEffect(() => {
+                    if (!showAddTag || !newTagInput.trim()) {
+                        setAvailableTags([]);
+                        return;
+                    }
+
+                    // Get all unique tags from all entries
+                    const allTagsSet = new Set();
+                    allEntries.forEach(entry => {
+                        if (entry.tags && entry.tags.length > 0) {
+                            entry.tags.forEach(tag => allTagsSet.add(tag));
+                        }
+                    });
+
+                    // Filter tags based on input and exclude already selected tags
+                    const searchTerm = newTagInput.toLowerCase().trim();
+                    const filtered = Array.from(allTagsSet)
+                        .filter(tag => 
+                            tag.toLowerCase().includes(searchTerm) &&
+                            !filterTags.some(ft => ft.toLowerCase() === tag.toLowerCase())
+                        )
+                        .slice(0, 8); // Limit to 8 suggestions
+
+                    setAvailableTags(filtered);
+                    setSelectedIndex(-1); // Reset selection when suggestions change
+                }, [newTagInput, showAddTag, allEntries, filterTags]);
+
+                // Focus input when showAddTag becomes true
+                useEffect(() => {
+                    if (showAddTag && addTagInputRef.current) {
+                        addTagInputRef.current.focus();
+                    }
+                }, [showAddTag]);
+
+                const updateURLWithTags = (tags) => {
+                    if (tags.length > 0) {
+                        const newUrl = `./index.html?tags=${encodeURIComponent(tags.join(','))}`;
+                        window.history.pushState({}, '', newUrl);
+                    } else {
+                        window.history.pushState({}, '', './index.html');
+                    }
+                };
+
+                const removeTag = (tagToRemove) => {
+                    const newTags = filterTags.filter(tag => tag.toLowerCase() !== tagToRemove.toLowerCase());
+                    setFilterTags(newTags);
+                    updateURLWithTags(newTags);
+                };
+
+                const addTag = (e, suggestedTag = null) => {
+                    if (e) e.preventDefault();
+                    const trimmedTag = suggestedTag || newTagInput.trim();
+                    if (trimmedTag && !filterTags.some(tag => tag.toLowerCase() === trimmedTag.toLowerCase())) {
+                        const newTags = [...filterTags, trimmedTag];
+                        setFilterTags(newTags);
+                        updateURLWithTags(newTags);
+                        setNewTagInput('');
+                        setShowAddTag(false);
+                        setSelectedIndex(-1);
+                    }
+                };
+
+                const cancelAddTag = () => {
+                    setShowAddTag(false);
+                    setNewTagInput('');
+                    setAvailableTags([]);
+                    setSelectedIndex(-1);
+                };
+
+                const handleKeyDown = (e) => {
+                    if (e.key === 'Escape') {
+                        cancelAddTag();
+                        return;
+                    }
+
+                    // Navigate through suggestions with arrow keys
+                    if (availableTags.length > 0) {
+                        if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            setSelectedIndex(prev => 
+                                prev < availableTags.length - 1 ? prev + 1 : prev
+                            );
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+                        } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                            e.preventDefault();
+                            addTag(null, availableTags[selectedIndex]);
+                        }
+                    }
+                };
 
                 const handleNavigateToEntry = (entry) => {
                     window.location.href = `./post.html?path=${encodeURIComponent(
                         entry.path
                     )}`;
+                };
+
+                const clearFilters = () => {
+                    setFilterTags([]);
+                    window.history.pushState({}, '', './index.html');
                 };
 
                 return html`
@@ -116,7 +249,82 @@
 
                         <main class="main-container">
                             <${Sidebar} />
-                            <${BlogList} entries=${entries} />
+                            <div class="content-wrapper">
+                                ${filterTags.length > 0 && html`
+                                    <div class="filter-notice">
+                                        <div class="filter-info">
+                                            <span class="filter-icon">🏷️</span>
+                                            <span>Filtering posts by tags: </span>
+                                            <div class="filter-tags">
+                                                ${filterTags.map(tag => html`
+                                                    <span key=${tag} class="filter-tag">
+                                                        ${tag}
+                                                        <button 
+                                                            class="remove-tag-btn" 
+                                                            onClick=${() => removeTag(tag)}
+                                                            title="Remove tag"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                `)}
+                                                ${!showAddTag && html`
+                                                    <button 
+                                                        class="add-tag-btn" 
+                                                        onClick=${() => setShowAddTag(true)}
+                                                        title="Add new tag"
+                                                    >
+                                                        +
+                                                    </button>
+                                                `}
+                                                ${showAddTag && html`
+                                                    <div class="add-tag-wrapper">
+                                                        <form class="add-tag-form" onSubmit=${addTag}>
+                                                            <input 
+                                                                type="text" 
+                                                                class="add-tag-input"
+                                                                value=${newTagInput}
+                                                                onInput=${(e) => setNewTagInput(e.target.value)}
+                                                                onKeyDown=${handleKeyDown}
+                                                                placeholder="Enter tag..."
+                                                                ref=${addTagInputRef}
+                                                            />
+                                                            <button type="submit" class="add-tag-submit" title="Add tag">✓</button>
+                                                            <button 
+                                                                type="button" 
+                                                                class="add-tag-cancel" 
+                                                                onClick=${cancelAddTag}
+                                                                title="Cancel (Esc)"
+                                                            >
+                                                                ✕
+                                                            </button>
+                                                        </form>
+                                                        ${availableTags.length > 0 && html`
+                                                            <div class="tag-suggestions">
+                                                                ${availableTags.map((tag, index) => html`
+                                                                    <div 
+                                                                        key=${tag}
+                                                                        class=${`tag-suggestion-item ${index === selectedIndex ? 'selected' : ''}`}
+                                                                        onClick=${() => addTag(null, tag)}
+                                                                        onMouseEnter=${() => setSelectedIndex(index)}
+                                                                    >
+                                                                        <span class="suggestion-icon">🏷️</span>
+                                                                        ${tag}
+                                                                    </div>
+                                                                `)}
+                                                            </div>
+                                                        `}
+                                                    </div>
+                                                `}
+                                            </div>
+                                        </div>
+                                        <button class="clear-filters-btn" onClick=${clearFilters}>
+                                            Clear filters⠀✕
+                                        </button>
+                                    </div>
+                                `}
+                                <${BlogList} entries=${entries} />
+                            </div>
                         </main>
 
                         <footer class="footer">
