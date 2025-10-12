@@ -5,13 +5,13 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
             title=${n()?.title}
             aria-label="Toggle theme"
             dangerouslySetInnerHTML=${{__html:n()?.label}}
-        >
-        </button>
-    `}function SearchResults({results:e,selectedIndex:t,onSelect:n}){return html`
-        <div class="search-results">
+        ></button>
+    `}function SearchResults({results:e,selectedIndex:t,onSelect:n,query:s}){const o=useRef(),i=useRef();useEffect(()=>{if(o.current&&i.current&&t>=0){const e=i.current,t=o.current,n=t.offsetTop-e.offsetTop-e.clientHeight/2+t.clientHeight/2;e.scrollTo({top:n,behavior:"smooth"})}},[t]);const a=useMemo(()=>{const t=new Set,n=s.toLowerCase();return e.forEach(e=>{e.tags?.forEach(e=>{e.toLowerCase().includes(n)&&t.add(e)})}),Array.from(t)},[e,s]);return html`
+        <div class="search-results" ref=${i}>
             ${e.map((e,s)=>html`
                     <div
                         key=${e.path}
+                        ref=${s===t?o:null}
                         class=${`search-result-item ${s===t?"selected":""}`}
                         onClick=${()=>n(e)}
                     >
@@ -19,21 +19,17 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                         <p>${e.summary}</p>
                     </div>
                 `)}
+            ${a.length>0&&html`
+                <div class="search-tags">
+                    ${a.map(e=>html`<a class="tag" href="./index.html?tags=${e}">${e}</a>`)}
+                </div>
+            `}
         </div>
-    `}function SearchBar({onNavigateToEntry:e,isExpanded:t,onToggleExpand:n}){const[i,a]=useState(""),[s,o]=useState([]),[r,c]=useState(-1),[h,f]=useState(searchDataCache||[]),[v,u]=useState(!searchDataCache),d=useRef();useEffect(()=>{searchDataCache||(u(!0),fetch(`${CONFIG.contentUrl}/search.json`).then(e=>e.json()).then(e=>{const t=(e.entries||[]).map(e=>({...e,path:resolveContentPath(e.path)}));searchDataCache=t,f(searchDataCache),u(!1)}).catch(e=>{console.error("Error loading search data:",e),u(!1)}))},[]);function l(e){return e?.normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase()||""}useEffect(()=>{if(i.trim()){const e=l(i),t=h.filter(t=>{const n=l(t.title),s=l(t.summary),o=t.tags?.map(l)||[];return n.includes(e)||s.includes(e)||o.some(t=>t.includes(e))});o(t),c(t.length>0?0:-1)}else o([]),c(-1)},[i,h]),useEffect(()=>{s.length>0?document.body.style.overflow="hidden":document.body.style.overflow="auto"},[s]);const p=t=>{switch(t.key){case"ArrowDown":if(s.length===0)return;t.preventDefault(),c(e=>e<s.length-1?e+1:0);break;case"ArrowUp":if(s.length===0)return;t.preventDefault(),c(e=>e>0?e-1:s.length-1);break;case"Enter":if(s.length===0)return;t.preventDefault(),r>=0&&s[r]&&e(s[r]);break;case"Escape":a(""),o([]),d.current?.blur();break}},g=t=>{e(t)},m=()=>{a(""),o([]),n()};return html`
+    `}function SearchBar({onNavigateToEntry:e,isExpanded:t,onToggleExpand:n}){const[o,a]=useState(""),[s,i]=useState([]),[r,c]=useState(-1),[h,f]=useState(searchDataCache||[]),[v,u]=useState(!searchDataCache),d=useRef();useEffect(()=>{searchDataCache||(u(!0),fetch(`${CONFIG.contentUrl}/search.json`).then(e=>e.json()).then(e=>{const t=(e.entries||[]).map(e=>({...e,path:resolveContentPath(e.path)}));searchDataCache=t,f(searchDataCache),u(!1)}).catch(e=>{u(!1)}))},[]);function l(e){return e?.normalize("NFD").replace(/\p{Diacritic}/gu,"").toLowerCase()||""}useEffect(()=>{if(o.trim()){const e=l(o),t=h.filter(t=>{const n=l(t.title),s=l(t.summary),o=t.tags?.map(l)||[];return n.includes(e)||s.includes(e)||o.some(t=>t.includes(e))});i(t),c(t.length>0?0:-1)}else i([]),c(-1)},[o,h]),useEffect(()=>{s.length>0?document.body.style.overflow="hidden":document.body.style.overflow="auto"},[s]);const p=t=>{switch(t.key){case"ArrowDown":if(s.length===0)return;t.preventDefault(),c(e=>e<s.length-1?e+1:0);break;case"ArrowUp":if(s.length===0)return;t.preventDefault(),c(e=>e>0?e-1:s.length-1);break;case"Enter":if(s.length===0)return;t.preventDefault(),r>=0&&s[r]&&e(s[r]);break;case"Escape":a(""),i([]),d.current?.blur();break}},g=t=>{e(t)},m=()=>{a(""),i([]),n()};return html`
         <div class=${`search-container ${t?"mobile-expanded":""}`}>
             ${!t&&html`
-                <button
-                    class="search-button"
-                    onClick=${m}
-                    aria-label="Open search"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                    >
+                <button class="search-button" onClick=${m} aria-label="Open search">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <path
                             fill="currentColor"
                             d="M9.5 16q-2.725 0-4.612-1.888T3 9.5t1.888-4.612T9.5 3t4.613 1.888T16 9.5q0 1.1-.35 2.075T14.7 13.3l5.6 5.6q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-5.6-5.6q-.75.6-1.725.95T9.5 16m0-2q1.875 0 3.188-1.312T14 9.5t-1.312-3.187T9.5 5T6.313 6.313T5 9.5t1.313 3.188T9.5 14"
@@ -44,16 +40,12 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
             ${s.length>0&&html`
                 <div
                     class="search-overlay"
-                    onClick=${()=>{a(""),o([]),d.current?.blur(),t&&n()}}
+                    onClick=${()=>{a(""),i([]),d.current?.blur(),t&&n()}}
                 ></div>
             `}
             <div class=${`search-bar ${t?"expanded":""}`}>
                 ${t&&html`
-                    <button
-                        class="close-search"
-                        onClick=${m}
-                        aria-label="Close search"
-                    >
+                    <button class="close-search" onClick=${m} aria-label="Close search">
                         <svg
                             xmlns="http://www.w3.org/2000/svg"
                             width="24"
@@ -72,19 +64,14 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                     type="text"
                     autocomplete="off"
                     placeholder="Search blog entries..."
-                    value=${i}
+                    value=${o}
                     onInput=${e=>a(e.target.value)}
                     onKeyDown=${p}
                     class="search-input"
                     id="search-input"
                 />
                 <div class="search-icon" onClick=${()=>d.current?.focus()}>
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
                         <path
                             fill="currentColor"
                             d="M9.5 16q-2.725 0-4.612-1.888T3 9.5t1.888-4.612T9.5 3t4.613 1.888T16 9.5q0 1.1-.35 2.075T14.7 13.3l5.6 5.6q.275.275.275.7t-.275.7t-.7.275t-.7-.275l-5.6-5.6q-.75.6-1.725.95T9.5 16m0-2q1.875 0 3.188-1.312T14 9.5t-1.312-3.187T9.5 5T6.313 6.313T5 9.5t1.313 3.188T9.5 14"
@@ -97,14 +84,15 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
                     results=${s}
                     selectedIndex=${r}
                     onSelect=${g}
+                    query=${o}
                 />
             `}
         </div>
-    `}export function Header({showSearch:e=!0,onNavigateToEntry:t}){const[n,s]=useState(!1),o=useMemo(()=>e&&html`<${SearchBar} 
-            onNavigateToEntry=${t}
-            isExpanded=${n}
-            onToggleExpand=${()=>s(e=>!e)}
-        />`,[e,t,n]);return html`
+    `}export function Header({showSearch:e=!0,onNavigateToEntry:t}){const[n,s]=useState(!1),o=useMemo(()=>e&&html`<${SearchBar}
+                onNavigateToEntry=${t}
+                isExpanded=${n}
+                onToggleExpand=${()=>s(e=>!e)}
+            />`,[e,t,n]);return html`
         <header class="header">
             <div style="display: inline-flex;align-items: center;">
                 <button class="sidebar-toggle" id="sidebarToggle">☰</button>
@@ -121,7 +109,7 @@ import{html}from"htm/preact";import{useState,useEffect,useRef,useMemo}from"preac
             </div>
             ${o}
             <div class="header-controls">
-            <nav class="nav">
+                <nav class="nav">
                     <${ThemeToggle} />
                     <a href="./index.html">Home</a>
                     <a href="./editor.html">Editor</a>

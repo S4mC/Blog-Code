@@ -857,6 +857,7 @@ blockquote h6 {
     box-shadow: var(--shadow-lg);
     max-height: 400px;
     overflow-y: auto;
+    scrollbar-width: thin;
     z-index: 1000;
 }
 
@@ -885,6 +886,23 @@ blockquote h6 {
 .search-result-item p {
     font-size: 0.875rem;
     color: var(--text-secondary);
+}
+
+.search-tags {
+    margin-block: 13px 5px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.search-tags .tag {
+    margin-left: 10px;
+    margin-bottom: 10px;
+    padding: 5px 10px;
+    color: var(--text-secondary);
+    background-color: var(--bg-highlight);
+    text-decoration: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 /* Specific CSS for the sidebar component */
@@ -1871,7 +1889,7 @@ details::after {
 }
 
 .filter-icon {
-    font-size: 1.2rem;
+    font-size: 0rem;
 }
 
 .filter-tags {
