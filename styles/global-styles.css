@@ -258,6 +258,16 @@ body {
     z-index: 100;
 }
 
+li[data-icon] {
+    /* Custom styles for list items with icons */
+    & p {
+        margin-left: 5px;
+    }
+    &::marker {
+        content: attr(data-icon);
+    }
+}
+
 .header h1 {
     font-size: 1.5rem;
     font-weight: 700;
@@ -509,13 +519,14 @@ input, select {
 
 .entry-content ul,
 .entry-content ol {
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
     padding-left: var(--spacing-xl);
 }
 
 .entry-content li {
     color: inherit;
     margin-top: 5px;
+    min-width: min-content;
 }
 
 .entry-content a {
@@ -1486,6 +1497,8 @@ details::after {
     padding-top: 7px;
     border-left: 3px solid var(--connector-line-color);
     position: relative;
+    overflow: auto;
+    scrollbar-width: thin;
 }
 
 .content-connector .content-connector {

@@ -339,6 +339,7 @@ function processMarkdownBlocks(markdownContent) {
             
             // Recursively process the content inside the block
             const nestedProcessed = processMarkdownBlocks(blockContent.join("\n"));
+
             processedLines.push(spaceTitle);
             for (const line of nestedProcessed.split("\n")) {
                 processedLines.push(line);
@@ -515,8 +516,6 @@ function processMarkdownBlocks(markdownContent) {
             if (currentItem.length > 0) {
                 gridItems.push(currentItem.join("\n"));
             }
-
-            console.log("Grid items:", gridItems);
             
             // If no explicit items found, treat the whole content as one item per paragraph
             if (gridItems.length === 0) {
@@ -613,6 +612,172 @@ export function renderMarkdown(markdownContent) {
     // Personalizar el renderer para bloques de código para evitar auto-generación
     renderer.code = (element) => {
         return `<p>${element.raw}</p>`;
+    };
+
+    // Personalizar el renderer para listas
+    renderer.list = (element) => {
+        const type = element.ordered ? 'ol' : 'ul';
+        
+        // Render the items - pass all element properties to preserve them
+        const body = element.items.map(item => {
+            // Create a new object with all original properties
+            return renderer.listitem({
+                type: item.type,
+                raw: item.raw,
+                task: item.task,
+                checked: item.checked,
+                loose: item.loose,
+                text: item.text,
+                tokens: item.tokens
+            });
+        }).join('');
+        
+        let result = `<${type}${element.ordered && element.start !== '' ? ' start="' + element.start + '"' : ''}>\n${body}</${type}>\n`;
+
+        return result;
+    };
+
+    // Personalizar el renderer para list items
+    renderer.listitem = (element) => {
+
+        
+        let text = '';
+        let dataIcon = '';
+        
+        // Process tokens if they exist (for nested content like lists, HTML blocks, etc.)
+        // When tokens exist, we should use them instead of element.text to avoid duplication
+        if (element.tokens && element.tokens.length > 0) {
+            const firstToken = element.tokens[0];
+            
+            // Check if first token is text type or paragraph type and we need to extract icon
+            if (firstToken && (firstToken.type === 'text' || firstToken.type === 'paragraph')) {
+                // For paragraph type, check its first child token
+                const textToken = firstToken.type === 'paragraph' && firstToken.tokens && firstToken.tokens.length > 0
+                    ? firstToken.tokens[0]
+                    : firstToken;
+                const firstText = textToken.text || textToken.raw || '';
+                
+                // Try to extract icon from the first text token
+                const match = firstText.match(/^([^\s\d]+)\s+(.*)$/s);
+                
+                if (match && /^\\?[\p{Emoji}]/u.test(match[1])) {
+                    let matchedIcon = match[1];
+                    let matchedText = match[2];
+
+                    if (matchedIcon.at(0) === '\\') { // Allow escaping the icon with a backslash
+                        matchedText = matchedIcon.slice(1) + ' ' + matchedText;
+                        matchedIcon = '';
+                    }
+                    dataIcon = matchedIcon; // Extract the icon
+
+                    // Deeply modify the first token to remove the icon
+                    let modifiedFirstToken;
+                    
+                    if (firstToken.type === 'paragraph') {
+                        // Modify the paragraph's first text token
+                        const modifiedTextToken = {
+                            ...textToken,
+                            text: matchedText,
+                            raw: matchedText
+                        };
+                        
+                        // Also modify the first sub-token if it exists
+                        if (textToken.tokens && textToken.tokens.length > 0) {
+                            modifiedTextToken.tokens = textToken.tokens.map((subToken, index) => {
+                                if (index === 0 && subToken.type === 'text') { 
+                                    // Extract icon only from this specific sub-token
+                                    const subMatch = subToken.text.match(/^([^\s\d]+)\s+(.*)$/s);
+                                    let matchedIcon1 = subMatch[1];
+                                    let matchedText1 = subMatch[2];
+
+                                    if (matchedIcon1.at(0) === '\\') { // Allow escaping the icon with a backslash
+                                        matchedText1 = matchedIcon1.slice(1) + ' ' + matchedText1;
+                                        matchedIcon1 = '';
+                                    }
+                                    if (subMatch) {
+                                        return {
+                                            ...subToken,
+                                            text: matchedText1,
+                                            raw: matchedText1
+                                        };
+                                    }
+                                }
+                                return subToken;
+                            });
+                        }
+                        
+                        modifiedFirstToken = {
+                            ...firstToken,
+                            tokens: [modifiedTextToken, ...firstToken.tokens.slice(1)]
+                        };
+                    } else {
+                        // Modify the text token directly
+                        modifiedFirstToken = {
+                            ...firstToken,
+                            text: matchedText,
+                            raw: matchedText
+                        };
+                        
+                        // If the text token has its own tokens array, modify the first sub-token
+                        if (textToken.tokens && textToken.tokens.length > 0) {
+                            modifiedFirstToken.tokens = textToken.tokens.map((subToken, index) => {
+                                if (index === 0 && subToken.type === 'text') {
+                                    // Extract icon only from this specific sub-token
+                                    const subMatch = subToken.text.match(/^([^\s\d]+)\s+(.*)$/s);
+                                    let matchedIcon1 = subMatch[1];
+                                    let matchedText1 = subMatch[2];
+
+                                    if (matchedIcon1.at(0) === '\\') { // Allow escaping the icon with a backslash
+                                        matchedText1 = matchedIcon1.slice(1) + ' ' + matchedText1;
+                                        matchedIcon1 = '';
+                                    }
+                                    if (subMatch) {
+                                        return {
+                                            ...subToken,
+                                            text: matchedText1,
+                                            raw: matchedText1
+                                        };
+                                    }
+                                }
+                                return subToken;
+                            });
+                        }
+                    }
+                    
+                    // Create new tokens array with modified first token
+                    const modifiedTokens = [modifiedFirstToken, ...element.tokens.slice(1)];
+                    
+                    // Parse the modified tokens
+                    text = marked.parser(modifiedTokens);
+                } else {
+                    // No icon found, parse all tokens normally
+                    text = marked.parser(element.tokens);
+                }
+            } else {
+                // First token is not text or paragraph type, parse all tokens normally
+                text = marked.parser(element.tokens);
+            }
+        } else {
+            // No tokens, process element.text directly
+            text = element.text;
+            const match = text.match(/^([^\s\d]+)\s+(.*)$/s);
+            if (match) {
+                dataIcon = match[1]; // First word (the icon)
+                text = match[2];      // Rest of the text
+                
+                if (dataIcon.at(0) === '\\') { // Allow escaping the icon with a backslash
+                    text = dataIcon.slice(1) + ' ' + text;
+                    dataIcon = '';
+                }
+            }
+        }
+
+        const iconAttr = dataIcon ? ` data-icon="${dataIcon}"` : '';
+        const taskAttr = element.task ? ' class="task-list-item"' : '';
+        const checkedContent = element.task ? 
+            `<input type="checkbox"${element.checked ? ' checked' : ''} disabled> ` : '';
+        
+        return `<li${iconAttr}${taskAttr}>${checkedContent}${text}</li>\n`;
     };
 
     // Personalizar el renderer para los encabezados H2 y H3

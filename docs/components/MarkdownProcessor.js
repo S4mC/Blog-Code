@@ -10,10 +10,10 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
 `));t.push(e);for(const e of a.split(`
 `))t.push(e);t.push(e),o=i,t.push(e+"</div>"),t.push(e+"</div>")}else if(i.startsWith(":::warning")){t.push(e+'<div class="warning-callout">'),t.push(e+'<div class="callout-header">'),t.push(e+'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 12.5ZM2.725 21q-.575 0-.85-.537T1.8 19.4l9.2-16q.275-.5.75-.7t.95 0t.75.7l9.2 16q.275.5.075 1.063T21.9 21zm1.85-2h14.85L12 5zm7.425-1q.425 0 .713-.288T13 17q0-.425-.288-.713T12 16q-.425 0-.713.288T11 17q0 .425.288.713T12 18m0-3q.425 0 .713-.288T13 14v-3q0-.425-.288-.713T12 10q-.425 0-.713.288T11 11v3q0 .425.288.713T12 15"></path></svg>'),t.push(e+"<span>Warning</span>"),t.push(e+"</div>"),t.push(e+'<div class="callout-content">');const[s,i]=n(o+1),a=processMarkdownBlocks(s.join(`
 `));t.push(e);for(const e of a.split(`
-`))t.push(e);t.push(e),o=i,t.push(e+"</div>"),t.push(e+"</div>")}else if(i.startsWith(":::grid")){const s=i.substring(":::grid".length).trim();let l="markdown-grid",a="";if(s){{const e=s.match(/cols-(\d+)/);if(e){const t=parseInt(e[1]);l+=` grid-cols-${t}`,a+=`grid-template-columns: repeat(${t}, 1fr); `}const t=s.match(/gap-(\w+)/);if(t){const e=t[1];l+=` gap-${e}`,a+=`gap: ${e*.5}rem; `}if(s.includes("responsive")&&(l+=" responsive-grid"),s.includes("auto-fit")){const e=s.match(/min-(\d+)/),t=e?e[1]+"px":"250px";a+=`grid-template-columns: repeat(auto-fit, minmax(${t}, 1fr)); `}const n=s.match(/style="([^"]+)"/);if(n){const e=n[1];a+=`${e}${e.endsWith(";")?" ":"; "}`}}}else a+="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; ",l+=" responsive-grid";t.push(e+`<div class="${l}" style="display: grid; ${a}">`);const[u,m]=n(o+1),r=[];let c=[],d=!1,h=!1;for(let t=0;t<u.length;t++){const n=u[t],e=n.trim();if(e.startsWith(":::")&&e!==":::"?h+=1:e===":::"&&(h-=1),h==0&&(e==="---"||e.startsWith("--- ")))c.length>0&&(r.push(c.join(`
-`)),c=[]),d=!0;else if(e===""&&!d)continue;else!d&&e!==""&&(d=!0),d&&c.push(n)}if(c.length>0&&r.push(c.join(`
-`)),console.log("Grid items:",r),r.length===0){const e=u.join(`
-`).split(/\n\s*\n/);r.push(...e.filter(e=>e.trim()))}r.forEach((n)=>{const i=s.includes("equal-height")?"grid-item equal-height":"grid-item";t.push(`${e}<div class="${i}">`);const a=processMarkdownBlocks(n.trim());t.push(e);for(const n of a.split(`
+`))t.push(e);t.push(e),o=i,t.push(e+"</div>"),t.push(e+"</div>")}else if(i.startsWith(":::grid")){const s=i.substring(":::grid".length).trim();let c="markdown-grid",a="";if(s){{const e=s.match(/cols-(\d+)/);if(e){const t=parseInt(e[1]);c+=` grid-cols-${t}`,a+=`grid-template-columns: repeat(${t}, 1fr); `}const t=s.match(/gap-(\w+)/);if(t){const e=t[1];c+=` gap-${e}`,a+=`gap: ${e*.5}rem; `}if(s.includes("responsive")&&(c+=" responsive-grid"),s.includes("auto-fit")){const e=s.match(/min-(\d+)/),t=e?e[1]+"px":"250px";a+=`grid-template-columns: repeat(auto-fit, minmax(${t}, 1fr)); `}const n=s.match(/style="([^"]+)"/);if(n){const e=n[1];a+=`${e}${e.endsWith(";")?" ":"; "}`}}}else a+="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; ",c+=" responsive-grid";t.push(e+`<div class="${c}" style="display: grid; ${a}">`);const[u,m]=n(o+1),l=[];let r=[],d=!1,h=!1;for(let t=0;t<u.length;t++){const n=u[t],e=n.trim();if(e.startsWith(":::")&&e!==":::"?h+=1:e===":::"&&(h-=1),h==0&&(e==="---"||e.startsWith("--- ")))r.length>0&&(l.push(r.join(`
+`)),r=[]),d=!0;else if(e===""&&!d)continue;else!d&&e!==""&&(d=!0),d&&r.push(n)}if(r.length>0&&l.push(r.join(`
+`)),l.length===0){const e=u.join(`
+`).split(/\n\s*\n/);l.push(...e.filter(e=>e.trim()))}l.forEach((n)=>{const i=s.includes("equal-height")?"grid-item equal-height":"grid-item";t.push(`${e}<div class="${i}">`);const a=processMarkdownBlocks(n.trim());t.push(e);for(const n of a.split(`
 `))t.push(e+n);t.push(e),t.push(e+"</div>")}),o=m,t.push(e+"</div>")}else if(i.startsWith(":::details")){let s=i.replace(":::details","").trim(),a=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),a=!0),t.push(e+`<details${a?" open":""}>
                             <summary><p>${s}</p></summary>
                             <div class="content-wrapper-details">
@@ -24,13 +24,16 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
                         </svg>`,d=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>`;t.push(e+`<div class="iframe-container"><iframe src="${c}" frameborder="0" allowfullscreen ${s}></iframe><button class="iframe-expand-button" title="Expand"><span class="expand-icon">${l}</span><span class="contract-icon" style="display: none;">${d}</span></button></div>`)}else t.push(a)}return t.join(`
-`)}export function renderMarkdown(e){const c=new marked.Renderer;c.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`},c.code=e=>`<p>${e.raw}</p>`;let l=0,r=0,a={};c.heading=function(e){let t="";if(e.depth===2)t=`section-${l}`,l++,r=0,a={};else if(e.depth===3){const e=Math.max(0,l-1);t=`section-${e}-item-${r}`,r++,a[`${e}-${r-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,l-1),s=Math.max(0,r-1),e=`${n}-${s}`;a[e]===0[0]&&(a[e]=0),t=`section-${n}-item-${s}-subitem-${a[e]}`,a[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let h=new Map,d=new Map,u=[],s="";[s,h,u]=processCodeBlocksAndTitles(e),s=s.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
+`)}export function renderMarkdown(e){const i=new marked.Renderer;i.link=e=>{const t=e.text.endsWith(" new"),n=t?e.text.slice(0,-4):e.text,s=t?'target="_blank" rel="noopener noreferrer"':"";return`<a href="${e.href}" ${s}${e.title?` title="${e.title}"`:""}>${n}</a>`},i.code=e=>`<p>${e.raw}</p>`,i.list=e=>{const t=e.ordered?"ol":"ul",n=e.items.map(e=>i.listitem({type:e.type,raw:e.raw,task:e.task,checked:e.checked,loose:e.loose,text:e.text,tokens:e.tokens})).join("");let s=`<${t}${e.ordered&&e.start!==""?' start="'+e.start+'"':""}>
+${n}</${t}>
+`;return s},i.listitem=e=>{let t="",n="";if(e.tokens&&e.tokens.length>0){const s=e.tokens[0];if(s&&(s.type==="text"||s.type==="paragraph")){const o=s.type==="paragraph"&&s.tokens&&s.tokens.length>0?s.tokens[0]:s,a=o.text||o.raw||"",i=a.match(/^([^\s\d]+)\s+(.*)$/s);if(i&&/^\\?[\p{Emoji}]/u.test(i[1])){let r=i[1],a=i[2];r.at(0)==="\\"&&(a=r.slice(1)+" "+a,r=""),n=r;let c;if(s.type==="paragraph"){const e={...o,text:a,raw:a};o.tokens&&o.tokens.length>0&&(e.tokens=o.tokens.map((e,t)=>{if(t===0&&e.type==="text"){const n=e.text.match(/^([^\s\d]+)\s+(.*)$/s);let s=n[1],t=n[2];if(s.at(0)==="\\"&&(t=s.slice(1)+" "+t,s=""),n)return{...e,text:t,raw:t}}return e})),c={...s,tokens:[e,...s.tokens.slice(1)]}}else c={...s,text:a,raw:a},o.tokens&&o.tokens.length>0&&(c.tokens=o.tokens.map((e,t)=>{if(t===0&&e.type==="text"){const n=e.text.match(/^([^\s\d]+)\s+(.*)$/s);let s=n[1],t=n[2];if(s.at(0)==="\\"&&(t=s.slice(1)+" "+t,s=""),n)return{...e,text:t,raw:t}}return e}));const l=[c,...e.tokens.slice(1)];t=marked.parser(l)}else t=marked.parser(e.tokens)}else t=marked.parser(e.tokens)}else{t=e.text;const s=t.match(/^([^\s\d]+)\s+(.*)$/s);s&&(n=s[1],t=s[2],n.at(0)==="\\"&&(t=n.slice(1)+" "+t,n=""))}const s=n?` data-icon="${n}"`:"",o=e.task?' class="task-list-item"':"",i=e.task?`<input type="checkbox"${e.checked?" checked":""} disabled> `:"";return`<li${s}${o}>${i}${t}</li>
+`};let l=0,c=0,r={};i.heading=function(e){let t="";if(e.depth===2)t=`section-${l}`,l++,c=0,r={};else if(e.depth===3){const e=Math.max(0,l-1);t=`section-${e}-item-${c}`,c++,r[`${e}-${c-1}`]=0}else if(e.depth>=4&&e.depth<=6){const n=Math.max(0,l-1),s=Math.max(0,c-1),e=`${n}-${s}`;r[e]===0[0]&&(r[e]=0),t=`section-${n}-item-${s}-subitem-${r[e]}`,r[e]++}else t=e.text.toLowerCase().replace(/[^\w]+/g,"-").replace(/(^-|-$)/g,"");return`<h${e.depth} id="${t}">${e.text}</h${e.depth}>`};let h=new Map,d=new Map,u=[],s="";[s,h,u]=processCodeBlocksAndTitles(e),s=s.replace(/\n\n\n+/g,e=>{const t=e.length-2,n="<rawhtml><br></rawhtml>".repeat(t);return`
 
 ${n}
 
-`}),[s,d]=processInlineCodeBlocks(s,d),s=s.replace(/\(w=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="width: ${t}${n}"></div>`),s=s.replace(/\(h=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="height: ${t}${n}"></div>`),s=processBalancedDelimiters(s,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const m=processMarkdownBlocks(s);s=m,marked.setOptions({breaks:!0,gfm:!0,renderer:c,headerIds:!0,mangle:!1});let i=marked.parse(s),o="";i=i.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
+`}),[s,d]=processInlineCodeBlocks(s,d),s=s.replace(/\(w=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="width: ${t}${n}"></div>`),s=s.replace(/\(h=(\d*\.?\d+)(px|em|rem|lh)\)/g,(e,t,n)=>`<div style="height: ${t}${n}"></div>`),s=processBalancedDelimiters(s,{findPattern:/\[(?<linkText>[^\]]+)\]\((?<hrefStart>#)/g,openChar:"(",closeChar:")",shouldProcess:e=>{const t=e.content;return t.includes(" ")||t.includes("(")||t.includes(")")||t.includes("<")||t.includes(">")||t.includes('"')||t.includes("=")||t.includes("&")||t.includes("%")},processMatch:(e)=>{const n=e.linkText,s=e.hrefStart+e.content;let o=s.replace(/"/g,"%22").replace(/ /g,"%20").replace(/\(/g,"%28").replace(/\)/g,"%29").replace(/</g,"%3C").replace(/>/g,"%3E").replace(/&/g,"%26");return`[${n}](${o})`}});const m=processMarkdownBlocks(s);s=m,marked.setOptions({breaks:!0,gfm:!0,renderer:i,headerIds:!0,mangle:!1});let a=marked.parse(s),o="";a=a.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
-        </span>`);for(const[e,{language:t,code:n}]of d){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let t=1,n=1;for(const[r,{language:e,code:a}]of h){let s="";if(e.startsWith("svg")){let n=obtainAttributes(e);s=`<div
+        </span>`);for(const[e,{language:t,code:n}]of d){const s=escapeHtml(n),o=new RegExp(e,"g");a=a.replace(o,`<code class="language-${t}">${s}</code>`)}let t=1,n=1;for(const[r,{language:e,code:i}]of h){let s="";if(e.startsWith("svg")){let n=obtainAttributes(e);s=`<div
                 id="SVGiewer${t}"
                 class="SVG-viewer"
                 ${n}
@@ -39,7 +42,7 @@ ${n}
                 <svg id="zoom-in${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${t}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
-            </button>${a.replace("<svg ",`<svg id='page${t}'`)}</div>
+            </button>${i.replace("<svg ",`<svg id='page${t}'`)}</div>
             `,o+=`
                 if (document.getElementById("page${t}")){
                 window.zoomContainer${t} = svgPanZoom("#page${t}");
@@ -135,11 +138,11 @@ ${n}
                     });
                     
                     center_svg${t}();
-                }`,t+=1}else if(e.startsWith("animation")){let i=obtainAttributes(e),t=e.split(" ");const r=a.trim();s=`<div class="animation-wrapper">
+                }`,t+=1}else if(e.startsWith("animation")){let a=obtainAttributes(e),t=e.split(" ");const r=i.trim();s=`<div class="animation-wrapper">
                 <div
                     id="animationContainer${n}"
                     class="animation-container"
-                    ${i}
+                    ${a}
                 ></div>
                 <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
                     <svg id="playPauseBtn${n}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
@@ -261,12 +264,12 @@ ${n}
                             }
                         });
                     }
-                }, 50);`,n+=1}else{const t=escapeHtml(a),n=`<button class="code-copy-button">
+                }, 50);`,n+=1}else{const t=escapeHtml(i),n=`<button class="code-copy-button">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
                     <path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-            </button>`;s=`<div class="code-block-wrapper">${n}<pre><code class="language-${e}">${t}</code></pre></div>`}const c=new RegExp(`(<br>\\s*)?${r}(\\s*<br>)?`,"g");i=i.replace(c,s)}return t>1&&(o+=`
+            </button>`;s=`<div class="code-block-wrapper">${n}<pre><code class="language-${e}">${t}</code></pre></div>`}const c=new RegExp(`(<br>\\s*)?${r}(\\s*<br>)?`,"g");a=a.replace(c,s)}return t>1&&(o+=`
         //Center SVG inside SVG-viewer
         document.querySelectorAll('.SVG-viewer').forEach((viewer) => {
             const viewerId = viewer.id;
@@ -697,7 +700,7 @@ ${n}
             }
         });
     }
-    `,[i,u,o]}export function showCopySuccess(e,t){e.innerHTML=`
+    `,[a,u,o]}export function showCopySuccess(e,t){e.innerHTML=`
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
