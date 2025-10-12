@@ -444,6 +444,7 @@ input, select {
 .entry-tags {
     display: flex;
     gap: var(--spacing-sm);
+    flex-wrap: wrap;
 }
 
 .entry-tags > .tag {
