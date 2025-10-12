@@ -819,7 +819,7 @@
                         const lineContent = editor.getModel().getLineContent(lineNumber);
 
                         // Detect if there's already a header at the beginning
-                        const headerRegex = /^(#{1,6}\s|#t\s)/;
+                        const headerRegex = /^(\s*)(#{1,6}\s|#t\s)/;
                         const match = lineContent.match(headerRegex);
 
                         const lineStart = {
@@ -832,10 +832,10 @@
                         let newText;
                         if (match) {
                             // If there's already a header, replace it
-                            newText = beforeText + lineContent.substring(match[0].length) + afterText;
+                            newText = match[1] + beforeText + lineContent.trim().substring(match[2].length) + afterText;
                         } else {
                             // If there's no header, add a new one
-                            newText = beforeText + lineContent + afterText;
+                            newText = lineContent.match(/^\s*/)[0] + beforeText + lineContent.trim() + afterText;
                         }
 
                         // Edit at the beginning of the line
@@ -4516,20 +4516,20 @@
                                                 <button
                                                     style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${(e) => {
-                                                        // Primero verificar si estamos en una línea de lista
+                                                        // First check if we are in a list line
                                                         if (!editorRef.current) return;
 
                                                         const editor = editorRef.current;
                                                         const selection = editor.getSelection();
                                                         const model = editor.getModel();
 
-                                                        // Verificar si hay selección de múltiples líneas
+                                                        // Check for multi-line selection
                                                         const isMultiLine =
                                                             selection.startLineNumber !==
                                                             selection.endLineNumber;
 
                                                         if (isMultiLine) {
-                                                            // Aplicar a todas las líneas seleccionadas
+                                                            // Apply to all selected lines
                                                             const edits = [];
 
                                                             for (
@@ -4540,11 +4540,11 @@
                                                                 const lineContent =
                                                                     model.getLineContent(i);
 
-                                                                // Detectar si ya es una lista numerada o con viñetas
+                                                                // Detect if it is already a numbered list or bulleted list
                                                                 const numberedListRegex =
-                                                                    /^(\d+)\.(\s+)(.*)$/;
+                                                                    /^(\s*)(\d+)\.(\s+)(.*)$/;
                                                                 const bulletListRegex =
-                                                                    /^(-|\*|\+)(\s+)(.*)$/;
+                                                                    /^(\s*)(-|\*|\+)(\s+)(.*)$/;
 
                                                                 const numberedMatch =
                                                                     lineContent.match(numberedListRegex);
@@ -4552,7 +4552,7 @@
                                                                     lineContent.match(bulletListRegex);
 
                                                                 if (numberedMatch) {
-                                                                    // Convertir de lista numerada a lista con viñetas
+                                                                    // Convert from numbered list to bulleted list
                                                                     edits.push({
                                                                         range: {
                                                                             startLineNumber: i,
@@ -4562,11 +4562,11 @@
                                                                                 numberedMatch[0].length +
                                                                                 1,
                                                                         },
-                                                                        text: "- " + numberedMatch[3],
+                                                                        text: numberedMatch[1] + "- " + numberedMatch[4],
                                                                     });
                                                                 } else if (bulletMatch) {
-                                                                    // Ya es una lista con viñetas, asegurarse de que sea "-"
-                                                                    if (bulletMatch[1] !== "-") {
+                                                                    // It is already a bulleted list, ensure it is "-"
+                                                                    if (bulletMatch[2] !== "-") {
                                                                         edits.push({
                                                                             range: {
                                                                                 startLineNumber: i,
@@ -4576,19 +4576,19 @@
                                                                                     bulletMatch[0]
                                                                                         .length + 1,
                                                                             },
-                                                                            text: "- " + bulletMatch[3],
+                                                                            text: bulletMatch[1] + "- " + bulletMatch[4],
                                                                         });
                                                                     }
                                                                 } else if (lineContent.trim() !== "") {
-                                                                    // No es ningún tipo de lista y la línea no está vacía
+                                                                    // It is not any kind of list and the line is not empty
                                                                     edits.push({
                                                                         range: {
                                                                             startLineNumber: i,
                                                                             startColumn: 1,
                                                                             endLineNumber: i,
-                                                                            endColumn: 1,
+                                                                            endColumn: lineContent.length + 1,
                                                                         },
-                                                                        text: "- ",
+                                                                        text: lineContent.match(/^\s*/)[0] + "- " + lineContent.trim(),
                                                                     });
                                                                 }
                                                             }
@@ -4597,16 +4597,16 @@
                                                                 editor.executeEdits("", edits);
                                                             }
                                                         } else {
-                                                            // Aplicar solo a la línea actual (comportamiento original)
+                                                            // Apply to current line only (original behavior)
                                                             const lineNumber = selection.startLineNumber;
                                                             const lineContent =
                                                                 model.getLineContent(lineNumber);
 
-                                                            // Detectar si ya es una lista numerada
+                                                            // Detect if it is already a numbered list
                                                             const numberedListRegex =
-                                                                /^(\d+)\.(\s+)(.*)$/;
+                                                                /^(\s*)(\d+)\.(\s+)(.*)$/;
                                                             const bulletListRegex =
-                                                                /^(-|\*|\+)(\s+)(.*)$/;
+                                                                /^(\s*)(-|\*|\+)(\s+)(.*)$/;
 
                                                             const numberedMatch =
                                                                 lineContent.match(numberedListRegex);
@@ -4614,7 +4614,7 @@
                                                                 lineContent.match(bulletListRegex);
 
                                                             if (numberedMatch) {
-                                                                // Convertir de lista numerada a lista con viñetas
+                                                                // Convert from numbered list to bulleted list
                                                                 const range = {
                                                                     startLineNumber: lineNumber,
                                                                     startColumn: 1,
@@ -4623,17 +4623,17 @@
                                                                         numberedMatch[0].length + 1,
                                                                 };
 
-                                                                // Reemplazar "1. " con "- "
+                                                                // Replace "1. " with "- "
                                                                 editor.executeEdits("", [
                                                                     {
                                                                         range: range,
-                                                                        text: "- " + numberedMatch[3],
+                                                                        text: numberedMatch[1] + "- " + numberedMatch[4],
                                                                     },
                                                                 ]);
                                                             } else if (bulletMatch) {
-                                                                // Ya es una lista con viñetas, no hacer nada
-                                                                // O cambiar el tipo de viñeta si se quiere
-                                                                if (bulletMatch[1] !== "-") {
+                                                                // It is already a bulleted list, do nothing
+                                                                // Or change the bullet type if desired
+                                                                if (bulletMatch[2] !== "-") {
                                                                     const range = {
                                                                         startLineNumber: lineNumber,
                                                                         startColumn: 1,
@@ -4645,12 +4645,12 @@
                                                                     editor.executeEdits("", [
                                                                         {
                                                                             range: range,
-                                                                            text: "- " + bulletMatch[3],
+                                                                            text: bulletMatch[1] + "- " + bulletMatch[4],
                                                                         },
                                                                     ]);
                                                                 }
                                                             } else {
-                                                                // No es ningún tipo de lista, añadir al principio
+                                                                // It is not any kind of list, add to the beginning
                                                                 insertText("- ", "", true);
                                                             }
                                                         }
@@ -4676,20 +4676,20 @@
                                                 <button
                                                     style="display: flex; align-items: center; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;"
                                                     onClick=${(e) => {
-                                                        // Primero verificar si estamos en una línea de lista
+                                                        // First check if we are in a list line
                                                         if (!editorRef.current) return;
 
                                                         const editor = editorRef.current;
                                                         const selection = editor.getSelection();
                                                         const model = editor.getModel();
 
-                                                        // Verificar si hay selección de múltiples líneas
+                                                        // Check for multi-line selection
                                                         const isMultiLine =
                                                             selection.startLineNumber !==
                                                             selection.endLineNumber;
 
                                                         if (isMultiLine) {
-                                                            // Aplicar a todas las líneas seleccionadas
+                                                            // Apply to all selected lines
                                                             const edits = [];
                                                             let currentNumber = 1;
 
@@ -4701,11 +4701,11 @@
                                                                 const lineContent =
                                                                     model.getLineContent(i);
 
-                                                                // Detectar si ya es una lista numerada o con viñetas
+                                                                // Detect if it is already a numbered or bulleted list
                                                                 const numberedListRegex =
-                                                                    /^(\d+)\.(\s+)(.*)$/;
+                                                                    /^(\s*)(\d+)\.(\s+)(.*)$/;
                                                                 const bulletListRegex =
-                                                                    /^(-|\*|\+)(\s+)(.*)$/;
+                                                                    /^(\s*)(-|\*|\+)(\s+)(.*)$/;
 
                                                                 const numberedMatch =
                                                                     lineContent.match(numberedListRegex);
@@ -4713,7 +4713,7 @@
                                                                     lineContent.match(bulletListRegex);
 
                                                                 if (bulletMatch) {
-                                                                    // Convertir de lista con viñetas a lista numerada
+                                                                    // Convert from bulleted list to numbered list
                                                                     edits.push({
                                                                         range: {
                                                                             startLineNumber: i,
@@ -4724,12 +4724,12 @@
                                                                                 1,
                                                                         },
                                                                         text:
-                                                                            `${currentNumber}. ` +
-                                                                            bulletMatch[3],
+                                                                            bulletMatch[1] + `${currentNumber}. ` +
+                                                                            bulletMatch[4],
                                                                     });
                                                                     currentNumber++;
                                                                 } else if (numberedMatch) {
-                                                                    // Ya es una lista numerada, actualizar al número correcto
+                                                                    // Already a numbered list, update to the correct number
                                                                     edits.push({
                                                                         range: {
                                                                             startLineNumber: i,
@@ -4740,20 +4740,20 @@
                                                                                 1,
                                                                         },
                                                                         text:
-                                                                            `${currentNumber}. ` +
-                                                                            numberedMatch[3],
+                                                                            numberedMatch[1] + `${currentNumber}. ` +
+                                                                            numberedMatch[4],
                                                                     });
                                                                     currentNumber++;
                                                                 } else if (lineContent.trim() !== "") {
-                                                                    // No es ningún tipo de lista y la línea no está vacía
+                                                                    // Not any kind of list and the line is not empty
                                                                     edits.push({
                                                                         range: {
                                                                             startLineNumber: i,
                                                                             startColumn: 1,
                                                                             endLineNumber: i,
-                                                                            endColumn: 1,
+                                                                            endColumn: lineContent.length + 1,
                                                                         },
-                                                                        text: `${currentNumber}. `,
+                                                                        text: lineContent.match(/^\s*/)[0] + `${currentNumber}. ` + lineContent.trim(),
                                                                     });
                                                                     currentNumber++;
                                                                 }
@@ -4763,16 +4763,16 @@
                                                                 editor.executeEdits("", edits);
                                                             }
                                                         } else {
-                                                            // Aplicar solo a la línea actual (comportamiento original)
+                                                            // Apply only to the current line (original behavior)
                                                             const lineNumber = selection.startLineNumber;
                                                             const lineContent =
                                                                 model.getLineContent(lineNumber);
 
-                                                            // Detectar si ya es una lista numerada
+                                                            // Detect if it is already a numbered list
                                                             const numberedListRegex =
-                                                                /^(\d+)\.(\s+)(.*)$/;
+                                                                /^(\s*)(\d+)\.(\s+)(.*)$/;
                                                             const bulletListRegex =
-                                                                /^(-|\*|\+)(\s+)(.*)$/;
+                                                                /^(\s*)(-|\*|\+)(\s+)(.*)$/;
 
                                                             const numberedMatch =
                                                                 lineContent.match(numberedListRegex);
@@ -4780,7 +4780,7 @@
                                                                 lineContent.match(bulletListRegex);
 
                                                             if (bulletMatch) {
-                                                                // Convertir de lista con viñetas a lista numerada
+                                                                // Convert from bulleted list to numbered list
                                                                 const range = {
                                                                     startLineNumber: lineNumber,
                                                                     startColumn: 1,
@@ -4788,16 +4788,16 @@
                                                                     endColumn: bulletMatch[0].length + 1,
                                                                 };
 
-                                                                // Reemplazar "- " con "1. "
+                                                                // Replace "- " with "1. "
                                                                 editor.executeEdits("", [
                                                                     {
                                                                         range: range,
-                                                                        text: "1. " + bulletMatch[3],
+                                                                        text: bulletMatch[1] + "1. " + bulletMatch[4],
                                                                     },
                                                                 ]);
                                                             } else if (numberedMatch) {
-                                                                // Ya es una lista numerada, verificar si queremos cambiar el número
-                                                                if (numberedMatch[1] !== "1") {
+                                                                // Already a numbered list, check if we want to change the number
+                                                                if (numberedMatch[2] !== "1") {
                                                                     const range = {
                                                                         startLineNumber: lineNumber,
                                                                         startColumn: 1,
@@ -4810,12 +4810,12 @@
                                                                         {
                                                                             range: range,
                                                                             text:
-                                                                                "1. " + numberedMatch[3],
+                                                                                numberedMatch[1] + "1. " + numberedMatch[4],
                                                                         },
                                                                     ]);
                                                                 }
                                                             } else {
-                                                                // No es ningún tipo de lista, añadir al principio
+                                                                // Not any kind of list, add to the beginning
                                                                 insertText("1. ", "", true);
                                                             }
                                                         }
