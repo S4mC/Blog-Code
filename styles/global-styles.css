@@ -1310,6 +1310,7 @@ details::after {
 .markdown-grid {
     margin: 0.5rem 0;
     width: 100%;
+    overflow: auto;
 }
 
 .markdown-grid .grid-item {
@@ -1318,11 +1319,6 @@ details::after {
     background-color: var(--card-background);
     border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.markdown-grid .grid-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Equal height grid items */

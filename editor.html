@@ -66,11 +66,61 @@
                 cleanup: null,
             };
 
-            // Handler for Escape key
+            // Global state for menu keyboard navigation
+            window.menuKeyboardState = {
+                currentMenu: null,
+                lastKey: null,
+                lastKeyIndex: -1
+            };
+
+            // Handler for Escape key and menu navigation
             document.addEventListener("keydown", function (e) {
                 if (e.key === "Escape") {
                     manageEscapeIframe();
+                    return;
                 }
+
+                // Handle menu keyboard navigation
+                const menu = window.menuKeyboardState.currentMenu;
+                if (!menu || menu.style.display !== "block") return;
+
+                // Only handle alphanumeric keys
+                if (e.key.length !== 1 || !/[a-zA-Z0-9]/.test(e.key)) return;
+
+                const key = e.key.toLowerCase();
+                const now = Date.now();
+
+                // Get all focusable items in the menu
+                const items = Array.from(menu.querySelectorAll('button, [role="menuitem"], .menu-item, a'));
+                if (items.length === 0) return;
+
+                // Filter items that start with the pressed key
+                const matchingItems = items.filter(item => {
+                    const text = item.textContent.trim().toLowerCase();
+                    return text.startsWith(key);
+                });
+
+                if (matchingItems.length === 0) return;
+
+                // Reset index if different key
+                if (key !== window.menuKeyboardState.lastKey) {
+                    window.menuKeyboardState.lastKeyIndex = -1;
+                }
+
+                // Move to next matching item
+                window.menuKeyboardState.lastKeyIndex = (window.menuKeyboardState.lastKeyIndex + 1);
+                if (window.menuKeyboardState.lastKeyIndex >= matchingItems.length) {
+                    window.menuKeyboardState.lastKeyIndex = 0;
+                }
+                window.menuKeyboardState.lastKey = key;
+
+                // Focus the item
+                const targetItem = matchingItems[window.menuKeyboardState.lastKeyIndex];
+                targetItem.focus();
+
+                // Prevent default to avoid typing in editor
+                e.preventDefault();
+                e.stopPropagation();
             });
 
             document.addEventListener("click", function (e) {
@@ -2792,7 +2842,7 @@
                         menu.id = "compare-file-menu";
                         menu.className = "menu-content";
                         menu.style.cssText =
-                            "position: fixed; display: block; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);min-width: 150px;width: max-content;";
+                            "position: fixed; display: block; border: 1px solid var(--border); border-radius: var(--border-radius); max-height: 300px; overflow-y: auto; z-index: 9999; box-shadow: 0 4px 12px rgba(0,0,0,0.3);min-width: 150px;width: max-content;";
                         document.body.appendChild(menu);
                     }
 
@@ -2815,10 +2865,19 @@
 
                     menu.style.display = "block";
 
+                    // Set current menu for keyboard navigation
+                    window.menuKeyboardState.currentMenu = menu;
+                    window.menuKeyboardState.lastKey = null;
+                    window.menuKeyboardState.lastKeyIndex = -1;
+
                     // Use the same closing pattern as handleMenuToggle/handleMenuOpen
                     const closeMenu = (event) => {
                         if (!menu.contains(event.target) && !compareButton.contains(event.target)) {
                             menu.style.display = "none";
+                            // Clear keyboard navigation state
+                            if (window.menuKeyboardState.currentMenu === menu) {
+                                window.menuKeyboardState.currentMenu = null;
+                            }
                             document.removeEventListener("click", closeMenu);
                             document.removeEventListener("contextmenu", closeMenu);
                         }
@@ -4065,10 +4124,19 @@
                         if (onOpenCallback) {
                             onOpenCallback(menu);
                         }
+
+                        // Set current menu for keyboard navigation
+                        window.menuKeyboardState.currentMenu = menu;
+                        window.menuKeyboardState.lastKey = null;
+                        window.menuKeyboardState.lastKeyIndex = -1;
                         
                         const closeMenu = (event) => {
                             if (!menu.contains(event.target) && !button.contains(event.target)) {
                                 menu.style.display = "none";
+                                // Clear keyboard navigation state
+                                if (window.menuKeyboardState.currentMenu === menu) {
+                                    window.menuKeyboardState.currentMenu = null;
+                                }
                                 document.removeEventListener("click", closeMenu);
                                 document.removeEventListener("contextmenu", closeMenu);
                             }
@@ -4077,6 +4145,11 @@
                             document.addEventListener("click", closeMenu);
                             document.addEventListener("contextmenu", closeMenu);
                         }, 0);
+                    } else {
+                        // Clear keyboard navigation state when closing
+                        if (window.menuKeyboardState.currentMenu === menu) {
+                            window.menuKeyboardState.currentMenu = null;
+                        }
                     }
                 };
 
@@ -4095,10 +4168,19 @@
                         if (onOpenCallback) {
                             onOpenCallback(menu);
                         }
+
+                        // Set current menu for keyboard navigation
+                        window.menuKeyboardState.currentMenu = menu;
+                        window.menuKeyboardState.lastKey = null;
+                        window.menuKeyboardState.lastKeyIndex = -1;
                         
                         const closeMenu = (event) => {
                             if (!menu.contains(event.target) && !button.contains(event.target)) {
                                 menu.style.display = "none";
+                                // Clear keyboard navigation state
+                                if (window.menuKeyboardState.currentMenu === menu) {
+                                    window.menuKeyboardState.currentMenu = null;
+                                }
                                 document.removeEventListener("click", closeMenu);
                                 document.removeEventListener("mouseup", closeMenu);
                                 document.removeEventListener("contextmenu", closeMenu);
@@ -4109,6 +4191,11 @@
                             document.addEventListener("mouseup", closeMenu);
                             document.addEventListener("contextmenu", closeMenu);
                         }, 0);
+                    } else {
+                        // Clear keyboard navigation state when closing
+                        if (window.menuKeyboardState.currentMenu === menu) {
+                            window.menuKeyboardState.currentMenu = null;
+                        }
                     }
                 };
 

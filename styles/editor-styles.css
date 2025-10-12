@@ -349,6 +349,10 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     overflow: auto;
     scrollbar-width: thin;
 }
+.menu-content button:focus {
+    background-color: var(--bg-highlight);
+}
+
 .editor-toolbar .menu-content button {
     width: 100%;
     text-align: left;
