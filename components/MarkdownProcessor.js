@@ -639,8 +639,6 @@ export function renderMarkdown(markdownContent) {
 
     // Personalizar el renderer para list items
     renderer.listitem = (element) => {
-
-        
         let text = '';
         let dataIcon = '';
         
@@ -658,9 +656,10 @@ export function renderMarkdown(markdownContent) {
                 const firstText = textToken.text || textToken.raw || '';
                 
                 // Try to extract icon from the first text token
-                const match = firstText.match(/^([^\s\d]+)\s+(.*)$/s);
+                // Only match actual emojis, not markdown syntax like **text**
+                const match = firstText.match(/^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su);
                 
-                if (match && /^\\?[\p{Emoji}]/u.test(match[1])) {
+                if (match) {
                     let matchedIcon = match[1];
                     let matchedText = match[2];
 
@@ -686,9 +685,9 @@ export function renderMarkdown(markdownContent) {
                             modifiedTextToken.tokens = textToken.tokens.map((subToken, index) => {
                                 if (index === 0 && subToken.type === 'text') { 
                                     // Extract icon only from this specific sub-token
-                                    const subMatch = subToken.text.match(/^([^\s\d]+)\s+(.*)$/s);
-                                    let matchedIcon1 = subMatch[1];
-                                    let matchedText1 = subMatch[2];
+                                    const subMatch = subToken.text.match(/^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su);
+                                    let matchedIcon1 = subMatch?.[1];
+                                    let matchedText1 = subMatch?.[2];
 
                                     if (matchedIcon1.at(0) === '\\') { // Allow escaping the icon with a backslash
                                         matchedText1 = matchedIcon1.slice(1) + ' ' + matchedText1;
@@ -723,9 +722,9 @@ export function renderMarkdown(markdownContent) {
                             modifiedFirstToken.tokens = textToken.tokens.map((subToken, index) => {
                                 if (index === 0 && subToken.type === 'text') {
                                     // Extract icon only from this specific sub-token
-                                    const subMatch = subToken.text.match(/^([^\s\d]+)\s+(.*)$/s);
-                                    let matchedIcon1 = subMatch[1];
-                                    let matchedText1 = subMatch[2];
+                                    const subMatch = subToken.text.match(/^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su);
+                                    let matchedIcon1 = subMatch?.[1];
+                                    let matchedText1 = subMatch?.[2];
 
                                     if (matchedIcon1.at(0) === '\\') { // Allow escaping the icon with a backslash
                                         matchedText1 = matchedIcon1.slice(1) + ' ' + matchedText1;
@@ -760,7 +759,7 @@ export function renderMarkdown(markdownContent) {
         } else {
             // No tokens, process element.text directly
             text = element.text;
-            const match = text.match(/^([^\s\d]+)\s+(.*)$/s);
+            const match = text.match(/^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su);
             if (match) {
                 dataIcon = match[1]; // First word (the icon)
                 text = match[2];      // Rest of the text
