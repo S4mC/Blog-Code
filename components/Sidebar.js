@@ -573,15 +573,72 @@ class SidebarClass {
             // Scroll to element in main content
             domElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             
-            // Add temporary highlight to DOM element
-            domElement.style.backgroundColor = 'var(--bg)';
-            domElement.style.color = 'var(--text-color)';
-            domElement.style.filter = 'invert(1)';
-            domElement.style.transition = 'background-color 0.3s ease';
+            // Wait for scroll to finish and element to be visible before applying highlight
+            const applyHighlight = () => {
+                clearTimeout(this.actualHighlightedTimeout);
+                domElement.style.backgroundColor = 'var(--bg)';
+                domElement.style.color = 'var(--text-color)';
+                domElement.style.filter = 'invert(1)';
+                domElement.style.transition = 'background-color 0.3s ease';
 
-            this.actualHighlightedTimeout = setTimeout(() => {
-                clearHighlight(domElement);
-            }, 2000);
+                this.actualHighlightedTimeout = setTimeout(() => {
+                    clearHighlight(domElement);
+                }, 2000);
+            };
+
+            // Detect when scroll ends
+            let observer;
+            let observerTimeout;
+
+            const container = document.querySelector('.entry-content') || window;
+            const scrollElement = container === window ? window : container;
+            
+            const onScrollEnd = (event) => {
+
+                if (observerTimeout) clearTimeout(observerTimeout);
+                observer?.disconnect();
+
+                // Check if element is visible in viewport
+                const targetRect = domElement.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                
+                const isVisible = targetRect.top < viewportHeight && targetRect.bottom > 0;
+                
+                if (isVisible) {
+                    // Element is visible, apply highlight
+                    if (event) scrollElement.removeEventListener(event, onScrollEnd);
+                    applyHighlight();
+                } else {
+                    // Element is not visible yet, use IntersectionObserver
+                    if (event) scrollElement.removeEventListener(event, onScrollEnd);
+
+                    observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                observer.disconnect();
+                                applyHighlight();
+                            }
+                        });
+                    }, {
+                        threshold: 0.1
+                    });
+                    
+                    observer.observe(domElement);
+                    
+                    // Cleanup observer after 5 seconds if element never becomes visible
+                    observerTimeout = setTimeout(() => {
+                        observer?.disconnect();
+                    }, 5000);
+                }
+            };
+            
+            if ('onscrollend' in document.documentElement) {
+                scrollElement.addEventListener('scrollend', onScrollEnd('scrollend'));
+            } else {
+                scrollElement.addEventListener('scroll', onScrollEnd('scroll'));
+            }
+            // Trigger once immediately in case scroll doesn't happen
+            onScrollEnd();
         }
     }
 

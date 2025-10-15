@@ -839,6 +839,7 @@
                         }
 
                         // Edit at the beginning of the line
+                        editor.pushUndoStop();
                         editor.executeEdits("", [
                             {
                                 range: lineStart,
@@ -849,7 +850,7 @@
                         // Normal behavior when text is selected
                         const newText = beforeText + selectedText + afterText;
 
-                        // Realiza la edición
+                        editor.pushUndoStop();
                         editor.executeEdits("", [
                             {
                                 range: selection,
@@ -4844,6 +4845,7 @@
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
+                                                    title="Insert a connector block, example: \n:::connector\n\tIf there are headers here, that header will be connected to the connector block (which is its parent) and if there are only lists then the lists will be the ones that are connected.\n:::"
                                                 >
                                                     <svg
                                                         xmlns="http://www.w3.org/2000/svg"
@@ -4911,6 +4913,7 @@
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
+                                                    title="Insert vertical space (like a <br> but with custom height), example: (h=10px)"
                                                 >
                                                     Vertical space
                                                 </button>
@@ -4920,6 +4923,7 @@
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
+                                                    title="Insert horizontal space, example: (w=10px)"
                                                 >
                                                     Horizontal space
                                                 </button>
@@ -4996,6 +5000,7 @@
                                                 >
                                                     Normal Link
                                                 </button>
+                                                <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;"/>
                                                 ${
                                                     // Generate navigation header buttons dynamically
                                                     (() => {
@@ -5027,12 +5032,14 @@
                                                         );
                                                     })()
                                                 }
+                                                <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;"/>
                                                 <button
                                                     onClick=${(e) => {
                                                         insertText("[", "](#text=search)");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
+                                                    title="Search for text content on the page"
                                                 >
                                                     Text Search
                                                 </button>
@@ -5045,8 +5052,80 @@
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
+                                                    title="Navigate using a document.querySelector()"
                                                 >
                                                     JS Path
+                                                </button>
+                                                <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;"/>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("[", "](#goto=name)");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Navigate to the location of an element relative to the go element\n Example: \n[holaaa5](#goto=go_element_name)\n With in some part of the markdown the text the next go element:\n (go-out-below=go_element_name)\n looks for the element below the parent of that go element"
+                                                >
+                                                    Navigate relative
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-out=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go Out (Parent)
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-above=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go Above (Previous)
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-below=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go Below (Next)
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-in=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go In (First Child)
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-inl=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go In Last (Last Child)
+                                                </button>
+                                                <button
+                                                    onClick=${(e) => {
+                                                        insertText("(go-out-out-below=", ")");
+                                                        e.currentTarget.parentElement.style.display =
+                                                            "none";
+                                                    }}
+                                                    title="Go element that is used in combination of the relative navigation link"
+                                                >
+                                                    Go Stacked Example
                                                 </button>
                                             </div>
                                             <svg

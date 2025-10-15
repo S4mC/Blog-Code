@@ -854,6 +854,13 @@ export function renderMarkdown(markdownContent) {
         return `<div style="height: ${size}${unit}"></div>`;
     });
     
+    // Process navigation elements like (go-out=name), (go-above=name), (go-below=name)
+    // Also supports stacked directions: (go-out-out-below=name)
+    // New: -in (enter first child), -inl (enter last child)
+    processedMarkdown = processedMarkdown.replace(/\(go-((?:out|above|below|in|inl)(?:-(?:out|above|below|in|inl))*)=([^)]+)\)/g, (match, directions, name) => {
+        return `<div class="go-navigate" data-directions="${directions}" data-name="${name.trim()}"></div>`;
+    });
+    
     // Handle links that might have spaces in the href that Marked.js doesn't parse correctly
     // Using the generic balanced delimiter processor
     // Process internal links that need encoding
@@ -879,7 +886,9 @@ export function renderMarkdown(markdownContent) {
                 .replace(/\)/g, '%29')
                 .replace(/</g, '%3C')
                 .replace(/>/g, '%3E')
-                .replace(/&/g, '%26');
+                .replace(/&/g, '%26')
+                .replace(/\n/g, '%0A')
+                .replace(/\r/g, '%0D');
 
             return `[${linkText}](${encodedHref})`;
         }
@@ -1252,18 +1261,7 @@ export function renderMarkdown(markdownContent) {
                         const type = targetId.substring(0, equalIndex);
                         const value = targetId.substring(equalIndex + 1);
                         
-                        if (type === 'h' && !isNaN(value)) {
-                            // Search for the specified h{number} (e.g. #h=1 searches for the first h1)
-                            const headingLevel = parseInt(value);
-                            if (headingLevel >= 1 && headingLevel <= 6) {
-                                const headings = entryContent ? 
-                                    entryContent.querySelectorAll(\`h\${headingLevel}\`) : 
-                                    document.querySelectorAll(\`h\${headingLevel}\`);
-                                if (headings.length > 0) {
-                                    target = headings[0];
-                                }
-                            }
-                        } else if (type.match(/^h[1-6]$/)) {
+                        if (type.match(/^h[1-6]$/)) {
                             // Search by position or by text in the specified h type
                             const headingLevel = parseInt(type.substring(1));
                             
@@ -1290,11 +1288,34 @@ export function renderMarkdown(markdownContent) {
                             const searchText = decodeURIComponent(value);
                             const searchArea = entryContent || document;
 
-                            // Search directly in all elements
-                            const allElements = searchArea.querySelectorAll('*');
-                            target = Array.from(allElements).find(element => 
-                                element.textContent.includes(searchText)
-                            );
+                            // Find all elements in order
+                            const allElements = Array.from(searchArea.querySelectorAll('*'));
+
+                            let firstMatch = null;
+                            for (const element of allElements) {
+                                if (element.textContent.includes(searchText)) {
+                                    firstMatch = element;
+                                    break; // we stop at the first one that contains the text
+                                }
+                            }
+
+                            target = firstMatch;
+
+                            // If we found something, we look for the deepest one inside it
+                            if (firstMatch) {
+                                // Recursive function to find the most nested element that contains the text
+                                const findDeepestMatch = (el) => {
+                                    for (const child of el.children) {
+                                        if (child.textContent.includes(searchText)) {
+                                            // Search deeper in that child
+                                            return findDeepestMatch(child);
+                                        }
+                                    }
+                                    return el;
+                                };
+
+                                target = findDeepestMatch(firstMatch);
+                            }
                         } else if (type === 'query') {
                             // Execute custom querySelector (e.g. #query=document.querySelector("selector"))
                             try {
@@ -1304,6 +1325,208 @@ export function renderMarkdown(markdownContent) {
                             } catch (error) {
                                 console.warn('Error executing query selector:', error);
                                 target = null;
+                            }
+                        } else if (type === 'goto') {
+
+                            const queryString = decodeURIComponent(value);
+
+                            // Helper function to check if element is visible
+                            const isElementVisible = (element) => {
+                                if (!element) return false;
+                                const style = window.getComputedStyle(element);
+                                const rect = element.getBoundingClientRect();
+                                return style.display !== 'none' && 
+                                       style.visibility !== 'hidden' && 
+                                       style.opacity !== '0' &&
+                                       rect.width > 0 && 
+                                       rect.height > 0;
+                            };
+
+                            // Helper function to find visible parent
+                            const findVisibleParent = (element) => {
+                                let parent = element.parentElement;
+                                while (parent) {
+                                    if (isElementVisible(parent)) {
+                                        return parent;
+                                    }
+                                    parent = parent.parentElement;
+                                }
+                                
+                                // If no visible parent found, check if parent node contains text nodes
+                                // and wrap them if needed (for cases where element is inside text)
+                                let parentNode = element.parentNode;
+                                if (parentNode && parentNode.nodeType === Node.ELEMENT_NODE) {
+                                    // Check child nodes for text content
+                                    for (let node of parentNode.childNodes) {
+                                        if (node !== element && node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                                            // Found text node sibling, wrap parent's content
+                                            const wrapper = document.createElement('div');
+                                            wrapper.style.display = 'inline-block';
+                                            
+                                            // Move all child nodes to wrapper
+                                            while (parentNode.firstChild) {
+                                                wrapper.appendChild(parentNode.firstChild);
+                                            }
+                                            
+                                            parentNode.appendChild(wrapper);
+                                            return wrapper;
+                                        }
+                                    }
+                                }
+                                
+                                return null;
+                            };
+
+                            // Helper function to find visible previous sibling
+                            const findVisiblePreviousSibling = (element) => {
+                                // Start directly with previousSibling to catch both elements and text nodes
+                                let prevNode = element.previousSibling;
+                                while (prevNode) {
+                                    // Check if it's a text node with actual content (not just whitespace)
+                                    if (prevNode.nodeType === Node.TEXT_NODE && prevNode.textContent.trim()) {
+                                        // Wrap the text node in a span element
+                                        const wrapper = document.createElement('span');
+                                        wrapper.textContent = prevNode.textContent;
+                                        prevNode.parentNode.replaceChild(wrapper, prevNode);
+                                        return wrapper;
+                                    }
+                                    // If it's an element, check if it's visible
+                                    if (prevNode.nodeType === Node.ELEMENT_NODE && isElementVisible(prevNode)) {
+                                        return prevNode;
+                                    }
+                                    prevNode = prevNode.previousSibling;
+                                }
+                                
+                                return null;
+                            };
+
+                            // Helper function to find visible next sibling
+                            const findVisibleNextSibling = (element) => {
+                                // Start directly with nextSibling to catch both elements and text nodes
+                                let nextNode = element.nextSibling;
+
+                                while (nextNode) {
+                                    // Check if it's a text node with actual content (not just whitespace)
+                                    if (nextNode.nodeType === Node.TEXT_NODE && nextNode.textContent.trim()) {
+                                        // Wrap the text node in a span element
+                                        const wrapper = document.createElement('span');
+                                        wrapper.textContent = nextNode.textContent;
+                                        nextNode.parentNode.replaceChild(wrapper, nextNode);
+                                        return wrapper;
+                                    }
+                                    // If it's an element, check if it's visible
+                                    if (nextNode.nodeType === Node.ELEMENT_NODE && isElementVisible(nextNode)) {
+                                        return nextNode;
+                                    }
+                                    nextNode = nextNode.nextSibling;
+                                }
+                                
+                                return null;
+                            };
+
+                            // Helper function to find first visible child (enter element)
+                            const findVisibleFirstChild = (element) => {
+                                // Start with first child to catch both elements and text nodes
+                                let firstNode = element.firstChild;
+                                
+                                while (firstNode) {
+                                    // Check if it's a text node with actual content (not just whitespace)
+                                    if (firstNode.nodeType === Node.TEXT_NODE && firstNode.textContent.trim()) {
+                                        // Wrap the text node in a span element
+                                        const wrapper = document.createElement('span');
+                                        wrapper.textContent = firstNode.textContent;
+                                        firstNode.parentNode.replaceChild(wrapper, firstNode);
+                                        console.log('Wrapped first child text node:', wrapper);
+                                        return wrapper;
+                                    }
+                                    // If it's an element, check if it's visible
+                                    if (firstNode.nodeType === Node.ELEMENT_NODE && isElementVisible(firstNode)) {
+                                        console.log('Found visible first child element:', firstNode);
+                                        return firstNode;
+                                    }
+                                    firstNode = firstNode.nextSibling;
+                                }
+                                
+                                console.log('No visible first child found');
+                                return null;
+                            };
+
+                            // Helper function to find last visible child (enter element at end)
+                            const findVisibleLastChild = (element) => {
+                                // Start with last child to catch both elements and text nodes
+                                let lastNode = element.lastChild;
+                                
+                                while (lastNode) {
+                                    // Check if it's a text node with actual content (not just whitespace)
+                                    if (lastNode.nodeType === Node.TEXT_NODE && lastNode.textContent.trim()) {
+                                        // Wrap the text node in a span element
+                                        const wrapper = document.createElement('span');
+                                        wrapper.textContent = lastNode.textContent;
+                                        lastNode.parentNode.replaceChild(wrapper, lastNode);
+                                        console.log('Wrapped last child text node:', wrapper);
+                                        return wrapper;
+                                    }
+                                    // If it's an element, check if it's visible
+                                    if (lastNode.nodeType === Node.ELEMENT_NODE && isElementVisible(lastNode)) {
+                                        console.log('Found visible last child element:', lastNode);
+                                        return lastNode;
+                                    }
+                                    lastNode = lastNode.previousSibling;
+                                }
+                                
+                                console.log('No visible last child found');
+                                return null;
+                            };
+
+                            // Helper function to apply a single navigation direction
+                            const applyDirection = (currentElement, direction) => {
+                                switch(direction) {
+                                    case 'out':
+                                        return findVisibleParent(currentElement);
+                                    case 'above':
+                                        return findVisiblePreviousSibling(currentElement);
+                                    case 'below':
+                                        return findVisibleNextSibling(currentElement);
+                                    case 'in':
+                                        return findVisibleFirstChild(currentElement);
+                                    case 'inl':
+                                        return findVisibleLastChild(currentElement);
+                                    default:
+                                        console.warn('Unknown direction:', direction);
+                                        return null;
+                                }
+                            };
+
+                            // Search for all go-navigate elements (new unified class)
+                            const goNavigateElements = document.querySelectorAll('.go-navigate');
+                            for (const element of goNavigateElements) {
+                                if (element.getAttribute('data-name') === queryString) {
+                                    const directionsStr = element.getAttribute('data-directions');
+                                    const directions = directionsStr.split('-'); // Split "out-out-below" into ["out", "out", "below"]
+                                    
+                                    console.log('Found go-navigate element with directions:', directions);
+                                    
+                                    // Apply each direction in sequence
+                                    let currentTarget = element;
+                                    for (const direction of directions) {
+                                        currentTarget = applyDirection(currentTarget, direction);
+                                        if (!currentTarget) {
+                                            console.warn('Navigation failed at direction:', direction);
+                                            break;
+                                        }
+                                        console.log('After direction', direction, ':', currentTarget);
+                                    }
+                                    
+                                    if (currentTarget) {
+                                        target = currentTarget;
+                                        console.log('Final target found:', target);
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if (!target) {
+                                console.warn('No visible target found for goto:', queryString);
                             }
                         }
                     } else {
@@ -1328,48 +1551,82 @@ export function renderMarkdown(markdownContent) {
                                 behavior: 'smooth'
                             });
                         }
-                        
-                        // Add highlighting animation to the target element
-                        if (window.isHighlighting == target) {
-                            return; // Do nothing if already animating
-                        }
-                        window.isHighlighting = target;
 
-                        setTimeout(() => {
-                            // Clear previous animations
-                            document.querySelectorAll('.target-highlight').forEach(el => {
-                                el.classList.remove('target-highlight');
-                                // Restore original display if it was changed
-                                if (el.dataset.originalDisplay) {
-                                    el.style.display = el.dataset.originalDisplay;
-                                    delete el.dataset.originalDisplay;
+                        // Wait for scroll to finish and element to be visible
+                        const applyHighlight = () => {
+                            if (window.highlightTargetTimeoutOut) clearTimeout(window.highlightTargetTimeoutOut);
+
+                            // Clear previous animations from all elements
+                            document.querySelectorAll('[style*="animation"]').forEach(el => {
+                                if (el.style.animation.includes('targetZoom')) {
+                                    el.style.animation = '';
                                 }
                             });
                             
-                            // Check if element is inline or computed inline
-                            const computedStyle = window.getComputedStyle(target);
-                            const isInline = computedStyle.display === 'inline';
+                            // Force reflow to ensure animation restarts
+                            void target.offsetWidth;
                             
-                            // Store original display and temporarily change to inline-block if needed
-                            if (isInline) {
-                                target.dataset.originalDisplay = computedStyle.display;
-                                target.style.display = 'inline-block';
-                            }
+                            // Add highlighting animation
+                            target.style.animation = 'targetZoom 1s ease-out';
                             
-                            // Add highlighting class
-                            target.classList.add('target-highlight');
-                            
-                            // Remove class after animation
+                            // Remove animation after completion
                             window.highlightTargetTimeoutOut = setTimeout(() => {
-                                target.classList.remove('target-highlight');
-                                // Restore original display if it was changed
-                                if (target.dataset.originalDisplay) {
-                                    target.style.display = target.dataset.originalDisplay;
-                                    delete target.dataset.originalDisplay;
-                                }
-                                window.isHighlighting = false;
+                                target.style.animation = '';
                             }, 1100);
-                        }, 300); // Reduced from 500ms to 300ms to be faster
+                        };
+
+                        // Detect when scroll ends
+                        let observer;
+                        let observerTimeout;
+
+                        const onScrollEnd = (event) => {
+                            if (observerTimeout) clearTimeout(observerTimeout);
+                            observer?.disconnect();
+                        
+                            // Check if element is visible in viewport
+                            const targetRect = target.getBoundingClientRect();
+                            const containerRect = container ? container.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+                            
+                            const isVisible = targetRect.top < containerRect.bottom && targetRect.bottom > containerRect.top;
+                            
+                            if (isVisible) {
+                                // Element is visible, apply highlight
+                                if (event) container.removeEventListener(event, onScrollEnd);
+                                applyHighlight();
+                            } else {
+                                // Element is not visible yet, use IntersectionObserver
+                                if (event) container.removeEventListener(event, onScrollEnd);
+                                
+                                observer = new IntersectionObserver((entries) => {
+                                    entries.forEach(entry => {
+                                        if (entry.isIntersecting) {
+                                            observer.disconnect();
+                                            applyHighlight();
+                                        }
+                                    });
+                                }, {
+                                    root: container,
+                                    threshold: 0.1
+                                });
+                                
+                                observer.observe(target);
+                                
+                                // Cleanup observer after 5 seconds if element never becomes visible
+                                observerTimeout = setTimeout(() => {
+                                    observer?.disconnect();
+                                }, 5000);
+                            }
+                        };
+                        
+                        if (container) {
+                            if ('onscrollend' in document.documentElement) {
+                                container.addEventListener('scrollend', onScrollEnd('scrollend'));
+                            } else {
+                                container.addEventListener('scroll', onScrollEnd('scroll'));
+                            }
+                            // Trigger once immediately in case scroll doesn't happen
+                            onScrollEnd();
+                        }
                     }
                 }
             });
@@ -1770,7 +2027,7 @@ export function manageClickFloatButton(e) {
                 showCopySuccess(button, originalHTML);
             })
             .catch((err) => {
-                console.error("Error al copiar:", err);
+                console.error("Error copying:", err);
             });
     }
 }
