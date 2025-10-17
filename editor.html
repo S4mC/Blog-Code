@@ -638,6 +638,21 @@
                             window.addEventListener("beforeunload", handleBeforeUnload);
                         });
                     }
+
+                    // Add keyboard shortcut Ctrl+S to open publish modal
+                    const handleKeyDown = (e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                            e.preventDefault(); // Prevent browser's default save behavior
+                            showPublishModal();
+                        }
+                    };
+
+                    document.addEventListener('keydown', handleKeyDown);
+
+                    // Cleanup on component unmount
+                    return () => {
+                        document.removeEventListener('keydown', handleKeyDown);
+                    };
                 }, []);
 
                 // Effect to save tabs to localStorage when they change
@@ -2798,12 +2813,11 @@
                         throw new Error("Failed to fetch posts list");
                     }
                     const data_search = await search_json.json();
-                    
                     // Find the entry whose title matches the extracted title
                     const matchingEntry = data_search.entries.find(entry => 
-                        entry.title === title || 
+                        entry.path.endsWith(".md") && (entry.title === title || 
                         entry.title.toLowerCase() === title.toLowerCase() ||
-                        entry.title.replace(/\s+/g, "-") === title
+                        entry.title.replace(/\s+/g, "-") === title)
                     );
                     
                     // Get the path if a matching entry is found
@@ -2858,7 +2872,7 @@
                         .map(
                             (file) => `
                         <button onclick="window.compareWithFile('${file.path}')" style="display: block; width: 100%; text-align: left; padding: 8px 12px; border: none; cursor: pointer; color: var(--text-color); font-size: 14px;">
-                            ${file.title}
+                            ${file.title} ${file.path.endsWith(".html") ? "(.html)" : ""}
                         </button>
                     `
                         )

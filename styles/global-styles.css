@@ -32,8 +32,8 @@
 
     --bg-dark: oklch(0.1 var(--chroma) var(--hue));
     --bg: oklch(0.15 var(--chroma) var(--hue));
-    --bg-light:  oklch(0.2 var(--chroma) var(--hue));
-    --bg-highlight:  oklch(0.25 var(--chroma) var(--hue));
+    --bg-light: oklch(0.2 var(--chroma) var(--hue));
+    --bg-highlight: oklch(0.25 var(--chroma) var(--hue));
     --bg-hover: oklch(0.5 0.03 246);
     --text-color: oklch(0.96 0.03 246);
     --text-secondary: oklch(0.76 0.03 246);
@@ -126,7 +126,7 @@
 
 [data-theme="light"] {
     /* Light theme by default */
-    --chroma: 0.0; /* 0.0 to 0.2 */
+    --chroma: 0; /* 0.0 to 0.2 */
     --hue: 110; /* 20 to 340 */
     --light-sidebar: 0.83; /* 0.0 to 1 */
 
@@ -289,7 +289,8 @@ hr {
     gap: var(--spacing-md);
 }
 
-input, select {
+input,
+select {
     border: 1px solid var(--border);
 }
 
@@ -1510,7 +1511,8 @@ details::after {
     margin-left: 0px;
 }
 
-.content-connector > ol:only-child, .content-connector > ul:only-child {
+.content-connector > ol:only-child,
+.content-connector > ul:only-child {
     margin-left: -15px;
     & > li::before {
         content: "";
@@ -1696,12 +1698,6 @@ details::after {
     transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-
-/* Highlight target link with momentary zoom */
-.target-highlight {
-    animation: targetZoom 1s ease-out;
-}
-
 /* Animation wrapper */
 .animation-wrapper {
     position: relative;
@@ -1734,32 +1730,12 @@ details::after {
 }
 
 @keyframes targetZoom {
-    0% {
+    0%, 30%, 60%, 90% {
         background-color: var(--bg);
         color: var(--text-color);
         filter: invert(1);
     }
-    20% {
-        background-color: var(--bg);
-        color: var(--text-color);
-        filter: invert(0.5);
-    }
-    40% {
-        background-color: var(--bg);
-        color: var(--text-color);
-        filter: invert(1);
-    }
-    60% {
-        background-color: var(--bg);
-        color: var(--text-color);
-        filter: invert(0.5);
-    }
-    80% {
-        background-color: var(--bg);
-        color: var(--text-color);
-        filter: invert(1);
-    }
-    100% {
+    15%, 45%, 75%, 100% {
         background-color: var(--bg);
         color: var(--text-color);
         filter: invert(0.5);
@@ -2154,7 +2130,7 @@ details::after {
         align-items: flex-start;
         gap: var(--spacing-sm);
     }
-    
+
     .clear-filters-btn {
         width: 100%;
         text-align: center;

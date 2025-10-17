@@ -114,16 +114,14 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
             const beforeBacktick = text.substring(0, start);
             const langMatch = beforeBacktick.match(/ ([a-zA-Z0-9]+)$/);
 
-            if (langMatch) {
-                const lang = langMatch[1];
-                const code = text.substring(start + 1, end).replace(/\\`/g, "`"); // Allow escaped backticks inside code
-                validBlocks.push({
-                    start: start - langMatch[0].length + 1,
-                    end: end + 1,
-                    lang,
-                    code,
-                });
-            }
+            const lang = langMatch ? langMatch[1]: "";
+            const code = text.substring(start + 1, end).replace(/\\`/g, "`"); // Allow escaped backticks inside code
+            validBlocks.push({
+                start: start - (langMatch ? langMatch[1].length : 0),
+                end: end + 1,
+                lang,
+                code,
+            });
         }
     }
 
@@ -137,7 +135,7 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
                 code: block.code,
             });
         }
-        result = result.substring(0, block.start) + ` ${placeholder}` + result.substring(block.end);
+        result = result.substring(0, block.start) + `${placeholder}` + result.substring(block.end);
     });
 
     return [result, inlineCodeBlocks];
@@ -910,7 +908,8 @@ export function renderMarkdown(markdownContent) {
     let finalHtml = marked.parse(processedMarkdown);
     let finalJS = "";
 
-    // Process the float element
+    // Process the float element, this need to be in this place to avoid issues with code blocks
+    // Replace all instances of (?=float-id) with the corresponding float trigger HTML
     finalHtml = finalHtml.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g, (match, id) => {
         return `<span class="float-trigger" data-float-id="${id}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
@@ -1436,18 +1435,15 @@ export function renderMarkdown(markdownContent) {
                                         const wrapper = document.createElement('span');
                                         wrapper.textContent = firstNode.textContent;
                                         firstNode.parentNode.replaceChild(wrapper, firstNode);
-                                        console.log('Wrapped first child text node:', wrapper);
                                         return wrapper;
                                     }
                                     // If it's an element, check if it's visible
                                     if (firstNode.nodeType === Node.ELEMENT_NODE && isElementVisible(firstNode)) {
-                                        console.log('Found visible first child element:', firstNode);
                                         return firstNode;
                                     }
                                     firstNode = firstNode.nextSibling;
                                 }
                                 
-                                console.log('No visible first child found');
                                 return null;
                             };
 
@@ -1463,18 +1459,15 @@ export function renderMarkdown(markdownContent) {
                                         const wrapper = document.createElement('span');
                                         wrapper.textContent = lastNode.textContent;
                                         lastNode.parentNode.replaceChild(wrapper, lastNode);
-                                        console.log('Wrapped last child text node:', wrapper);
                                         return wrapper;
                                     }
                                     // If it's an element, check if it's visible
                                     if (lastNode.nodeType === Node.ELEMENT_NODE && isElementVisible(lastNode)) {
-                                        console.log('Found visible last child element:', lastNode);
                                         return lastNode;
                                     }
                                     lastNode = lastNode.previousSibling;
                                 }
                                 
-                                console.log('No visible last child found');
                                 return null;
                             };
 
@@ -1504,8 +1497,6 @@ export function renderMarkdown(markdownContent) {
                                     const directionsStr = element.getAttribute('data-directions');
                                     const directions = directionsStr.split('-'); // Split "out-out-below" into ["out", "out", "below"]
                                     
-                                    console.log('Found go-navigate element with directions:', directions);
-                                    
                                     // Apply each direction in sequence
                                     let currentTarget = element;
                                     for (const direction of directions) {
@@ -1514,12 +1505,10 @@ export function renderMarkdown(markdownContent) {
                                             console.warn('Navigation failed at direction:', direction);
                                             break;
                                         }
-                                        console.log('After direction', direction, ':', currentTarget);
                                     }
                                     
                                     if (currentTarget) {
                                         target = currentTarget;
-                                        console.log('Final target found:', target);
                                         break;
                                     }
                                 }
@@ -1535,19 +1524,47 @@ export function renderMarkdown(markdownContent) {
                     }
 
                     if (target) {
-                        const container = document.getElementsByClassName('entry-content')[0];
+                        // Detect which element handles the scroll
+                        const entryContent = document.getElementsByClassName('entry-content')[0];
+                        let container = null;
+                        let isBodyScroll = false;
+                        
+                        // Check if entry-content exists and has scrolling
+                        if (entryContent) {
+                            const hasScroll = entryContent.scrollHeight > entryContent.clientHeight;
+                            const hasOverflow = window.getComputedStyle(entryContent).overflowY !== 'visible';
+                            
+                            if (hasScroll && hasOverflow) {
+                                container = entryContent;
+                            }
+                        }
+                        
+                        // If no scrollable container found, use body/document
+                        if (!container) {
+                            container = document.scrollingElement || document.documentElement;
+                            isBodyScroll = true;
+                        }
+                        
+                        // Calculate scroll position
                         if (container) {
-                            const containerRect = container.getBoundingClientRect();
                             const targetRect = target.getBoundingClientRect();
                             
-                            // Calculate the relative position of target within the container
-                            const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+                            let scrollTop;
+                            if (isBodyScroll) {
+                                // For body scroll: calculate from top of page
+                                const targetTop = targetRect.top + window.scrollY;
+                                const viewportHeight = window.innerHeight;
+                                scrollTop = targetTop - viewportHeight / 2 + targetRect.height / 2;
+                            } else {
+                                // For container scroll: calculate relative to container
+                                const containerRect = container.getBoundingClientRect();
+                                const relativeTop = targetRect.top - containerRect.top + container.scrollTop;
+                                scrollTop = relativeTop - container.clientHeight / 2 + targetRect.height / 2;
+                            }
                             
-                            // Calculate offset to center in the container
-                            const offset = relativeTop - container.clientHeight / 2 + targetRect.height / 2;
-                            
+                            // Perform scroll
                             container.scrollTo({
-                                top: Math.max(0, offset),
+                                top: Math.max(0, scrollTop),
                                 behavior: 'smooth'
                             });
                         }
@@ -1567,12 +1584,12 @@ export function renderMarkdown(markdownContent) {
                             void target.offsetWidth;
                             
                             // Add highlighting animation
-                            target.style.animation = 'targetZoom 1s ease-out';
+                            target.style.animation = 'targetZoom 1.5s ease-out';
                             
                             // Remove animation after completion
                             window.highlightTargetTimeoutOut = setTimeout(() => {
                                 target.style.animation = '';
-                            }, 1100);
+                            }, 1500);
                         };
 
                         // Detect when scroll ends
@@ -1585,17 +1602,35 @@ export function renderMarkdown(markdownContent) {
                         
                             // Check if element is visible in viewport
                             const targetRect = target.getBoundingClientRect();
-                            const containerRect = container ? container.getBoundingClientRect() : { top: 0, bottom: window.innerHeight };
+                            let containerRect;
+                            
+                            if (isBodyScroll) {
+                                containerRect = { top: 0, bottom: window.innerHeight };
+                            } else {
+                                containerRect = container.getBoundingClientRect();
+                            }
                             
                             const isVisible = targetRect.top < containerRect.bottom && targetRect.bottom > containerRect.top;
                             
                             if (isVisible) {
                                 // Element is visible, apply highlight
-                                if (event) container.removeEventListener(event, onScrollEnd);
+                                if (event) {
+                                    if (isBodyScroll) {
+                                        window.removeEventListener(event, onScrollEnd);
+                                    } else {
+                                        container.removeEventListener(event, onScrollEnd);
+                                    }
+                                }
                                 applyHighlight();
                             } else {
                                 // Element is not visible yet, use IntersectionObserver
-                                if (event) container.removeEventListener(event, onScrollEnd);
+                                if (event) {
+                                    if (isBodyScroll) {
+                                        window.removeEventListener(event, onScrollEnd);
+                                    } else {
+                                        container.removeEventListener(event, onScrollEnd);
+                                    }
+                                }
                                 
                                 observer = new IntersectionObserver((entries) => {
                                     entries.forEach(entry => {
@@ -1605,7 +1640,7 @@ export function renderMarkdown(markdownContent) {
                                         }
                                     });
                                 }, {
-                                    root: container,
+                                    root: isBodyScroll ? null : container,
                                     threshold: 0.1
                                 });
                                 
@@ -1619,10 +1654,11 @@ export function renderMarkdown(markdownContent) {
                         };
                         
                         if (container) {
+                            const scrollTarget = isBodyScroll ? window : container;
                             if ('onscrollend' in document.documentElement) {
-                                container.addEventListener('scrollend', onScrollEnd('scrollend'));
+                                scrollTarget.addEventListener('scrollend', onScrollEnd('scrollend'));
                             } else {
-                                container.addEventListener('scroll', onScrollEnd('scroll'));
+                                scrollTarget.addEventListener('scroll', onScrollEnd('scroll'));
                             }
                             // Trigger once immediately in case scroll doesn't happen
                             onScrollEnd();
