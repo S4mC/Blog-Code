@@ -33,7 +33,7 @@
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
             import { Sidebar } from "./components/Sidebar.js";
-            import CONFIG from "config";
+            import CONFIG, { getSearchJson } from "config";
 
             // Set the document title to the app copyright from config
             document.title = CONFIG.app.name;
@@ -107,8 +107,7 @@
                 }, []);
 
                 useEffect(() => {
-                    fetch(`${CONFIG.contentUrl}/search.json`)
-                        .then((res) => res.json())
+                    getSearchJson()
                         .then((data) => {
                             // Resolve relative paths to absolute URLs
                             let entriesWithResolvedPaths = data.entries || [];

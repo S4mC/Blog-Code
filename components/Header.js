@@ -1,6 +1,6 @@
 import { html } from "htm/preact";
 import { useState, useEffect, useRef, useMemo } from "preact/hooks";
-import CONFIG, { resolveContentPath } from "../config.js";
+import CONFIG, { resolveContentPath, getSearchJson } from "../config.js";
 
 // Cache para los datos de búsqueda
 let searchDataCache = null;
@@ -156,8 +156,7 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
     useEffect(() => {
         if (!searchDataCache) {
             setIsLoading(true);
-            fetch(`${CONFIG.contentUrl}/search.json`)
-                .then((res) => res.json())
+            getSearchJson()
                 .then((data) => {
                     // Resolve relative paths to absolute URLs
                     const entriesWithResolvedPaths = (data.entries || []).map((entry) => ({

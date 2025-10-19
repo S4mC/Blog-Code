@@ -604,7 +604,7 @@ function processMarkdownBlocks(markdownContent) {
     return processedLines.join("\n");
 }
 
-export function renderMarkdown(markdownContent) {
+export function renderMarkdown(markdownContent, onlyMarkdown = false) {
     const renderer = new marked.Renderer();
 
     // Configure the custom renderer for links with new window option
@@ -1044,7 +1044,9 @@ export function renderMarkdown(markdownContent) {
     finalJS += `(${setupFloatingElements.toString()})();`;
 
     // Ensure scripts inside the markdown content are executed, this must be at the end because it can go wrong and break other script below
-    finalJS += `(${executeEntryContentScripts.toString()})();`;
+    if (!onlyMarkdown) {
+        finalJS += `(${executeEntryContentScripts.toString()})();`;
+    }
 
     return [finalHtml, sidebarContent, finalJS];
 }

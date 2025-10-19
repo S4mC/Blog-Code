@@ -521,6 +521,7 @@ select {
 
 .entry-content p {
     color: inherit;
+    overflow-wrap: anywhere;
 }
 
 .entry-content ul,
@@ -872,7 +873,7 @@ blockquote h6 {
     border: 1px solid var(--border);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-lg);
-    max-height: 400px;
+    max-height: 405px;
     overflow-y: auto;
     scrollbar-width: thin;
     z-index: 1000;

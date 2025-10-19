@@ -64,7 +64,12 @@ const CONFIG = {
 
     // Security
     security: {
-        allowedDomains: ["https://s4mc.github.io"],  // Whitelist
+        // Each domain can specify its own onlyMarkdown setting
+        allowedDomains: {
+            "https://s4mc.github.io": { onlyMarkdown: true },
+            // "https://your-domain.com": { onlyMarkdown: false },
+        },
+        onlyMarkdown: false,  // Default for relative paths and editor
         strictMode: false,  // Only allow posts in search.json
     },
 
@@ -72,7 +77,6 @@ const CONFIG = {
     app: {
         name: "Blog Code",
         copyright: "© 2025 Blog Code",
-        version: "1.0.0",
     }
 };
 ```
@@ -93,7 +97,23 @@ const CONFIG = {
 ### Security Features
 
 **Domain Whitelist**  
-Only domains in `allowedDomains` can serve content. Prevents XSS attacks.
+Only domains in `allowedDomains` can serve content. Prevents XSS attacks. Each domain can have individual security settings:
+
+```javascript
+allowedDomains: {
+    "https://trusted-domain.com": { 
+        onlyMarkdown: true  // Only allow .md files, no HTML/scripts
+    },
+    "https://another-domain.com": { 
+        onlyMarkdown: false  // Allow both .md and .html files
+    },
+}
+```
+
+**Only Markdown**  
+- Per-domain: Each domain in `allowedDomains` can specify `onlyMarkdown: true/false`
+- Default: The `security.onlyMarkdown` setting applies to relative paths and the editor
+- When `true`: Only markdown posts are allowed, scripts inside markdown are not executed
 
 **Strict Mode**  
 When enabled, only posts listed in `search.json` can be loaded. Prevents direct file access.

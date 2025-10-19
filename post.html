@@ -39,7 +39,7 @@
                 manageEscapeIframe,
                 manageClickFloatButton,
             } from "./components/MarkdownProcessor.js";
-            import CONFIG, { resolveContentPath } from "config";
+            import CONFIG, { resolveContentPath, isAllowedDomain, getSearchJson } from "config";
 
             // Handler for Escape key
             document.addEventListener("keydown", function (e) {
@@ -64,8 +64,7 @@
                  */
                 useEffect(() => {
                     if (CONFIG.security.strictMode) {
-                        fetch(`${CONFIG.contentUrl}/search.json`)
-                            .then(res => res.json())
+                        getSearchJson()
                             .then(data => {
                                 // Resolve relative paths and create set
                                 const paths = data.entries.map(entry => resolveContentPath(entry.path));
@@ -77,28 +76,6 @@
                             });
                     }
                 }, []);
-
-                /**
-                 * Validates if a URL is from an allowed domain
-                 * @param {string} url - The URL to validate
-                 * @returns {boolean} - True if allowed, false otherwise
-                 */
-                const isAllowedDomain = (url) => {
-                    try {
-                        // Allow relative paths (local files)
-                        if (url.startsWith('./') || url.startsWith('../') || !url.includes('://')) {
-                            return true;
-                        }
-
-                        const urlObj = new URL(url);
-                        const origin = urlObj.origin;
-
-                        return CONFIG.security.allowedDomains.some(domain => origin.startsWith(domain));
-                    } catch (e) {
-                        console.error('[Security] Invalid URL:', url);
-                        return false;
-                    }
-                };
 
                 /**
                  * Validates if a post is in the allowed list (strict mode)
@@ -136,10 +113,12 @@
                     }
 
                     // Resolve relative paths to absolute URLs
-                    const resolvedPath = resolveContentPath(entryPath);
+                    let resolvedPath = resolveContentPath(entryPath);
+
+                    let isAllowed = isAllowedDomain(resolvedPath);
 
                     // Security check 1: Validate domain whitelist
-                    if (!isAllowedDomain(resolvedPath)) {
+                    if (!isAllowed.allowed) {
                         setError(`Security Error: Domain not allowed. Only posts from authorized domains can be loaded.`);
                         setLoading(false);
                         console.error('[Security] Attempted to load post from unauthorized domain:', resolvedPath);
@@ -177,6 +156,13 @@
                             let finalHtml = "";
 
                             if (resolvedPath.endsWith(".html")) {
+
+                                if (isAllowed.onlyMarkdown) {
+                                    throw new Error(
+                                        `Security Error: Loading HTML entries is disabled by configuration.`
+                                    );
+                                }
+
                                 // Handle HTML content
                                 setContent(markdownContent);
                                 // Extract title from <title> tag
@@ -196,7 +182,7 @@
                                     doc.getElementById("sidebar-data").textContent
                                 );
                             }else{
-                                [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent);
+                                [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent, isAllowed.onlyMarkdown);
 
                                 setContent(finalHtml);
 
