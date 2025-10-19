@@ -3119,7 +3119,7 @@
                                         ${(isMatch && isFirst) || isSelected ? 'checked' : ''}
                                     />
                                     <div style="flex: 1; color: var(--text-color); font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                        <span>📄 ${fileNameWithoutExt}</span>
+                                        <span>📄 ${fileNameWithoutExt} ${file.path.endsWith('.html') ? "<span style='color: var(--text-muted);'>(.html)</span>" : ""}</span>
                                         ${folderBadge}
                                         ${isMatch ? '<span style="color: var(--error-color); margin-left: 10px;">✓ Match</span>' : ""}
                                     </div>

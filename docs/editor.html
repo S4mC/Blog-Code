@@ -388,7 +388,7 @@ Continuing with Online API.`);return}}localStorage.setItem("translateUseOnlineAP
                                         ${n&&s||c?"checked":""}
                                     />
                                     <div style="flex: 1; color: var(--text-color); font-size: 14px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                                        <span>📄 ${a}</span>
+                                        <span>📄 ${a} ${e.path.endsWith(".html")?"<span style='color: var(--text-muted);'>(.html)</span>":""}</span>
                                         ${r}
                                         ${n?'<span style="color: var(--error-color); margin-left: 10px;">✓ Match</span>':""}
                                     </div>
