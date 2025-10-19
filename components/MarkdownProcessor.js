@@ -604,7 +604,7 @@ function processMarkdownBlocks(markdownContent) {
     return processedLines.join("\n");
 }
 
-export function renderMarkdown(markdownContent, onlyMarkdown = false) {
+export function renderMarkdown(markdownContent, executeScripts = true) {
     const renderer = new marked.Renderer();
 
     // Configure the custom renderer for links with new window option
@@ -1044,7 +1044,7 @@ export function renderMarkdown(markdownContent, onlyMarkdown = false) {
     finalJS += `(${setupFloatingElements.toString()})();`;
 
     // Ensure scripts inside the markdown content are executed, this must be at the end because it can go wrong and break other script below
-    if (!onlyMarkdown) {
+    if (executeScripts) {
         finalJS += `(${executeEntryContentScripts.toString()})();`;
     }
 
@@ -2157,7 +2157,7 @@ function setupFloatingElements() {
     };
 }
 
-function executeEntryContentScripts() {
+export function executeEntryContentScripts() {
     // Select the first element with class "entry-content"
     const entryContent = document.querySelector(".entry-content");
 
@@ -2167,6 +2167,11 @@ function executeEntryContentScripts() {
 
         scripts.forEach((oldScript) => {
             try {
+                if (oldScript.id === "sidebar-data") {
+                    // This script is handled separately, skip it
+                    return;
+                }
+
                 // Create a new script element to execute
                 const newScript = document.createElement("script");
 

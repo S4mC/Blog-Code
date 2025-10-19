@@ -38,6 +38,7 @@
                 showCopySuccess,
                 manageEscapeIframe,
                 manageClickFloatButton,
+                executeEntryContentScripts
             } from "./components/MarkdownProcessor.js";
             import CONFIG, { resolveContentPath, isAllowedDomain, getSearchJson } from "config";
 
@@ -177,12 +178,13 @@
                                 }
 
                                 finalJS = doc.getElementById("entry-script").textContent;
+                                finalJS += `(${executeEntryContentScripts.toString()})();`;
 
                                 sidebarContent = JSON.parse(
                                     doc.getElementById("sidebar-data").textContent
                                 );
                             }else{
-                                [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent, isAllowed.onlyMarkdown);
+                                [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdownContent, !isAllowed.onlyMarkdown);
 
                                 setContent(finalHtml);
 

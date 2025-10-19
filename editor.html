@@ -268,7 +268,7 @@
                     updateTabContent(window.activeTabId, markdown);
                     if (showPreview) {
                         scrollDataRef.current.isUpdating = true;
-                        let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, CONFIG.security.onlyMarkdown);
+                        let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, !CONFIG.security.onlyMarkdown);
                         setPreview(finalHtml);
 
                         setTimeout(() => {
@@ -1926,7 +1926,7 @@
                 };
 
                 const handleExport = () => {
-                    let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
+                    let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, false);
                     // Add finalJs
                     finalHtml += '<script id="entry-script">\n';
                     finalHtml += finalJS;
@@ -3895,7 +3895,7 @@
                                 let content;
                                 
                                 if (isHtmlFile) {
-                                    let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown);
+                                    let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, false);
                                     finalHtml += '<script id="entry-script">\n';
                                     finalHtml += finalJS;
                                     finalHtml += "\n<";
