@@ -3,8 +3,6 @@
  * 
  * This file contains all configuration settings for the blog application.
  * 
- * IMPORTANT: After modifying this file, run compile.bat to rebuild the project.
- * The build process will inline this configuration into the compiled files.
  */
 
 /**
@@ -62,7 +60,7 @@ const CONFIG = {
      */
     app: {
         name: "Blog Code",
-        copyright: "© 2025 Blog Code",
+        copyright: "© <year> Blog Code", // <year> will be replaced with current year
     },
 
 };

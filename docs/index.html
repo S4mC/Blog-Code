@@ -119,8 +119,8 @@
                             </div>
                         </main>
 
-                        <footer class="footer">
-                            <p>${CONFIG.app.copyright}</p>
-                        </footer>
+                        <div class="footer">
+                            <p>${CONFIG.app.copyright.replace("<year>",(new Date).getFullYear())}</p>
+                        </div>
                     </div>
                 `}render(html`<${App} />`,document.getElementById("app"))</script>

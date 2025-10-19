@@ -5994,7 +5994,7 @@
                             </div>
                         </main>
 
-                        <footer class="footer">
+                        <div class="footer">
                             <!-- Line configuration button -->
                             <button id="config-line-button" class="config-line-button hidden">
                                 <svg
@@ -6022,8 +6022,8 @@
                                     <!-- Content is generated dynamically -->
                                 </div>
                             </div>
-                            <p>${CONFIG.app.copyright}</p>
-                        </footer>
+                            <p>${CONFIG.app.copyright.replace("<year>", new Date().getFullYear())}</p>
+                        </div>
                     </div>
                 `;
             }
