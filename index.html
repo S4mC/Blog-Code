@@ -33,7 +33,7 @@
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
             import { Sidebar } from "./components/Sidebar.js";
-            import CONFIG, { resolveContentPath } from "config";
+            import CONFIG from "config";
 
             // Set the document title to the app copyright from config
             document.title = CONFIG.app.name;
@@ -111,10 +111,7 @@
                         .then((res) => res.json())
                         .then((data) => {
                             // Resolve relative paths to absolute URLs
-                            let entriesWithResolvedPaths = (data.entries || []).map(entry => ({
-                                ...entry,
-                                path: resolveContentPath(entry.path)
-                            }));
+                            let entriesWithResolvedPaths = data.entries || [];
 
                             // Store all entries for extracting all available tags
                             setAllEntries(entriesWithResolvedPaths);

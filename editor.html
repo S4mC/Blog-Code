@@ -643,7 +643,7 @@
                     const handleKeyDown = (e) => {
                         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                             e.preventDefault(); // Prevent browser's default save behavior
-                            showPublishModal();
+                            document.getElementById('manage-publish-button').click();
                         }
                     };
 
@@ -3181,7 +3181,7 @@
                                 
                                 <div style="margin-bottom: 15px;">
                                     <label style="display: block; margin-bottom: 5px; color: var(--text-color); font-size: 14px; font-weight: bold;">File Name: *</label>
-                                    <input type="text" id="new-file-name" placeholder="my-post.md or folder/my-post.md" autocomplete="off" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
+                                    <input type="text" id="new-file-name" placeholder="my-post.md or folder/my-post.md" autocomplete="off" value="${extractTitleFromMarkdown(markdown)}.md" style="width: 100%; padding: 8px; background: var(--bg-light); border: 1px solid var(--border); border-radius: var(--border-radius); color: var(--text-color); font-size: 14px;" />
                                     <small style="color: var(--text-secondary); font-size: 12px;">
                                         Must end with .md or .html<br>
                                         <span style="color: var(--accent-color);">💡 Tip:</span> You can include folders: <code style="background: var(--bg-hover); padding: 2px 4px; border-radius: 3px;">tutorials/my-post.md</code>
@@ -3266,12 +3266,9 @@
                                 ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag)
                                 : [];
                             
-                            // Normalize the file path:
-                            // - Remove leading ./ or /
-                            // - If it starts with a folder path (e.g., "folder/file.md"), keep it
-                            // - Use resolveContentPath with isFilenameOnly=true to prepend 'posts/' and build full URL
+                            // Normalize file name to avoid leading ./
                             let normalizedFileName = fileName.replace(/^\.?\//, '');
-                            const fullPath = resolveContentPath(normalizedFileName, true);
+                            const fullPath = resolveContentPath(normalizedFileName);
                             
                             // Check if file already exists
                             if (allFiles.some(file => file.path === fullPath)) {
@@ -3282,9 +3279,8 @@
                             document.getElementById("file-search-input").value = "";
 
                             // Store the search.json configuration
-                            // For search.json, store the relative path (e.g., "posts/folder/file.md" or "./posts/file.md")
-                            // We'll store it as a relative path starting with posts/
-                            const relativePath = `./posts/${normalizedFileName}`;
+                            // We'll store it as a relative path starting with ./
+                            const relativePath = `${normalizedFileName}`;
                             
                             const searchConfig = {
                                 title: title,
@@ -4373,7 +4369,7 @@
 
                                             <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;margin-block: 3px;"/>
 
-                                            <button onClick=${showPublishModal}>
+                                            <button onClick=${showPublishModal} id="manage-publish-button">
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" style="margin: -3px;"><path fill="currentColor" d="m11 11.85l-1.875 1.875q-.3.3-.712.288T7.7 13.7q-.275-.3-.288-.7t.288-.7l3.6-3.6q.15-.15.325-.212T12 8.425t.375.063t.325.212l3.6 3.6q.3.3.288.7t-.288.7q-.3.3-.712.313t-.713-.288L13 11.85V19q0 .425-.288.713T12 20t-.712-.288T11 19zM4 8V6q0-.825.588-1.412T6 4h12q.825 0 1.413.588T20 6v2q0 .425-.288.713T19 9t-.712-.288T18 8V6H6v2q0 .425-.288.713T5 9t-.712-.288T4 8"/></svg>
                                                 Manage & Publish Post
                                             </button>

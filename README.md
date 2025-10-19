@@ -108,7 +108,7 @@ When enabled, only posts listed in `search.json` can be loaded. Prevents direct 
     {
       "title": "Post Title",
       "summary": "Brief description",
-      "path": "./posts/my-post.md",
+      "path": "./my-post.md",
       "date": "2025-01-01",
       "tags": ["tutorial", "guide"]
     }
@@ -127,7 +127,7 @@ When enabled, only posts listed in `search.json` can be loaded. Prevents direct 
 
 **Relative paths** (recommended):
 ```json
-"path": "./posts/hello.md"
+"path": "./hello.md"
 ```
 Automatically resolved to: `${CONFIG.contentUrl}/posts/hello.md`
 
@@ -151,7 +151,7 @@ Used as-is.
    {
      "title": "My Post Title",
      "summary": "Description",
-     "path": "./posts/my-post.md",
+     "path": "./my-post.md",
      "date": "2025-01-01",
      "tags": ["example"]
    }
