@@ -110,14 +110,20 @@
                     getSearchJson()
                         .then((data) => {
                             // Resolve relative paths to absolute URLs
-                            let entriesWithResolvedPaths = data.entries || [];
+                            let entries = data.entries || [];
+
+                            entries = entries.filter(entry => {
+                                if (entry.hidden) return false;
+                                // Check if entry has at least one of the filter tags
+                                return entry
+                            });
 
                             // Store all entries for extracting all available tags
-                            setAllEntries(entriesWithResolvedPaths);
+                            setAllEntries(entries);
 
                             // Filter entries by tags if tags parameter exists
                             if (filterTags.length > 0) {
-                                entriesWithResolvedPaths = entriesWithResolvedPaths.filter(entry => {
+                                entries = entries.filter(entry => {
                                     if (!entry.tags || entry.tags.length === 0) return false;
                                     // Check if entry has at least one of the filter tags
                                     return entry.tags.some(tag => 
@@ -128,7 +134,7 @@
                                 });
                             }
 
-                            setEntries(entriesWithResolvedPaths);
+                            setEntries(entries);
                         })
                         .catch((err) =>
                             console.error("Error loading entries:", err)

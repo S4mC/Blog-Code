@@ -158,8 +158,15 @@ function SearchBar({ onNavigateToEntry, isExpanded, onToggleExpand }) {
             setIsLoading(true);
             getSearchJson()
                 .then((data) => {
+                    let entries = data.entries || [];
+                    entries = entries.filter(entry => {
+                        if (entry.hidden) return false;
+                        // Check if entry has at least one of the filter tags
+                        return entry
+                    });
+                    
                     // Resolve relative paths to absolute URLs
-                    const entriesWithResolvedPaths = (data.entries || []).map((entry) => ({
+                    const entriesWithResolvedPaths = entries.map((entry) => ({
                         ...entry,
                         path: resolveContentPath(entry.path),
                     }));

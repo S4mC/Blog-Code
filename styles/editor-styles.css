@@ -316,6 +316,7 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     box-shadow: var(--shadow);
     z-index: 1000;
     min-width: 200px;
+    scrollbar-width: thin;
 }
 .menu-content button {
     display: flex;
