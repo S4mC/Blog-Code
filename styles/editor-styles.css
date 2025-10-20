@@ -112,7 +112,7 @@ body {
     align-items: center;
 }
 
-@media (max-width: 560px) {
+@media (width <= 560px) {
     .editor-toolbar {
         display: flex;
         gap: 0;

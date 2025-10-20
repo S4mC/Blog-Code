@@ -67,7 +67,7 @@
 }
 
 /* Media query for medium-small screens */
-@media (max-width: 1024px) {
+@media (width <= 1024px) {
     .sidebar-component {
         /* By default on small screens do not show sidebar */
         display: none;
@@ -116,7 +116,7 @@
 }
 
 /* Media query for small screens */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .sidebar-component, .sidebar-overlay {
         height: calc(100vh - 38.7px); /* Full height minus the header */
         top: 38.7px; /* Considering the header */
@@ -124,7 +124,7 @@
 }
 
 /* Media query for super small screens */
-@media (max-width: 440px) {
+@media (width <= 440px) {
     .sidebar-component, .sidebar-overlay {
         height: calc(100vh - 34.7px); /* Full height minus the header */
         top: 34.7px; /* Considering the header */

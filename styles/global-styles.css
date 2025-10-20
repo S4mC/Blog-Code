@@ -1428,7 +1428,7 @@ details::after {
 }
 
 /* Responsive behavior for smaller screens */
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .markdown-grid.grid-cols-3,
     .markdown-grid.grid-cols-4,
     .markdown-grid.grid-cols-5,
@@ -1441,7 +1441,7 @@ details::after {
     }
 }
 
-@media (max-width: 480px) {
+@media (width <= 480px) {
     .markdown-grid.grid-cols-2,
     .markdown-grid.grid-cols-3,
     .markdown-grid.grid-cols-4,
@@ -1749,13 +1749,13 @@ details::after {
 }
 
 /* Delete header title on small screens */
-@media (max-width: 440px) {
+@media (width <= 440px) {
     #header-title {
         display: none;
     }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
     /* Search bar */
     .header {
         padding: 0 var(--spacing-sm);
@@ -2130,7 +2130,7 @@ details::after {
     }
 }
 
-@media (max-width: 768px) {
+@media (width <= 768px) {
     .filter-notice {
         flex-direction: column;
         align-items: flex-start;
