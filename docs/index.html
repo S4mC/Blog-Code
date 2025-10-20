@@ -1,4 +1,4 @@
-<!doctype html><html lang=en data-theme=dark><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Code</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs","config":"./config.js"}}</script><style>#sidebarToggle{display:none}</style><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect,useRef}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar}from"./components/Sidebar.js";import CONFIG,{getSearchJson}from"config";document.title=CONFIG.app.name;function BlogList({entries:e}){return html`
+<!doctype html><html lang=en data-theme=dark><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Blog Code</title><link rel=icon type=image/png sizes=32x32 href=public/icon.ico><link rel=stylesheet href=cdn/font/ubuntu-font.css><link rel=stylesheet href=styles/global-styles.css><script type=importmap>{"imports":{"preact":"./cdn/preact/preact.mjs","preact/hooks":"./cdn/preact/hooks.mjs","htm/preact":"./cdn/preact/htm-preact.mjs","config":"./config.js"}}</script><body data-open-sidebar-resize=false><div id=app></div><script type=module>import{render}from"preact";import{useState,useEffect,useRef}from"preact/hooks";import{html}from"htm/preact";import{Header}from"./components/Header.js";import{Sidebar,initSidebar}from"./components/Sidebar.js";import CONFIG,{getSearchJson}from"config";document.title=CONFIG.app.name;function extractFolderPath(e){if(e.startsWith("http"))try{const n=new URL(e);let t=n.pathname;const s=t.indexOf("/posts/");if(s!==-1){const o=t.substring(s+7);e=`${n.hostname}/${o}`}else e=`${n.hostname}${t.startsWith("/")?t:"/"+t}`}catch{return console.error("Invalid URL:",e),null}if(!e||typeof e!="string")return null;const t=e.split("/");return t.length>1?t.slice(0,-1).join("/"):null}function BlogList({entries:e}){return html`
                     <div class="blog-list">
                         ${e.map(e=>html`
                                 <article
@@ -35,69 +35,81 @@
                                 </article>
                             `)}
                     </div>
-                `}function App(){const[g,p]=useState([]),[h,b]=useState([]),[e,i]=useState([]),[t,r]=useState(!1),[o,l]=useState(""),[s,u]=useState([]),[a,n]=useState(-1),d=useRef(null);useEffect(()=>{const t=new URLSearchParams(window.location.search),e=t.get("tags"),n=e?e.split(",").map(e=>e.trim()):[];i(n)},[]),useEffect(()=>{getSearchJson().then(t=>{let n=t.entries||[];n=n.filter(e=>!e.hidden&&e),b(n),e.length>0&&(n=n.filter(t=>!!t.tags&&t.tags.length!==0&&t.tags.some(t=>e.some(e=>t.toLowerCase()===e.toLowerCase())))),p(n)}).catch(e=>console.error("Error loading entries:",e))},[e]),useEffect(()=>{if(!t||!o.trim()){u([]);return}const s=new Set;h.forEach(e=>{e.tags&&e.tags.length>0&&e.tags.forEach(e=>s.add(e))});const i=o.toLowerCase().trim(),a=Array.from(s).filter(t=>t.toLowerCase().includes(i)&&!e.some(e=>e.toLowerCase()===t.toLowerCase())).slice(0,8);u(a),n(-1)},[o,t,h,e]),useEffect(()=>{t&&d.current&&d.current.focus()},[t]);const m=e=>{if(e.length>0){const t=`./index.html?tags=${encodeURIComponent(e.join(","))}`;window.history.pushState({},"",t)}else window.history.pushState({},"","./index.html")},v=t=>{const n=e.filter(e=>e.toLowerCase()!==t.toLowerCase());i(n),m(n)},c=(t,s=null)=>{t&&t.preventDefault();const a=s||o.trim();if(a&&!e.some(e=>e.toLowerCase()===a.toLowerCase())){const t=[...e,a];i(t),m(t),l(""),r(!1),n(-1)}},f=()=>{r(!1),l(""),u([]),n(-1)},j=e=>{if(e.key==="Escape"){f();return}s.length>0&&(e.key==="ArrowDown"?(e.preventDefault(),n(e=>e<s.length-1?e+1:e)):e.key==="ArrowUp"?(e.preventDefault(),n(e=>e>0?e-1:-1)):e.key==="Enter"&&a>=0&&(e.preventDefault(),c(null,s[a])))},y=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`},_=()=>{i([]),window.history.pushState({},"","./index.html")};return html`
+                `}function App(){const[w,j]=useState([]),[g,y]=useState([]),[e,c]=useState([]),[t,o]=useState(null),[s,d]=useState(!1),[a,u]=useState(""),[i,m]=useState([]),[f,n]=useState(-1),l=useRef(null);useEffect(()=>{const e=new URLSearchParams(window.location.search),t=e.get("tags"),n=e.get("folder"),s=t?t.split(",").map(e=>e.trim()):[];c(s),n&&o(n)},[]),useEffect(()=>{getSearchJson().then(n=>{let s=n.entries||[];s=s.filter(e=>!e.hidden&&e),y(s),t&&(t==="__root__"?s=s.filter(e=>{const t=extractFolderPath(e.path);return!t}):s=s.filter(e=>{const n=extractFolderPath(e.path);return n&&n.startsWith(t)})),e.length>0&&(s=s.filter(t=>!!t.tags&&t.tags.length!==0&&t.tags.some(t=>e.some(e=>t.toLowerCase()===e.toLowerCase())))),j(s),b(n.entries||[])}).catch(e=>console.error("Error loading entries:",e))},[e,t]);const b=n=>{const s=new Map;let a=0;n.forEach(e=>{if(e.hidden)return;const t=extractFolderPath(e.path);if(t){const o=t.split("/");let e="";o.forEach((t,n)=>{e=n===0?t:`${e}/${t}`,s.has(e)||s.set(e,{path:e,name:t,level:n,count:0,directCount:0})});const i=s.get(t);i&&i.directCount++;let n="";o.forEach((e,t)=>{n=t===0?e:`${n}/${e}`;const o=s.get(n);o&&o.count++})}else a++});const i=[],l=n.filter(e=>!e.hidden).length;i.push(`## 📚 All Posts (${l})`);const d=Array.from(s.values()).sort((e,t)=>e.path.localeCompare(t.path));d.forEach(e=>{const t="⠀⠀".repeat(e.level),n=e.level===0?"📁":"📂";i.push(`## ${t?t+"⎢▁ ":""}${n} ${e.name} (${e.count})|||${e.path}`)}),a>0&&i.push(`## 📄 Root (${a})`);const c=()=>{const t=document.querySelectorAll(".sidebar-component .section-header");t.forEach(e=>{const t=e.cloneNode(!0);e.parentNode.replaceChild(t,e)}),document.querySelectorAll(".sidebar-component .section-header").forEach(t=>{t.addEventListener("click",t=>{const n=t.target.closest(".section");if(!n)return;const i=n.querySelector(".section-title");if(!i)return;const a=i.textContent.trim(),u=n.dataset.folderPath,c=a.match(/^(📚|📁|📂|📄)\s*(.+?)\s*\(/),s=c?c[2].trim():a;if(s==="All Posts")o(null),r(e,null);else if(s==="Root")o("__root__"),r(e,"__root__");else{const t=u||s;o(t),r(e,t)}document.querySelectorAll(".sidebar-component .section").forEach(e=>{e.classList.remove("active-folder")}),n.classList.add("active-folder");const l=document.getElementById("sidebar"),d=document.getElementById("sidebarOverlay");l&&l.classList.remove("open"),d&&d.classList.remove("active"),window.document.body.style.overflow="auto"})})};window.attachIndexFolderHandlers=c,setTimeout(()=>{if(initSidebar(i),c(),t){const e=t==="__root__"?"Root":t;document.querySelectorAll(".sidebar-component .section").forEach(n=>{const s=n.dataset.folderPath,o=n.querySelector(".section-title")?.textContent.trim();(s===t||o?.includes(e))&&n.classList.add("active-folder")})}else{const e=Array.from(document.querySelectorAll(".sidebar-component .section-title")).find(e=>e.textContent.trim().includes("All Posts"));e&&e.closest(".section").classList.add("active-folder")}},100)};useEffect(()=>{if(!s||!a.trim()){m([]);return}const t=new Set;g.forEach(e=>{e.tags&&e.tags.length>0&&e.tags.forEach(e=>t.add(e))});const o=a.toLowerCase().trim(),i=Array.from(t).filter(t=>t.toLowerCase().includes(o)&&!e.some(e=>e.toLowerCase()===t.toLowerCase())).slice(0,8);m(i),n(-1)},[a,s,g,e]),useEffect(()=>{s&&l.current&&l.current.focus()},[s]);const p=e=>{r(e,t)},r=(e,t)=>{const n=new URLSearchParams;e.length>0&&n.set("tags",e.join(",")),t&&t!=="__root__"?n.set("folder",t):t==="__root__"&&n.set("folder","__root__");const s=n.toString()?`./index.html?${n.toString()}`:"./index.html";window.history.pushState({},"",s)},_=t=>{const n=e.filter(e=>e.toLowerCase()!==t.toLowerCase());c(n),p(n)},h=(t,s=null)=>{t&&t.preventDefault();const o=s||a.trim();if(o&&!e.some(e=>e.toLowerCase()===o.toLowerCase())){const t=[...e,o];c(t),p(t),u(""),d(!1),n(-1)}},v=()=>{d(!1),u(""),m([]),n(-1)},O=e=>{if(e.key==="Escape"){v();return}i.length>0&&(e.key==="ArrowDown"?(e.preventDefault(),n(e=>e<i.length-1?e+1:e)):e.key==="ArrowUp"?(e.preventDefault(),n(e=>e>0?e-1:-1)):e.key==="Enter"&&f>=0&&(e.preventDefault(),h(null,i[f])))},x=e=>{window.location.href=`./post.html?path=${encodeURIComponent(e.path)}`},C=()=>{c([]),o(null),window.history.pushState({},"","./index.html")};return html`
                     <div class="app">
-                        <${Header} showSearch=${!0} onNavigateToEntry=${y} />
+                        <${Header} showSearch=${!0} onNavigateToEntry=${x} />
 
                         <main class="main-container">
                             <${Sidebar} />
                             <div class="content-wrapper">
-                                ${e.length>0&&html`
+                                ${(e.length>0||t)&&html`
                                     <div class="filter-notice">
                                         <div class="filter-info">
                                             <span class="filter-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-opacity="0" stroke="currentColor" stroke-dasharray="56" stroke-dashoffset="56" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h14l-5 6.5v9.5l-4 -4v-5.5Z"><animate fill="freeze" attributeName="fill-opacity" begin="0.6s" dur="0.5s" values="0;1"/><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="56;0"/></path></svg></span>
-                                            <span>Filtering posts by tags: </span>
+                                            <span>Filtering posts${t?" in folder":""}${e.length>0?" by tags":""}: </span>
                                             <div class="filter-tags">
+                                                ${t&&html`
+                                                    <span class="filter-tag">
+                                                        📁 ${t==="__root__"?"Root":t}
+                                                        <button 
+                                                            class="remove-tag-btn" 
+                                                            onClick=${()=>{o(null),r(e,null)}}
+                                                            title="Remove folder filter"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                `}
                                                 ${e.map(e=>html`
                                                     <span key=${e} class="filter-tag">
                                                         ${e}
                                                         <button 
                                                             class="remove-tag-btn" 
-                                                            onClick=${()=>v(e)}
+                                                            onClick=${()=>_(e)}
                                                             title="Remove tag"
                                                         >
                                                             ✕
                                                         </button>
                                                     </span>
                                                 `)}
-                                                ${!t&&html`
+                                                ${!s&&html`
                                                     <button 
                                                         class="add-tag-btn" 
-                                                        onClick=${()=>r(!0)}
+                                                        onClick=${()=>d(!0)}
                                                         title="Add new tag"
                                                     >
                                                         +
                                                     </button>
                                                 `}
-                                                ${t&&html`
+                                                ${s&&html`
                                                     <div class="add-tag-wrapper">
-                                                        <form class="add-tag-form" onSubmit=${c}>
+                                                        <form class="add-tag-form" onSubmit=${h}>
                                                             <input 
                                                                 type="text" 
                                                                 class="add-tag-input"
-                                                                value=${o}
-                                                                onInput=${e=>l(e.target.value)}
-                                                                onKeyDown=${j}
+                                                                value=${a}
+                                                                onInput=${e=>u(e.target.value)}
+                                                                onKeyDown=${O}
                                                                 placeholder="Enter tag..."
-                                                                ref=${d}
+                                                                ref=${l}
                                                             />
                                                             <button type="submit" class="add-tag-submit" title="Add tag">✓</button>
                                                             <button 
                                                                 type="button" 
                                                                 class="add-tag-cancel" 
-                                                                onClick=${f}
+                                                                onClick=${v}
                                                                 title="Cancel (Esc)"
                                                             >
                                                                 ✕
                                                             </button>
                                                         </form>
-                                                        ${s.length>0&&html`
+                                                        ${i.length>0&&html`
                                                             <div class="tag-suggestions">
-                                                                ${s.map((e,t)=>html`
+                                                                ${i.map((e,t)=>html`
                                                                     <div 
                                                                         key=${e}
-                                                                        class=${`tag-suggestion-item ${t===a?"selected":""}`}
-                                                                        onClick=${()=>c(null,e)}
+                                                                        class=${`tag-suggestion-item ${t===f?"selected":""}`}
+                                                                        onClick=${()=>h(null,e)}
                                                                         onMouseEnter=${()=>n(t)}
                                                                     >
                                                                         <span class="suggestion-icon">🏷️</span>
@@ -110,12 +122,12 @@
                                                 `}
                                             </div>
                                         </div>
-                                        <button class="clear-filters-btn" onClick=${_}>
+                                        <button class="clear-filters-btn" onClick=${C}>
                                             Clear filters⠀✕
                                         </button>
                                     </div>
                                 `}
-                                <${BlogList} entries=${g} />
+                                <${BlogList} entries=${w} />
                             </div>
                         </main>
 

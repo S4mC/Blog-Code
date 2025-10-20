@@ -17,14 +17,8 @@
                 }
             }
         </script>
-        <style>
-            /* Hide the sidebar toggle button in main page by default */
-            #sidebarToggle{ 
-                display: none;
-            }
-        </style>
     </head>
-    <body>
+    <body data-open-sidebar-resize="false">
         <div id="app"></div>
 
         <script type="module">
@@ -32,11 +26,45 @@
             import { useState, useEffect, useRef } from "preact/hooks";
             import { html } from "htm/preact";
             import { Header } from "./components/Header.js";
-            import { Sidebar } from "./components/Sidebar.js";
+            import { Sidebar, initSidebar } from "./components/Sidebar.js";
             import CONFIG, { getSearchJson } from "config";
 
             // Set the document title to the app copyright from config
             document.title = CONFIG.app.name;
+            
+            // Extract folder path from path (all folders before the filename)
+            function extractFolderPath(path) {
+
+                if (path.startsWith("http")) {
+                    try {
+                        const url = new URL(path);
+                        let pathname = url.pathname;
+                        
+                        // Find the 'posts' folder in the path and extract everything after it
+                        const postsIndex = pathname.indexOf('/posts/');
+                        if (postsIndex !== -1) {
+                            // Extract the part after '/posts/'
+                            const afterPosts = pathname.substring(postsIndex + 7); // 7 = length of '/posts/'
+                            // Combine hostname with the file after posts
+                            path = `${url.hostname}/${afterPosts}`;
+                        }else{
+                            // If no 'posts' folder, use pathname without leading slash
+                            path = `${url.hostname}${pathname.startsWith('/') ? pathname : '/' + pathname}`;
+                        }
+                    } catch (e) {
+                        console.error("Invalid URL:", path);
+                        return null;
+                    }
+                }
+
+                if (!path || typeof path !== 'string') return null;
+                const parts = path.split('/');
+                // If there's more than one part, everything except the last part is the folder path
+                if (parts.length > 1) {
+                    return parts.slice(0, -1).join('/');
+                }
+                return null;
+            }
 
             function BlogList({ entries }) {
                 return html`
@@ -92,6 +120,7 @@
                 const [entries, setEntries] = useState([]);
                 const [allEntries, setAllEntries] = useState([]);
                 const [filterTags, setFilterTags] = useState([]);
+                const [filterFolder, setFilterFolder] = useState(null);
                 const [showAddTag, setShowAddTag] = useState(false);
                 const [newTagInput, setNewTagInput] = useState('');
                 const [availableTags, setAvailableTags] = useState([]);
@@ -99,11 +128,15 @@
                 const addTagInputRef = useRef(null);
 
                 useEffect(() => {
-                    // Get tags from URL parameters
+                    // Get tags and folder from URL parameters
                     const urlParams = new URLSearchParams(window.location.search);
                     const tagsParam = urlParams.get('tags');
+                    const folderParam = urlParams.get('folder');
                     const activeTags = tagsParam ? tagsParam.split(',').map(tag => tag.trim()) : [];
                     setFilterTags(activeTags);
+                    if (folderParam) {
+                        setFilterFolder(folderParam);
+                    }
                 }, []);
 
                 useEffect(() => {
@@ -121,6 +154,23 @@
                             // Store all entries for extracting all available tags
                             setAllEntries(entries);
 
+                            // Filter entries by folder if folder parameter exists
+                            if (filterFolder) {
+                                if (filterFolder === '__root__') {
+                                    // Show only posts without folder
+                                    entries = entries.filter(entry => {
+                                        const folderPath = extractFolderPath(entry.path);
+                                        return !folderPath;
+                                    });
+                                } else {
+                                    // Show posts from specific folder path (exact match or nested)
+                                    entries = entries.filter(entry => {
+                                        const folderPath = extractFolderPath(entry.path);
+                                        return folderPath && folderPath.startsWith(filterFolder);
+                                    });
+                                }
+                            }
+
                             // Filter entries by tags if tags parameter exists
                             if (filterTags.length > 0) {
                                 entries = entries.filter(entry => {
@@ -135,11 +185,177 @@
                             }
 
                             setEntries(entries);
+                            
+                            // Initialize sidebar with folders
+                            initializeSidebar(data.entries || []);
                         })
                         .catch((err) =>
                             console.error("Error loading entries:", err)
                         );
-                }, [filterTags]);
+                }, [filterTags, filterFolder]);
+                
+                // Function to initialize sidebar with folder structure
+                const initializeSidebar = (allEntries) => {
+                    // Build a hierarchical folder tree
+                    const folderTree = new Map();
+                    let postsWithoutFolder = 0;
+                    
+                    allEntries.forEach(entry => {
+                        if (entry.hidden) return;
+                        
+                        const folderPath = extractFolderPath(entry.path);
+                        if (folderPath) {
+                            const parts = folderPath.split('/');
+                            
+                            // Add each level of the folder hierarchy
+                            let currentPath = '';
+                            parts.forEach((part, index) => {
+                                currentPath = index === 0 ? part : `${currentPath}/${part}`;
+                                
+                                if (!folderTree.has(currentPath)) {
+                                    folderTree.set(currentPath, {
+                                        path: currentPath,
+                                        name: part,
+                                        level: index,
+                                        count: 0,
+                                        directCount: 0
+                                    });
+                                }
+                            });
+                            
+                            // Increment count for the full path (direct posts in this folder)
+                            const folder = folderTree.get(folderPath);
+                            if (folder) {
+                                folder.directCount++;
+                            }
+                            
+                            // Increment count for all parent folders
+                            let parentPath = '';
+                            parts.forEach((part, index) => {
+                                parentPath = index === 0 ? part : `${parentPath}/${part}`;
+                                const parentFolder = folderTree.get(parentPath);
+                                if (parentFolder) {
+                                    parentFolder.count++;
+                                }
+                            });
+                        } else {
+                            postsWithoutFolder++;
+                        }
+                    });
+                    
+                    // Create sidebar data structure
+                    const sidebarData = [];
+                    
+                    // Add "All Posts" option
+                    const totalPosts = allEntries.filter(e => !e.hidden).length;
+                    sidebarData.push(`## 📚 All Posts (${totalPosts})`);
+                    
+                    // Sort folders by path (alphabetically and by hierarchy)
+                    const sortedFolders = Array.from(folderTree.values()).sort((a, b) => {
+                        return a.path.localeCompare(b.path);
+                    });
+                    
+                    // Add folders as sections with hierarchy
+                    sortedFolders.forEach(folder => {
+                        const indent = '⠀⠀'.repeat(folder.level); // Unicode space for indentation
+                        const icon = folder.level === 0 ? '📁' : '📂';
+                        // Store the full path as data attribute for filtering
+                        sidebarData.push(`## ${indent ? indent + '⎢▁ ' : ''}${icon} ${folder.name} (${folder.count})|||${folder.path}`);
+                    });
+                    
+                    // Add posts without folder if any
+                    if (postsWithoutFolder > 0) {
+                        sidebarData.push(`## 📄 Root (${postsWithoutFolder})`);
+                    }
+                    
+                    // Function to attach folder click handlers
+                    const attachFolderHandlers = () => {
+                        // Remove previous listeners to avoid duplicates
+                        const oldHandlers = document.querySelectorAll('.sidebar-component .section-header');
+                        oldHandlers.forEach(header => {
+                            const newHeader = header.cloneNode(true);
+                            header.parentNode.replaceChild(newHeader, header);
+                        });
+                        
+                        // Add click handlers for folders
+                        document.querySelectorAll('.sidebar-component .section-header').forEach(header => {
+                            header.addEventListener('click', (e) => {
+                                const section = e.target.closest('.section');
+                                if (!section) return;
+                                
+                                const titleElement = section.querySelector('.section-title');
+                                if (!titleElement) return;
+                                
+                                const titleText = titleElement.textContent.trim();
+                                
+                                // Get the folder path from data attribute (for nested folders)
+                                const folderPath = section.dataset.folderPath;
+                                
+                                // Extract folder name (remove emoji and count in parentheses)
+                                const folderMatch = titleText.match(/^(📚|📁|📂|📄)\s*(.+?)\s*\(/);
+                                const folderName = folderMatch ? folderMatch[2].trim() : titleText;
+                                
+                                if (folderName === 'All Posts') {
+                                    // Clear folder filter
+                                    setFilterFolder(null);
+                                    updateURLWithFilters(filterTags, null);
+                                } else if (folderName === 'Root') {
+                                    // Filter posts without folder
+                                    setFilterFolder('__root__');
+                                    updateURLWithFilters(filterTags, '__root__');
+                                } else {
+                                    // Filter by folder - use full path if available
+                                    const filterValue = folderPath || folderName;
+                                    setFilterFolder(filterValue);
+                                    updateURLWithFilters(filterTags, filterValue);
+                                }
+                                
+                                // Highlight active folder
+                                document.querySelectorAll('.sidebar-component .section').forEach(s => {
+                                    s.classList.remove('active-folder');
+                                });
+                                section.classList.add('active-folder');
+                                
+                                // Close sidebar after selecting a folder
+                                const sidebar = document.getElementById('sidebar');
+                                const overlay = document.getElementById('sidebarOverlay');
+                                if (sidebar) sidebar.classList.remove('open');
+                                if (overlay) overlay.classList.remove('active');
+                                window.document.body.style.overflow = "auto";
+                            });
+                        });
+                    };
+                    
+                    // Make the function globally accessible so it can be called after sidebar re-renders
+                    window.attachIndexFolderHandlers = attachFolderHandlers;
+                    
+                    // Initialize sidebar after DOM is ready
+                    setTimeout(() => {
+                        initSidebar(sidebarData);
+                        attachFolderHandlers();
+                        
+                        // Highlight current folder if any
+                        if (filterFolder) {
+                            const folderName = filterFolder === '__root__' ? 'Root' : filterFolder;
+                            document.querySelectorAll('.sidebar-component .section').forEach(section => {
+                                const folderPath = section.dataset.folderPath;
+                                const titleText = section.querySelector('.section-title')?.textContent.trim();
+                                
+                                // Check if this section matches the current filter
+                                if (folderPath === filterFolder || titleText?.includes(folderName)) {
+                                    section.classList.add('active-folder');
+                                }
+                            });
+                        } else {
+                            // Highlight "All Posts" by default
+                            const allPostsSection = Array.from(document.querySelectorAll('.sidebar-component .section-title'))
+                                .find(title => title.textContent.trim().includes('All Posts'));
+                            if (allPostsSection) {
+                                allPostsSection.closest('.section').classList.add('active-folder');
+                            }
+                        }
+                    }, 100);
+                };
 
                 // Extract and filter available tags based on input
                 useEffect(() => {
@@ -177,12 +393,24 @@
                 }, [showAddTag]);
 
                 const updateURLWithTags = (tags) => {
+                    updateURLWithFilters(tags, filterFolder);
+                };
+                
+                const updateURLWithFilters = (tags, folder) => {
+                    const params = new URLSearchParams();
+                    
                     if (tags.length > 0) {
-                        const newUrl = `./index.html?tags=${encodeURIComponent(tags.join(','))}`;
-                        window.history.pushState({}, '', newUrl);
-                    } else {
-                        window.history.pushState({}, '', './index.html');
+                        params.set('tags', tags.join(','));
                     }
+                    
+                    if (folder && folder !== '__root__') {
+                        params.set('folder', folder);
+                    } else if (folder === '__root__') {
+                        params.set('folder', '__root__');
+                    }
+                    
+                    const newUrl = params.toString() ? `./index.html?${params.toString()}` : './index.html';
+                    window.history.pushState({}, '', newUrl);
                 };
 
                 const removeTag = (tagToRemove) => {
@@ -242,6 +470,7 @@
 
                 const clearFilters = () => {
                     setFilterTags([]);
+                    setFilterFolder(null);
                     window.history.pushState({}, '', './index.html');
                 };
 
@@ -252,12 +481,27 @@
                         <main class="main-container">
                             <${Sidebar} />
                             <div class="content-wrapper">
-                                ${filterTags.length > 0 && html`
+                                ${(filterTags.length > 0 || filterFolder) && html`
                                     <div class="filter-notice">
                                         <div class="filter-info">
                                             <span class="filter-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" fill-opacity="0" stroke="currentColor" stroke-dasharray="56" stroke-dashoffset="56" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 4h14l-5 6.5v9.5l-4 -4v-5.5Z"><animate fill="freeze" attributeName="fill-opacity" begin="0.6s" dur="0.5s" values="0;1"/><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.6s" values="56;0"/></path></svg></span>
-                                            <span>Filtering posts by tags: </span>
+                                            <span>Filtering posts${filterFolder ? ' in folder' : ''}${filterTags.length > 0 ? ' by tags' : ''}: </span>
                                             <div class="filter-tags">
+                                                ${filterFolder && html`
+                                                    <span class="filter-tag">
+                                                        📁 ${filterFolder === '__root__' ? 'Root' : filterFolder}
+                                                        <button 
+                                                            class="remove-tag-btn" 
+                                                            onClick=${() => {
+                                                                setFilterFolder(null);
+                                                                updateURLWithFilters(filterTags, null);
+                                                            }}
+                                                            title="Remove folder filter"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                `}
                                                 ${filterTags.map(tag => html`
                                                     <span key=${tag} class="filter-tag">
                                                         ${tag}

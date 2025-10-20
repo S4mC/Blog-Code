@@ -166,10 +166,21 @@ class SidebarClass {
                 // If there's an active section, save it
                 if (currentSection) sections.push(currentSection);
                 
+                // Check if the item contains a path marker (for index.html folders)
+                let title = item.replace(/^##\s*/, '');
+                let folderPath = null;
+                
+                if (title.includes('|||')) {
+                    const parts = title.split('|||');
+                    title = parts[0];
+                    folderPath = parts[1];
+                }
+                
                 // Create a new section (H2)
                 currentSection = {
                     id: `section-${sections.length}`,
-                    title: item.replace(/^##\s*/, ''),
+                    title: title,
+                    folderPath: folderPath, // Store the full folder path
                     items: [],
                     expanded: false
                 };
@@ -352,7 +363,7 @@ class SidebarClass {
         }
 
         const html = this.data.map(section => `
-            <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}">
+            <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}"${section.folderPath ? ` data-folder-path="${section.folderPath}"` : ''}>
                 <div class="section-header toggle-area">
                     <span class="section-title">${section.title}</span>
                     ${section.items.length > 0 ? '<span class="collapse-icon">▼</span>' : ''}
@@ -374,6 +385,13 @@ class SidebarClass {
         `).join('');
 
         content.innerHTML = html;
+        
+        // Call custom render callback if it exists (for index.html custom handlers)
+        if (typeof window.attachIndexFolderHandlers === 'function') {
+            setTimeout(() => {
+                window.attachIndexFolderHandlers();
+            }, 10);
+        }
     }
 
     bindEvents() {
@@ -405,10 +423,12 @@ class SidebarClass {
             if (currentWidth !== lastWidth) {
                 lastWidth = currentWidth;
                 const isLargeScreen = currentWidth >= 1024;
-
+                
                 // On large screens, show sidebar automatically
                 if (isLargeScreen && !sidebar.classList.contains('open')) {
-                    if (document.body.dataset.openSidebarResize !== "false") { this.open(); }
+                    if (document.body.dataset.openSidebarResize !== "false") {
+                        this.open();
+                    }
                 } 
                 // On small screens, hide sidebar if it's open
                 else if (!isLargeScreen && sidebar.classList.contains('open')) {
@@ -510,11 +530,17 @@ class SidebarClass {
         
         sidebar.classList.remove('open');
         sidebar.style.display = 'grid';
-        
-        // Only activate the overlay on small screens
-        if (window.innerWidth < 1024 && overlay) {
-            overlay.classList.add('active');
-            window.document.body.style.overflow = "hidden";
+             
+        if (document.body.dataset.openSidebarResize === "false") {
+            if (overlay) {
+                overlay.classList.add('active');
+                window.document.body.style.overflow = "hidden";
+            }
+        } else {
+            if (window.innerWidth < 1024 && overlay) {
+                overlay.classList.add('active');
+                window.document.body.style.overflow = "hidden";
+            }
         }
 
         // Refresh the content with the timeout so that display = 'grid' takes effect before opening the sidebar
@@ -552,8 +578,9 @@ class SidebarClass {
 
         const domElement = findDOMElement(result, this.data);
         
-        if (domElement) {
-            if (window.innerWidth < 1024) {
+        if (domElement) {            
+            // Close sidebar on small screens
+            if (window.innerWidth < 1024 || document.body.dataset.openSidebarResize === "false") {
                 this.close();
             }
 
@@ -758,14 +785,14 @@ class SidebarClass {
         }
 
         const html = sections.map(section => `
-            <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}">
+            <div class="section ${section.expanded ? 'expanded' : ''}" data-section-id="${section.id}"${section.folderPath ? ` data-folder-path="${section.folderPath}"` : ''}>
                 <div class="section-header toggle-area">
                     <span class="section-title">${section.title}</span>
                     ${section.items.length > 0 ? '<span class="collapse-icon">▼</span>' : ''}
                 </div>
                 <div class="section-items">
                     ${section.items.map(item => {
-                        // Usar la función auxiliar para generar subitems
+                        // Use the helper function to generate subitems
                         const subitemsHTML = this.generateSubitemsHTML(item);
                         
                         return `
@@ -780,6 +807,13 @@ class SidebarClass {
         `).join('');
 
         content.innerHTML = html;
+        
+        // Call custom render callback if it exists (for index.html custom handlers)
+        if (typeof window.attachIndexFolderHandlers === 'function') {
+            setTimeout(() => {
+                window.attachIndexFolderHandlers();
+            }, 10);
+        }
     }
 
     highlightText(query) {

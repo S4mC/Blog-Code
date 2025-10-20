@@ -1080,7 +1080,7 @@ blockquote h6 {
     font-size: 16px;
 }
 
-.sidebar-component .section-title:hover {
+.section:not([data-folder-path]) .sidebar-component .section-title:hover {
     text-decoration: underline;
 }
 
