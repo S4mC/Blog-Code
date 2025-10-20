@@ -53,12 +53,12 @@ ${n}
                     <svg id="playPauseBtn${l}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
                     <svg id="resetBtn${l}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
                 </button>
-            </div>`,o+=`(${setupLottieAnimation.toString()})(${l}, ${JSON.stringify(i)}, ${JSON.stringify(a)});`,l+=1}else{const s=escapeHtml(n),o=`<button class="code-copy-button">
+            </div>`,o+=`(${setupLottieAnimation.toString()})(${l}, ${JSON.stringify(i)}, ${JSON.stringify(a)});`,l+=1}else{let s=e.split(" ");const o=escapeHtml(n),i=`<button class="code-copy-button">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 13H7a2 2 0 01-2-2V5a2 2 0 012-2h6a2 2 0 012 2v6a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2"/>
                     <path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 </svg>
-            </button>`;t=`<div class="code-block-wrapper">${o}<pre><code class="language-${e}">${s}</code></pre></div>`}const r=new RegExp(`(<br>\\s*)?${i}(\\s*<br>)?`,"g");a=a.replace(r,t)}return s>1&&(o+=`(${centerAllSVGViewers.toString()})();`),o+=`(${setupCustomScrollLinks.toString()})();`,o+=`(${setupDetailsAnimation.toString()})();`,o+=`(${setupFloatingElements.toString()})();`,t&&(o+=`(${executeEntryContentScripts.toString()})();`),[a,h,o]}export function showCopySuccess(e,t){e.innerHTML=`
+            </button>`;t=`<div class="code-block-wrapper${s.includes("-min")?" min":""}">${i}<pre><code class="language-${s[0]}">${o}</code></pre></div>`}const r=new RegExp(`(<br>\\s*)?${i}(\\s*<br>)?`,"g");a=a.replace(r,t)}return s>1&&(o+=`(${centerAllSVGViewers.toString()})();`),o+=`(${setupCustomScrollLinks.toString()})();`,o+=`(${setupDetailsAnimation.toString()})();`,o+=`(${setupFloatingElements.toString()})();`,t&&(o+=`(${executeEntryContentScripts.toString()})();`),[a,h,o]}export function showCopySuccess(e,t){e.innerHTML=`
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M13 4L6 11L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>

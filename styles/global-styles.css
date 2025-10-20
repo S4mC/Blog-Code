@@ -462,7 +462,7 @@ select {
 
 /* Individual entry */
 .blog-entry {
-    max-width: 800px;
+    max-width: 850px;
     margin: 0 auto;
     transition: margin 0.3s ease, max-width 0.3s ease;
     position: relative;
@@ -654,6 +654,11 @@ blockquote h6 {
 .code-block-wrapper {
     position: relative;
 }
+
+.code-block-wrapper.min {
+    max-width: max-content;
+}
+
 .code-block-wrapper pre {
     margin: 0;
 }

@@ -1014,6 +1014,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
         } else {
             // Escape the content to display it as text
+            let config = language.split(" ");
             const escapedCode = escapeHtml(code);
 
             const copyButton = `<button class="code-copy-button">
@@ -1023,7 +1024,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 </svg>
             </button>`;
 
-            codeHtml = `<div class="code-block-wrapper">${copyButton}<pre><code class="language-${language}">${escapedCode}</code></pre></div>`;
+            codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}<pre><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
         }
         // Replace the placeholder with the code block, handling possible <br> before/after
         const regex = new RegExp(`(<br>\\s*)?${placeholder}(\\s*<br>)?`, "g");

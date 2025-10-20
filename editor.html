@@ -2474,8 +2474,6 @@
                             targetLanguage: normalizedTarget
                         });
 
-                        console.log('Translator created, translating...');
-
                         // Translate
                         const translatedText = await translator.translate(text);
                         return translatedText;
@@ -6182,6 +6180,21 @@
                         },
                     ],
                 },
+                "code block": {
+                    title: "Code Block Configuration",
+                    sections: [
+                        {
+                            title: "Options",
+                            type: "options",
+                            options: ["-min"],
+                        },
+                        {
+                            title: "Information",
+                            type: "info",
+                            info: "You can add -min to make the width of the code block the same width as its content (as small as possible).",
+                        },
+                    ],
+                },
             };
 
             function checkForConfigurableBlock(position) {
@@ -6203,6 +6216,7 @@
                 const floatMatch = lineContent.match(/^(\s*):::float-/);
                 const animationMatch = lineContent.match(/^(\s*)```animation/);
                 const svgMatch = lineContent.match(/^(\s*)```svg/);
+                const blockCodeMatch = lineContent.match(/^(\s*)```([^ ]+)/);
 
                 if (gridMatch) {
                     blockType = "grid";
@@ -6222,6 +6236,8 @@
                     blockType = "animation";
                 } else if (svgMatch) {
                     blockType = "svg";
+                } else if (blockCodeMatch) {
+                    blockType = "code block";
                 }
 
                 if (blockType) {
@@ -6506,6 +6522,7 @@
                     "-open",
                     "loop",
                     "autoplay",
+                    "-min",
                 ];
 
                 // Check if it's a valid standalone option
@@ -6629,6 +6646,8 @@
                 let blockStart;
                 if (currentBlockType === "animation" || currentBlockType === "svg") {
                     blockStart = spacesStartPreview + `\`\`\`${currentBlockType}`;
+                } else if (currentBlockType === "code block") {
+                    blockStart = preview.textContent.split(" ")[0]; // Keep existing code block type
                 } else {
                     blockStart = spacesStartPreview + `:::${currentBlockType}`;
                 }
@@ -6733,8 +6752,6 @@
                     endLineNumber: currentLineNumber,
                     endColumn: model.getLineMaxColumn(currentLineNumber),
                 };
-
-                console.log("Applying new line:", newLine);
 
                 editor.executeEdits("", [
                     {

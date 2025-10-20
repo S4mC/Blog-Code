@@ -302,13 +302,16 @@ In `editor.html`, add a regex pattern to detect your block in the `checkForConfi
 
 #### 2.2 Configure Block Parameters
 
-Add your block configuration to the `blockConfigurations` object
+Add your block configuration to the `blockConfigurations` object and if new options are being added also put them in the `isValidOption` function
 
 #### 2.3 Add Configuration UI (if configurable)
 
 If your block has configurable parameters, implement the UI in the `generateConfigContent` function
 
-#### 2.4 Handle Configuration Application (if needed)
+### 2.4 Handle preview (if needed)
+If your block requires complex logic when updating the preview, add it to the `updatePreview` function
+
+#### 2.5 Handle Configuration Application (if needed)
 
 If your block requires complex logic when applying configuration, add it to the `applyConfiguration` function
 
