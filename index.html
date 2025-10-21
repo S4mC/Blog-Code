@@ -260,7 +260,7 @@
                         const indent = '⠀⠀'.repeat(folder.level); // Unicode space for indentation
                         const icon = folder.level === 0 ? '📁' : '📂';
                         // Store the full path as data attribute for filtering
-                        sidebarData.push(`## ${indent ? indent + '⎢▁ ' : ''}${icon} ${folder.name} (${folder.count})|||${folder.path}`);
+                        sidebarData.push(`## ${indent ? indent + '├─ ' : ''}${icon} ${folder.name} (${folder.count})|||${folder.path}`);
                     });
                     
                     // Add posts without folder if any
