@@ -6205,12 +6205,12 @@
                         {
                             title: "Options",
                             type: "options",
-                            options: ["-min"],
+                            options: ["-min", "-folded" ],
                         },
                         {
                             title: "Information",
                             type: "info",
-                            info: "You can add -min to make the width of the code block the same width as its content (as small as possible).",
+                            info: "You can add -min to make the width of the code block the same width as its content (as small as possible). You can add -folded to make the code block start in a collapsed state.",
                         },
                     ],
                 },
@@ -6542,6 +6542,7 @@
                     "loop",
                     "autoplay",
                     "-min",
+                    "-folded",
                 ];
 
                 // Check if it's a valid standalone option
@@ -6666,7 +6667,7 @@
                 if (currentBlockType === "animation" || currentBlockType === "svg") {
                     blockStart = spacesStartPreview + `\`\`\`${currentBlockType}`;
                 } else if (currentBlockType === "code block") {
-                    blockStart = preview.textContent.split(" ")[0]; // Keep existing code block type
+                    blockStart = spacesStartPreview + preview.textContent.trim().split(" ")[0]; // Keep existing code block type
                 } else {
                     blockStart = spacesStartPreview + `:::${currentBlockType}`;
                 }
