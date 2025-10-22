@@ -1024,7 +1024,11 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 </svg>
             </button>`;
 
-            codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}<pre><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
+            const foldingButton = `<button class="code-folding-button" title="Fold/Unfold Code">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m6 9l6 6l6-6"/></svg>
+            </button>`;
+
+            codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}${config.includes("-folded") ? foldingButton : ""}<pre class="${config.includes("-folded") ? " folded" : ""}"><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
         }
         // Replace the placeholder with the code block, handling possible <br> before/after
         const regex = new RegExp(`(<br>\\s*)?${placeholder}(\\s*<br>)?`, "g");
@@ -1181,6 +1185,19 @@ export function manageClickFloatButton(e) {
             .catch((err) => {
                 console.error("Error copying:", err);
             });
+    }
+
+    // For folder code buttons
+    if (e.target.closest(".code-folding-button")) {
+        const button = e.target.closest(".code-folding-button");
+        const codeBlock = button.parentElement.querySelector("pre");
+        if (codeBlock.classList.contains("folded")) {
+            codeBlock.classList.remove("folded");
+            button.querySelector("svg").innerHTML = '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m6 15l6-6l6 6"/>'
+        } else {
+            codeBlock.classList.add("folded");
+            button.querySelector("svg").innerHTML = '<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m6 9l6 6l6-6"/>'
+        }
     }
 }
 

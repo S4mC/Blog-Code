@@ -661,6 +661,41 @@ blockquote h6 {
 
 .code-block-wrapper pre {
     margin: 0;
+    &.folded{
+        max-height: 125px !important;
+        overflow: hidden;
+        &::after {
+            pointer-events: none;
+            content: "...";
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            color: var(--text-color);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(to bottom, transparent, var(--bg));
+        }
+    }
+}
+.code-folding-button {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    border-radius: var(--border-radius);
+    padding: 4px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
 }
 .code-copy-button {
     position: absolute;
@@ -678,10 +713,10 @@ blockquote h6 {
     align-items: center;
     justify-content: center;
 }
-.code-block-wrapper:hover .code-copy-button {
+.code-block-wrapper:hover .code-copy-button, .code-block-wrapper:hover .code-folding-button {
     opacity: 1;
 }
-.code-copy-button:hover {
+.code-copy-button:hover, .code-folding-button:hover {
     background: var(--bg-hover);
 }
 .iframe-expand-button {
