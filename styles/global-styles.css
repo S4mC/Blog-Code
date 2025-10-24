@@ -258,6 +258,34 @@ body {
     z-index: 100;
 }
 
+input[type="checkbox"] {
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border: 1px solid gray;
+    border-radius: 3px;
+    position: relative;
+}
+
+input[type="checkbox"]::before {
+    content: "";
+    display: block;
+    width: 9px;
+    height: 9px;
+    background-color: var(--text-muted);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 2px;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+input[type="checkbox"]:checked::before {
+    opacity: 1;
+}
+
 li[data-icon] {
     /* Custom styles for list items with icons */
     & p {
@@ -462,7 +490,7 @@ select {
 
 /* Individual entry */
 .blog-entry {
-    max-width: 850px;
+    max-width: 860px;
     margin: 0 auto;
     transition: margin 0.3s ease, max-width 0.3s ease;
     position: relative;
@@ -661,7 +689,7 @@ blockquote h6 {
 
 .code-block-wrapper pre {
     margin: 0;
-    &.folded{
+    &.folded {
         max-height: 125px !important;
         overflow: hidden;
         &::after {
@@ -713,10 +741,12 @@ blockquote h6 {
     align-items: center;
     justify-content: center;
 }
-.code-block-wrapper:hover .code-copy-button, .code-block-wrapper:hover .code-folding-button {
+.code-block-wrapper:hover .code-copy-button,
+.code-block-wrapper:hover .code-folding-button {
     opacity: 1;
 }
-.code-copy-button:hover, .code-folding-button:hover {
+.code-copy-button:hover,
+.code-folding-button:hover {
     background: var(--bg-hover);
 }
 .iframe-expand-button {
@@ -1771,12 +1801,18 @@ details::after {
 }
 
 @keyframes targetZoom {
-    0%, 30%, 60%, 90% {
+    0%,
+    30%,
+    60%,
+    90% {
         background-color: var(--bg);
         color: var(--text-color);
         filter: invert(1);
     }
-    15%, 45%, 75%, 100% {
+    15%,
+    45%,
+    75%,
+    100% {
         background-color: var(--bg);
         color: var(--text-color);
         filter: invert(0.5);

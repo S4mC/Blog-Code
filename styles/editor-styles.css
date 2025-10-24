@@ -31,10 +31,10 @@ body {
     border: none;
 }
 
-/* Force text color in Monaco autocompletion menu */
-
 .markdown-preview {
     height: 100%;
+    scrollbar-width: thin;
+    max-width: calc(800px + 2*var(--spacing-md));
     overflow-y: auto;
     padding: var(--spacing-md);
     background-color: var(--bg);
@@ -169,6 +169,7 @@ body {
     grid-template-columns: 1fr;
     min-height: 0;
     overflow: hidden;
+    justify-items: center;
 }
 
 .editor-content.bottom .markdown-preview {
@@ -447,10 +448,6 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     width: 100%;
     padding: 6px;
     font-size: 0.85rem;
-}
-
-.markdown-preview {
-    scrollbar-width: thin;
 }
 
 [data-open-sidebar-resize="false"] .main-container::before,

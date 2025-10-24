@@ -612,7 +612,7 @@ function extractIconFromText(text) {
     
     if (!match) {
         let icon = "";
-        if (text.trim().startsWith("... ")) {
+        if (text.trim() === "..." || text.trim().startsWith("... ")) {
             // Allow special handling for "..." to indicate that the list continues
             text = text.trim().slice(4);
             text = `START_OF_LIST_CONTINUES_TEXT_${text}_TEXT_CONTINUES_LIST_OF_START`;
@@ -704,8 +704,6 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                     const matchedIcon = extracted.icon;
                     const matchedText = extracted.text;
 
-                    console.log("Matched icon in list item:", matchedText);
-
                     dataIcon = matchedIcon; // Extract the icon
 
                     // Deeply modify the first token to remove the icon
@@ -791,11 +789,13 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
         const iconAttr = dataIcon ? ` data-icon="${dataIcon}"` : "";
         const taskAttr = element.task ? ' class="task-list-item"' : "";
-        const checkedContent = element.task
-            ? `<input type="checkbox"${element.checked ? " checked" : ""} disabled> `
-            : "";
 
-        return `<li${iconAttr}${taskAttr}>${checkedContent}${text}</li>\n`;
+        // Handle task list items with checkboxes
+        if (element.task && text.startsWith("<p>")) {
+            text = `<p><input type="checkbox"${element.checked ? " checked" : ""} style="margin-right: 5px;" disabled/>${text.substring(3)}`;
+        }
+
+        return `<li${iconAttr}${taskAttr}>${text}</li>\n`;
     };
 
     // Configure the custom renderer for add headings ids

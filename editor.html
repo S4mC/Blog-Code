@@ -2533,12 +2533,6 @@
                         try {
                             // Detect source language
                             const sourceLang = await detectLanguage(selectedText);
-                            
-                            // Don't translate if already in target language
-                            if (sourceLang === targetLang) {
-                                alert(`Text is already in ${languages[targetLang] || targetLang}`);
-                                return;
-                            }
 
                             // Translate the text
                             const translatedText = await translateText(selectedText, targetLang, sourceLang);
@@ -6195,7 +6189,7 @@
                         {
                             title: "Information",
                             type: "info",
-                            info: "Customize the connector with styles and other HTML attributes. If it has a list inside, the first icon of every item will be used as marker. You can prevent this adding a \\ before the icon. This allow you to create a files and directories list with icons like folder(📁), open folder(📂) and file(📄).",
+                            info: "Customize the connector with styles and other HTML attributes. If it has a list inside, the first icon of every item will be used as marker. You can prevent this adding a \\ before the icon. This allow you to create a files and directories list with icons like folder(📁), open folder(📂) and file(📄). You can also add ... at the beginning to indicate how the list continues",
                         },
                     ],
                 },
