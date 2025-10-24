@@ -1031,7 +1031,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}${config.includes("-folded") ? foldingButton : ""}<pre class="${config.includes("-folded") ? " folded" : ""}"><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
         }
         // Replace the placeholder with the code block, handling possible <br> before/after
-        const regex = new RegExp(`(<br>\\s*)?${placeholder}(\\s*<br>)?`, "g");
+        const regex = new RegExp(`${placeholder}(\\s*<br>)?`, "g");
         finalHtml = finalHtml.replace(regex, codeHtml);
     }
 
