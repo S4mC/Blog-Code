@@ -3921,7 +3921,26 @@
                                     finalHtml += JSON.stringify(sidebarContent, null, 4);
                                     finalHtml += "\n<";
                                     finalHtml += "/script>";
-                                    content = finalHtml;
+                                    
+                                    // Try to minify HTML
+                                    try {
+                                        const response = await fetch("https://www.toptal.com/developers/html-minifier/api/raw", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                                            body: new URLSearchParams({ input: finalHtml })
+                                        });
+
+                                        if (response.ok) {
+                                            const minifiedHtml = await response.text();
+                                            content = minifiedHtml;
+                                        } else {
+                                            console.warn("Minification API failed, using original HTML");
+                                            content = finalHtml;
+                                        }
+                                    } catch (error) {
+                                        console.warn("Error minifying HTML, using original:", error);
+                                        content = finalHtml;
+                                    }
                                 } else {
                                     content = markdown;
                                 }
