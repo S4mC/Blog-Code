@@ -604,6 +604,35 @@ function processMarkdownBlocks(markdownContent) {
     return processedLines.join("\n");
 }
 
+// Helper function to extract icon from text and handle backslash escaping
+function extractIconFromText(text) {
+    const match = text.match(
+        /^(\\?(?![0-9])[\p{Emoji}\p{Emoji_Presentation}]+)\s+(.*)$/su
+    );
+    
+    if (!match) {
+        let icon = "";
+        if (text.trim().startsWith("... ")) {
+            // Allow special handling for "..." to indicate that the list continues
+            text = text.trim().slice(4);
+            text = `START_OF_LIST_CONTINUES_TEXT_${text}_TEXT_CONTINUES_LIST_OF_START`;
+            icon = " ";
+        }
+        return { icon, text: text };
+    }
+    
+    let icon = match[1];
+    let cleanText = match[2];
+    
+    if (icon.at(0) === "\\") {
+        // Allow escaping the icon with a backslash
+        cleanText = icon.slice(1) + " " + cleanText;
+        icon = "";
+    }
+    
+    return { icon, text: cleanText };
+}
+
 export function renderMarkdown(markdownContent, executeScripts = true) {
     const renderer = new marked.Renderer();
 
@@ -669,19 +698,14 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 const firstText = textToken.text || textToken.raw || "";
 
                 // Try to extract icon from the first text token
-                const match = firstText.match(
-                    /^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su
-                );
+                const extracted = extractIconFromText(firstText);
 
-                if (match) {
-                    let matchedIcon = match[1];
-                    let matchedText = match[2];
+                if (extracted.icon || extracted.text !== firstText) {
+                    const matchedIcon = extracted.icon;
+                    const matchedText = extracted.text;
 
-                    if (matchedIcon.at(0) === "\\") {
-                        // Allow escaping the icon with a backslash
-                        matchedText = matchedIcon.slice(1) + " " + matchedText;
-                        matchedIcon = "";
-                    }
+                    console.log("Matched icon in list item:", matchedText);
+
                     dataIcon = matchedIcon; // Extract the icon
 
                     // Deeply modify the first token to remove the icon
@@ -700,22 +724,12 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                             modifiedTextToken.tokens = textToken.tokens.map((subToken, index) => {
                                 if (index === 0 && subToken.type === "text") {
                                     // Extract icon only from this specific sub-token
-                                    const subMatch = subToken.text.match(
-                                        /^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su
-                                    );
-                                    let matchedIcon1 = subMatch?.[1];
-                                    let matchedText1 = subMatch?.[2];
-
-                                    if (matchedIcon1.at(0) === "\\") {
-                                        // Allow escaping the icon with a backslash
-                                        matchedText1 = matchedIcon1.slice(1) + " " + matchedText1;
-                                        matchedIcon1 = "";
-                                    }
-                                    if (subMatch) {
+                                    const extracted = extractIconFromText(subToken.text);
+                                    if (extracted.icon || extracted.text !== subToken.text) {
                                         return {
                                             ...subToken,
-                                            text: matchedText1,
-                                            raw: matchedText1,
+                                            text: extracted.text,
+                                            raw: extracted.text,
                                         };
                                     }
                                 }
@@ -740,22 +754,12 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                             modifiedFirstToken.tokens = textToken.tokens.map((subToken, index) => {
                                 if (index === 0 && subToken.type === "text") {
                                     // Extract icon only from this specific sub-token
-                                    const subMatch = subToken.text.match(
-                                        /^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su
-                                    );
-                                    let matchedIcon1 = subMatch?.[1];
-                                    let matchedText1 = subMatch?.[2];
-
-                                    if (matchedIcon1.at(0) === "\\") {
-                                        // Allow escaping the icon with a backslash
-                                        matchedText1 = matchedIcon1.slice(1) + " " + matchedText1;
-                                        matchedIcon1 = "";
-                                    }
-                                    if (subMatch) {
+                                    const extracted = extractIconFromText(subToken.text);
+                                    if (extracted.icon || extracted.text !== subToken.text) {
                                         return {
                                             ...subToken,
-                                            text: matchedText1,
-                                            raw: matchedText1,
+                                            text: extracted.text,
+                                            raw: extracted.text,
                                         };
                                     }
                                 }
@@ -780,19 +784,9 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         } else {
             // No tokens, process element.text directly
             text = element.text;
-            const match = text.match(
-                /^(\\?[\p{Emoji}\p{Emoji_Presentation}\p{Emoji_Modifier}\p{Emoji_Modifier_Base}\p{Emoji_Component}]+)\s+(.*)$/su
-            );
-            if (match) {
-                dataIcon = match[1]; // First word (the icon)
-                text = match[2]; // Rest of the text
-
-                if (dataIcon.at(0) === "\\") {
-                    // Allow escaping the icon with a backslash
-                    text = dataIcon.slice(1) + " " + text;
-                    dataIcon = "";
-                }
-            }
+            const extracted = extractIconFromText(text);
+            dataIcon = extracted.icon;
+            text = extracted.text;
         }
 
         const iconAttr = dataIcon ? ` data-icon="${dataIcon}"` : "";
@@ -954,6 +948,11 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         return `<span class="float-trigger" data-float-id="${id}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
         </span>`;
+    });
+
+    // Process the special list continuation text placeholders
+    finalHtml = finalHtml.replace(/START_OF_LIST_CONTINUES_TEXT_(.*?)_TEXT_CONTINUES_LIST_OF_START/g, (match, text) => {
+        return `<p style=" margin-left: -16px">··· <span style="font-size: smaller;margin-left: 5px;">${text}</span></p>`;
     });
 
     // Restore inline codes
