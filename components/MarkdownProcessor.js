@@ -134,7 +134,7 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
     return [result, inlineCodeBlocks];
 }
 
-function processCodeBlocksAndTitles(text) {
+function processCodeBlocksAndTitlesAndBR(text) {
     let blockCount = 0;
     let inCodeBlock = false;
     let currentLanguage = "";
@@ -143,11 +143,23 @@ function processCodeBlocksAndTitles(text) {
     let protectedContent = [];
     let codeBlocks = new Map();
 
+    let lineForBR = 0;
+
     const lines = text.split("\n");
 
     for (let line of lines) {
         line = line.replace(/\t/g, "    "); // Remove tabs if present for avoiding issues
-        const trimmedLine = line.trim();
+        let trimmedLine = line.trim();
+
+        if (!inCodeBlock && trimmedLine === "") { // Add <br> for multiple line breaks outside code blocks
+            lineForBR++;
+            if (lineForBR > 1) {
+                protectedContent.push(line + "<br>");
+            }
+        } else {
+            lineForBR = 0;
+        }
+
         if (trimmedLine.startsWith("```")) {
             if (!inCodeBlock) {
                 // Start of code block
@@ -848,15 +860,8 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
     let sidebarContent = [];
     let processedMarkdown = "";
 
-    // This must be run before markdown-it because it prevents processing the contents of the code blocks and also getting the sidebar titles
-    [processedMarkdown, codeBlocks, sidebarContent] = processCodeBlocksAndTitles(markdownContent);
-
-    // Process multiple line breaks
-    processedMarkdown = processedMarkdown.replace(/\n\n\n+/g, (match) => {
-        const lineBreakCount = match.length - 2;
-        const brs = "<br>".repeat(lineBreakCount);
-        return `\n\n${brs}\n\n`;
-    });
+    // This must be run before markdown-it because it prevents processing the contents of the code blocks and also getting the sidebar titles and breaks
+    [processedMarkdown, codeBlocks, sidebarContent] = processCodeBlocksAndTitlesAndBR(markdownContent);
 
     // Protect inline code
     [processedMarkdown, inlineCodeBlocks] = processInlineCodeBlocks(processedMarkdown, inlineCodeBlocks);
@@ -937,8 +942,19 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         mangle: false,
     });
 
+    // // Process multiple line breaks
+    // processedMarkdown = processedMarkdown.replace(/\n\n\n+/g, (match) => {
+    //     const lineBreakCount = match.length - 2;
+    //     const brs = "<br>".repeat(lineBreakCount);
+    //     return `\n\n${brs}\n\n`;
+    // });
+
+    console.log("Processed Markdown:", processedMarkdown);
+
     // Convert the document to markdown with marked
     let finalHtml = marked.parse(processedMarkdown);
+
+    console.log("Initial HTML:", finalHtml);
 
     let finalJS = ""; // This will hold any final JS code to be executed after rendering
 
