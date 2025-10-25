@@ -38,6 +38,7 @@
     --prism-c-text: #cccccc;
     --prism-c-number: #b5cea8;
     --prism-c-macro: #569cd6;
+    --prism-js-constant: #4FC0F1;
     --prism-green: #d8d8a7;
     --prism-purple: #b97eb5;
     --prism-blue: #569cd6;
@@ -85,6 +86,7 @@
     --prism-c-text: #374151;
     --prism-c-number: #16a34a;
     --prism-c-macro: #7c3aed;
+    --prism-js-constant: #00abf6;
     --prism-green: #059669;
     --prism-purple: #a855f7;
     --prism-blue: #3b82f6;
@@ -277,6 +279,37 @@ code.language-c {
 
 .language-c .token.macro-name {
     color: var(--prism-c-macro);
+}
+
+/* JS language specific */
+.language-javascript .token.comment {
+    color: var(--prism-c-comment);
+}
+
+.language-javascript .token.constant {
+    color: var(--prism-js-constant);
+}
+
+/* CSS language specific */
+.language-css .token.comment {
+    color: var(--prism-c-comment);
+}
+
+.language-css .token.selector {
+    color: var(--prism-class-name);
+}
+
+.language-css .token.property {
+    color: var(--prism-text);
+}
+
+code.language-css {
+    color: var(--prism-green) !important;
+}
+
+/* Json language specific */
+.language-json .token.property {
+    color: var(--prism-text);
 }
 
 /* Custom color classes */
