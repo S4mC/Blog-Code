@@ -942,19 +942,8 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         mangle: false,
     });
 
-    // // Process multiple line breaks
-    // processedMarkdown = processedMarkdown.replace(/\n\n\n+/g, (match) => {
-    //     const lineBreakCount = match.length - 2;
-    //     const brs = "<br>".repeat(lineBreakCount);
-    //     return `\n\n${brs}\n\n`;
-    // });
-
-    console.log("Processed Markdown:", processedMarkdown);
-
     // Convert the document to markdown with marked
     let finalHtml = marked.parse(processedMarkdown);
-
-    console.log("Initial HTML:", finalHtml);
 
     let finalJS = ""; // This will hold any final JS code to be executed after rendering
 

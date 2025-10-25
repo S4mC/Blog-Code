@@ -458,10 +458,9 @@
                                     const shiftKey =
                                         ed._standaloneKeybindingService._currentChord?.[0]?.shiftKey;
 
-                                    // Regular expression to detect numbered lines (e.g., "1. ", "12. ") with optional leading spaces
-                                    const numberedListRegex = /^(\s*)(\d+)\.(\s+)(.*)$/;
-                                    // Regular expression to detect bullet lists (e.g., "- ") with optional leading spaces
-                                    const bulletListRegex = /^(\s*)(-|\*)(\s+)(.*)$/;
+                                    const numberedListRegex = /^(\s*)(\d+)\.(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su;
+
+                                    const bulletListRegex = /^(\s*)(-|\*)(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su;
 
                                     const lineStartSpaces = lineContent.match(/^\s*/)[0];
 
@@ -474,7 +473,7 @@
                                     // Only execute list logic if cursor is at the end of the line
                                     if (isAtEndOfLine && numberedMatch) {
                                         // If the current line is empty after the number (e.g., "1. "), end the list
-                                        if (numberedMatch[4].trim() === "") {
+                                        if (numberedMatch[6].trim() === "") {
                                             // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
@@ -482,6 +481,7 @@
                                                 endLineNumber: position.lineNumber,
                                                 endColumn: lineContent.length + 1,
                                             };
+                                            editor.pushUndoStop();
                                             editor.executeEdits("", [
                                                 {
                                                     range: range,
@@ -493,10 +493,14 @@
 
                                         const currentNumber = parseInt(numberedMatch[2], 10);
                                         const nextNumber = currentNumber + 1;
-                                        const spacing = numberedMatch[3]; // Keep the same spacing
 
                                         // Insert a new line with the next number
-                                        const text = "\n" + lineStartSpaces + nextNumber + "." + spacing;
+                                        let startofLine = lineStartSpaces + nextNumber + "." + numberedMatch[3];
+                                        startofLine += numberedMatch[4] ? numberedMatch[4] : "";
+                                        startofLine += numberedMatch[5] ? numberedMatch[5] : "";
+                                        
+                                        const text = "\n" + startofLine;
+                                        editor.pushUndoStop();
                                         editor.executeEdits("", [
                                             {
                                                 range: {
@@ -516,7 +520,7 @@
                                         // Move the cursor to the new line after the number
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
-                                            column: lineStartSpaces.length + (nextNumber + ".").length + spacing.length + 1,
+                                            column: startofLine.length + 1,
                                         });
 
                                         return true; // Completed
@@ -524,7 +528,7 @@
 
                                     if (isAtEndOfLine && bulletMatch) {
                                         // If the current line is empty after the bullet (e.g., "- "), end the list
-                                        if (bulletMatch[4].trim() === "") {
+                                        if (bulletMatch[6].trim() === "") {
                                             // Remove the current line and add a blank line
                                             const range = {
                                                 startLineNumber: position.lineNumber,
@@ -532,6 +536,7 @@
                                                 endLineNumber: position.lineNumber,
                                                 endColumn: lineContent.length + 1,
                                             };
+                                            editor.pushUndoStop();
                                             editor.executeEdits("", [
                                                 {
                                                     range: range,
@@ -541,11 +546,13 @@
                                             return true; // Prevent default behavior
                                         }
 
-                                        const bulletChar = bulletMatch[2]; // "-" o "*"
-                                        const spacing = bulletMatch[3]; // Keep the same spacing
-
                                         // Insert a new line with the same bullet
-                                        const text = "\n" + lineStartSpaces + bulletChar + spacing;
+                                        let startofLine = lineStartSpaces + bulletMatch[2] + bulletMatch[3];
+                                        startofLine += bulletMatch[4] ? bulletMatch[4] : "";
+                                        startofLine += bulletMatch[5] ? bulletMatch[5] : "";
+
+                                        const text = "\n" + startofLine;
+                                        editor.pushUndoStop();
                                         editor.executeEdits("", [
                                             {
                                                 range: {
@@ -565,7 +572,7 @@
                                         // Move the cursor to the new line after the bullet
                                         editor.setPosition({
                                             lineNumber: position.lineNumber + 1,
-                                            column: lineStartSpaces.length + bulletChar.length + spacing.length + 1,
+                                            column: startofLine.length + 1,
                                         });
 
                                         return true; // Completed
@@ -2850,7 +2857,6 @@
                         menu.style.top = `${rect.bottom + 1.5}px`;
                         menu.style.left = `${rect.left}px`;
                     }
-                    console.log(files);
                     menu.innerHTML = files
                         .map(
                             (file) => `
