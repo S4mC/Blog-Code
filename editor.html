@@ -6195,7 +6195,7 @@
                         {
                             title: "Information",
                             type: "info",
-                            info: "Customize the connector with styles and other HTML attributes. If it has a list inside, the first icon of every item will be used as marker. You can prevent this adding a \\ before the icon. This allow you to create a files and directories list with icons like folder(📁), open folder(📂) and file(📄). You can also add ... at the beginning to indicate how the list continues",
+                            info: "Customize the connector with styles and other HTML attributes. If it has a list inside or headers, every item will be connected.",
                         },
                     ],
                 },
@@ -6211,6 +6211,64 @@
                             title: "Information",
                             type: "info",
                             info: "You can add -min to make the width of the code block the same width as its content (as small as possible). You can add -folded to make the code block start in a collapsed state.",
+                        },
+                    ],
+                },
+                "bullet list": {
+                    title: "Bullet List Configuration",
+                    sections: [
+                        {
+                            title: "Quick Emojis",
+                            type: "emoji-buttons",
+                            emojis: ["📁", "📂", "📄", "..."],
+                        },
+                        {
+                            title: "Custom Emoji/Icon",
+                            type: "list-emoji-input",
+                            inputs: [
+                                {
+                                    type: "text",
+                                    id: "list-emoji",
+                                    label: "Emoji or icon",
+                                    placeholder: "Enter emoji or icon",
+                                    data: "list-emoji",
+                                    onChange: "handleListEmojiInput",
+                                },
+                            ],
+                        },
+                        {
+                            title: "Information",
+                            type: "info",
+                            info: "The first icon of every item will be used as marker. You can prevent this adding a \\ before the icon (use the 'Toggle Escape' button).",
+                        },
+                    ],
+                },
+                "numbered list": {
+                    title: "Numbered List Configuration",
+                    sections: [
+                        {
+                            title: "Quick Emojis",
+                            type: "emoji-buttons",
+                            emojis: ["📁", "📂", "📄", "..."],
+                        },
+                        {
+                            title: "Custom Emoji/Icon",
+                            type: "list-emoji-input",
+                            inputs: [
+                                {
+                                    type: "text",
+                                    id: "list-emoji",
+                                    label: "Emoji or icon",
+                                    placeholder: "Enter emoji or icon",
+                                    data: "list-emoji",
+                                    onChange: "handleListEmojiInput",
+                                },
+                            ],
+                        },
+                        {
+                            title: "Information",
+                            type: "info",
+                            info: "The first icon of every item will be used as marker. You can prevent this adding a \\ before the icon (use the 'Toggle Escape' button).",
                         },
                     ],
                 },
@@ -6236,6 +6294,8 @@
                 const animationMatch = lineContent.match(/^(\s*)```animation/);
                 const svgMatch = lineContent.match(/^(\s*)```svg/);
                 const blockCodeMatch = lineContent.match(/^(\s*)```([^ ]+)/);
+                const numberedListMatch = lineContent.match(/^(\s*)(\d+)\.(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su);
+                const bulletListMatch = lineContent.match(/^(\s*)(-|\*)(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su);
 
                 if (gridMatch) {
                     blockType = "grid";
@@ -6257,6 +6317,10 @@
                     blockType = "svg";
                 } else if (blockCodeMatch) {
                     blockType = "code block";
+                } else if (numberedListMatch) {
+                    blockType = "numbered list";
+                } else if (bulletListMatch) {
+                    blockType = "bullet list";
                 }
 
                 if (blockType) {
@@ -6439,6 +6503,30 @@
                             html += `<input type="text" placeholder="${section.placeholder}" data-pattern="${section.pattern}" value="${existingValue}" oninput="window.handleCustomInput(this)">`;
                             html += `</div>`;
                         }
+                    } else if (section.type === "emoji-buttons") {
+                        // Quick emoji buttons for lists
+                        html += `<div class="config-emoji-buttons">`;
+                        section.emojis.forEach((emoji) => {
+                            html += `<button class="emoji-quick-button" onclick="window.insertListEmoji('${emoji}')">${emoji}</button>`;
+                        });
+                        html += `<button class="emoji-escape-button" onclick="window.addListEscape()">Toggle Escape</button>`;
+                        html += `</div>`;
+                    } else if (section.type === "list-emoji-input") {
+                        // Custom input for emoji/icon
+                        if (section.inputs && Array.isArray(section.inputs)) {
+                            html += `<div class="config-custom-input">`;
+
+                            section.inputs.forEach((input) => {
+                                if (input.type === "text") {
+                                    html += `<label for="${input.id}">${input.label}</label>`;
+                                    html += `<input autocomplete="off" type="text" id="${input.id}" placeholder="${input.placeholder}" 
+                                        data-input="${input.data}" 
+                                        oninput="window.${input.onChange}(this)" value="${window.currentListParts.emoji ? window.currentListParts.emoji : ''}"/>`;
+                                }
+                            });
+
+                            html += `</div>`;
+                        }
                     } else if (section.type === "info") {
                         html += `<div class="config-info">${section.info}</div>`;
                     }
@@ -6453,7 +6541,53 @@
                 return html;
             }
 
+            // Function to parse list items (bullet or numbered)
+            function parseListOptions(currentLine) {
+                const numberedListRegex = /^(\s*)(\d+)\.(\s+)(\\?(?![0-9])[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su;
+                const bulletListRegex = /^(\s*)(-|\*)(\s+)(\\?(?![0-9])[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su;
+
+                let match;
+                if (currentBlockType === "numbered list") {
+                    match = currentLine.match(numberedListRegex);
+                } else {
+                    match = currentLine.match(bulletListRegex);
+                }
+
+                if (!match) return { options: [], remainingText: "" };
+
+                let emoji = match[4] || "";
+                let spacesAfterMarker = match[3] || "";
+                let text = match[6] || "";
+                let spacesAfterEmoji = match[5] || "";
+
+                if (!emoji) {
+                    let rematchRegex1 = text.match(/^(\\?\.{3})(\s*)(.*)/);
+                    if (rematchRegex1) {
+                        emoji = rematchRegex1[1];
+                        spacesAfterEmoji = rematchRegex1[2];
+                        text = rematchRegex1[3];
+                    }
+                }
+
+                // Store the parsed components for list
+                window.currentListParts = {
+                    leadingSpaces: match[1] || "",
+                    marker: currentBlockType === "numbered list" ? match[2] + "." : match[2],
+                    spacesAfterMarker: spacesAfterMarker,
+                    emoji: emoji,
+                    spacesAfterEmoji: spacesAfterEmoji,
+                    text: text,
+                };
+
+                return { options: [], remainingText: match[6] || "" };
+            }
+
             function parseExistingOptions(currentLine) {
+                // Special handling for bullet and numbered lists
+                if (currentBlockType === "bullet list" || currentBlockType === "numbered list") {
+                    return parseListOptions(currentLine);
+                }
+
                 // Extract options from a line like ":::grid cols-2 gap-4 responsive style="background: red" additional title"
                 // or "```animation-loop-autoplay style="height:15em;" title"
                 let match;
@@ -6659,6 +6793,31 @@
                 }
 
                 const preview = document.getElementById("config-preview");
+
+                // Special handling for lists
+                if (currentBlockType === "bullet list" || currentBlockType === "numbered list") {
+                    if (!window.currentListParts) return;
+                    
+                    const parts = window.currentListParts;
+                    const emojiInput = document.getElementById("list-emoji");
+                    const customEmoji = emojiInput ? emojiInput.value : "";
+                    
+                    let newLine = parts.leadingSpaces + parts.marker + parts.spacesAfterMarker;
+                    
+                    // Use custom emoji if provided, otherwise keep existing
+                    if (customEmoji) {
+                        newLine += customEmoji + " ";
+                    } else if (parts.emoji) {
+                        newLine += parts.emoji + parts.spacesAfterEmoji;
+                    }
+                    
+                    newLine += parts.text;
+                    
+                    if (preview) {
+                        preview.textContent = newLine;
+                    }
+                    return;
+                }
 
                 let spacesStartPreview = preview.textContent.match(/^\s*/)[0] || "";
 
@@ -6947,7 +7106,47 @@
                             isProcessingInput = false;
                         }
                     }
-                }, 100);
+                }, 500);
+            }
+
+            // Functions for list emoji configuration
+            function insertListEmoji(emoji) {
+                if (!window.currentListParts) return;
+                
+                const emojiInput = document.getElementById("list-emoji");
+                if (emojiInput) {
+                    emojiInput.value = emoji;
+                    handleListEmojiInput(emojiInput);
+                }
+            }
+
+            function addListEscape() {
+                if (!window.currentListParts) return;
+                
+                const emojiInput = document.getElementById("list-emoji");
+                if (emojiInput) {
+                    const currentValue = emojiInput.value;
+                    // Toggle escape
+                    if (!currentValue.startsWith("\\")) {
+                        emojiInput.value = "\\" + currentValue;
+                    } else {
+                        emojiInput.value = currentValue.slice(1);
+                    }
+                    handleListEmojiInput(emojiInput);
+                }
+            }
+
+            function handleListEmojiInput(inputElement) {
+                if (!window.currentListParts) return;
+                
+                const value = inputElement.value;
+                const parts = window.currentListParts;
+                
+                // Update the emoji part
+                parts.emoji = value;
+                parts.spacesAfterEmoji = value ? " " : "";
+                
+                updatePreview();
             }
 
             // Make functions globally accessible
@@ -6956,6 +7155,9 @@
             window.handleCustomInput = handleCustomInput;
             window.handleCustomInputImmediate = handleCustomInputImmediate;
             window.handleFloatIdChange = handleFloatIdChange;
+            window.insertListEmoji = insertListEmoji;
+            window.addListEscape = addListEscape;
+            window.handleListEmojiInput = handleListEmojiInput;
 
             // Initialize sidebar after rendering
             // With a small timeout to ensure DOM is ready

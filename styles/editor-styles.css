@@ -702,6 +702,49 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
     background: var(--primary-color-hover);
 }
 
+.config-emoji-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+.emoji-quick-button {
+    padding: 8px 12px;
+    background: var(--bg-light);
+    color: var(--text-color);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.emoji-quick-button:hover {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.emoji-escape-button {
+    padding: 6px 10px;
+    background: var(--bg-highlight);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 11px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    font-weight: 500;
+}
+
+.emoji-escape-button:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary-color);
+}
+
 .config-preview {
     margin-top: 12px;
     padding: 8px;
