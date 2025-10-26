@@ -957,7 +957,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
     // Process the special list continuation text placeholders
     finalHtml = finalHtml.replace(/START_OF_LIST_CONTINUES_TEXT_(.*?)_TEXT_CONTINUES_LIST_OF_START/g, (match, text) => {
-        return `<p style=" margin-left: -16px">··· <span style="font-size: smaller;margin-left: 5px;">${text}</span></p>`;
+        return `<p style=" margin-left: -16px">··· ${text ? `<span style="font-size: smaller;margin-left: 5px;">[ ${text} ]</span>` : ''}</p>`;
     });
 
     // Restore inline codes

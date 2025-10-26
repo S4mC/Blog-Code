@@ -558,10 +558,13 @@ select {
     padding-left: var(--spacing-xl);
 }
 
+.entry-content .content-connector li {
+    min-width: max-content;
+}
+
 .entry-content li {
     color: inherit;
     margin-top: 5px;
-    min-width: min-content;
 }
 
 .entry-content a {
@@ -691,7 +694,8 @@ blockquote h6 {
     margin: 0;
     &.folded {
         max-height: 125px !important;
-        overflow: hidden;
+        overflow-y: hidden;
+        overflow-x: auto;
         &::after {
             pointer-events: none;
             content: "...";
