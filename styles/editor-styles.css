@@ -496,8 +496,8 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 /* Configuration Assistant Styles */
 .config-assistant {
     position: fixed;
-    left: 20px;
-    bottom: 60px;
+    left: 10px;
+    bottom: 35px;
     width: 320px;
     max-height: 400px;
     background: var(--bg);
