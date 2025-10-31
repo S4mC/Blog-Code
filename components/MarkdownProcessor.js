@@ -136,12 +136,14 @@ function processInlineCodeBlocks(text, inlineCodeBlocks, noPlaceHolder = false) 
 
 function processCodeBlocksAndTitlesAndBR(text) {
     let blockCount = 0;
-    let inCodeBlock = false;
+    let inCodeBlock = 0; // 0 = false, 1 or higher = true (to support nested code blocks if needed)
     let currentLanguage = "";
     let currentCode = [];
     let sidebarContent = [];
     let protectedContent = [];
     let codeBlocks = new Map();
+
+    let insideCustomBlock = false; // To handle custom blocks that need to be preserved (no marked) like :::svg or :::animation
 
     let lineForBR = 0;
 
@@ -151,7 +153,7 @@ function processCodeBlocksAndTitlesAndBR(text) {
         line = line.replace(/\t/g, "    "); // Remove tabs if present for avoiding issues
         let trimmedLine = line.trim();
 
-        if (!inCodeBlock && trimmedLine === "") { // Add <br> for multiple line breaks outside code blocks
+        if (inCodeBlock === 0 && trimmedLine === "") { // Add <br> for multiple line breaks outside code blocks
             lineForBR++;
             if (lineForBR > 1) {
                 protectedContent.push(line + "<br>");
@@ -160,18 +162,39 @@ function processCodeBlocksAndTitlesAndBR(text) {
             lineForBR = 0;
         }
 
-        if (trimmedLine.startsWith("```")) {
-            if (!inCodeBlock) {
+        if (trimmedLine.startsWith(":::svg") || trimmedLine.startsWith(":::animation")) {
+            insideCustomBlock = true;
+        }
+
+        if (trimmedLine.startsWith("```") || (insideCustomBlock && trimmedLine.startsWith(":::"))) {
+            let language = trimmedLine.slice(3).trim();
+            let shouldContinue = false; // To avoid pushing the ``` line to currentCode
+
+            if (inCodeBlock === 0) { // If starting a new code block
                 // Start of code block
-                inCodeBlock = true;
-                currentLanguage = trimmedLine.slice(3).trim();
+                shouldContinue = true;
+
+                currentLanguage = language;
+                if (insideCustomBlock) {
+                    currentLanguage = "custom-block-block-custom-" + language; // To avoid conflicts with normal code blocks
+                }
                 currentCode = [];
+            }
+
+            if (language === "") {
+                inCodeBlock--;
             } else {
+                inCodeBlock++;
+            }
+
+            console.log(inCodeBlock);
+
+            if (inCodeBlock === 0) {
                 // End of code block
-                inCodeBlock = false;
+                shouldContinue = true;
+                insideCustomBlock = false;
 
                 let spaceTitle = line.match(/^\s*/)[0];
-
                 // Check if all lines have common leading whitespace and remove it if they do
                 let processedCode = currentCode;
                 if (currentCode.length > 0) {
@@ -216,10 +239,13 @@ function processCodeBlocksAndTitlesAndBR(text) {
                 });
                 protectedContent.push(spaceTitle + placeholder);
             }
-            continue;
+
+            if (shouldContinue) {
+                continue;
+            }
         }
 
-        if (inCodeBlock) {
+        if (inCodeBlock > 0) {
             currentCode.push(line);
         } else {
             // We use lineTrim because in quotes the > avoid correct detection of headers
@@ -249,6 +275,8 @@ function processCodeBlocksAndTitlesAndBR(text) {
             }
         }
     }
+
+    console.log(codeBlocks);
 
     return [protectedContent.join("\n"), codeBlocks, sidebarContent];
 }
@@ -975,7 +1003,8 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
     let numberLottieContainer = 1;
     for (const [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
-        if (language.startsWith("svg")) { // Manages SVG custom code blocks
+        console.log("Processing code block with language:", language);
+        if (language.startsWith("custom-block-block-custom-svg")) { // Manages SVG custom code blocks
             let attributes = obtainAttributes(language);
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
@@ -991,7 +1020,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             finalJS += `(${setupSVGZoom.toString()})(${numberSVGcontainer});`;
             numberSVGcontainer += 1;
 
-        } else if (language.startsWith("animation")) {
+        } else if (language.startsWith("custom-block-block-custom-animation")) {
             let attributes = obtainAttributes(language);
             let config = language.split(" ");
 

@@ -5239,7 +5239,7 @@
                                                 <hr style="border-bottom: 1px solid var(--border);border-top: none;border-inline: none;"/>
                                                 <button
                                                     onClick=${(e) => {
-                                                        insertText("\n```\n    ", "\n```\n");
+                                                        insertText("\n```language\n    ", "\n```\n");
                                                         e.currentTarget.parentElement.style.display =
                                                             "none";
                                                     }}
@@ -5437,8 +5437,8 @@
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    '\n```svg style="height:15em;"\n\t',
-                                                    "\n```\n"
+                                                    '\n:::svg style="height:15em;"\n\t',
+                                                    "\n:::\n"
                                                 )}
                                             title="SVG Container"
                                         >
@@ -5461,8 +5461,8 @@
                                         <button
                                             onClick=${() =>
                                                 insertText(
-                                                    "\n```animation\n\tpublic/bodymovin.json",
-                                                    "\n```\n"
+                                                    "\n:::animation\n\tpublic/bodymovin.json",
+                                                    "\n:::\n"
                                                 )}
                                             title="Animation Container"
                                         >
@@ -6291,8 +6291,8 @@
                 const iframeMatch = lineContent.match(/^(\s*):::iframe/);
                 const connectorMatch = lineContent.match(/^(\s*):::connector/);
                 const floatMatch = lineContent.match(/^(\s*):::float-/);
-                const animationMatch = lineContent.match(/^(\s*)```animation/);
-                const svgMatch = lineContent.match(/^(\s*)```svg/);
+                const animationMatch = lineContent.match(/^(\s*):::animation/);
+                const svgMatch = lineContent.match(/^(\s*):::svg/);
                 const blockCodeMatch = lineContent.match(/^(\s*)```([^ ]+)/);
                 const numberedListMatch = lineContent.match(/^(\s*)(\d+)\.(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su);
                 const bulletListMatch = lineContent.match(/^(\s*)(-|\*)(\s+)(\\?[\p{Emoji}\p{Emoji_Presentation}])?(\s*)(.*)$/su);
@@ -6589,7 +6589,6 @@
                 }
 
                 // Extract options from a line like ":::grid cols-2 gap-4 responsive style="background: red" additional title"
-                // or "```animation-loop-autoplay style="height:15em;" title"
                 let match;
                 let restOfLine = "";
 
@@ -6601,7 +6600,7 @@
                     if (!match) return { options: [], remainingText: "" };
                     restOfLine = match[3].trim();
                 } else if (currentLine.trim().startsWith("```")) {
-                    // For blocks that start with ``` (animation, svg, etc)
+                    // For blocks that start with ```
                     const blockRegex = /^(\s*)```([a-z-]+)(.*)$/;
                     match = currentLine.match(blockRegex);
 
@@ -6823,9 +6822,7 @@
 
                 // Determine the correct prefix based on the block type
                 let blockStart;
-                if (currentBlockType === "animation" || currentBlockType === "svg") {
-                    blockStart = spacesStartPreview + `\`\`\`${currentBlockType}`;
-                } else if (currentBlockType === "code block") {
+                if (currentBlockType === "code block") {
                     blockStart = spacesStartPreview + preview.textContent.trim().split(" ")[0]; // Keep existing code block type
                 } else {
                     blockStart = spacesStartPreview + `:::${currentBlockType}`;
