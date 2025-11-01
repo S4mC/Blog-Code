@@ -21,6 +21,47 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
+// Helper function to remove common leading whitespace from an array of lines
+function removeCommonIndentation(lines, spaceTitle = "") {
+    // Filter out empty lines to find the minimum indentation
+    const nonEmptyLines = lines.filter((line) => line.trim() !== "");
+
+    if (lines.length === 0) return lines;
+
+
+    if (nonEmptyLines.length === 0) return lines;
+    
+    // Find the minimum leading whitespace (spaces or tabs)
+    let minIndentation = 4 + spaceTitle.length;
+
+    for (const line of nonEmptyLines) {
+        let indentation = 0;
+        for (let i = 0; i < line.length; i++) {
+            if (line[i] === " ") {
+                indentation++;
+            } else {
+                break;
+            }
+        }
+        minIndentation = Math.min(minIndentation, indentation);
+    }
+
+    // If there's common indentation, remove it from all lines
+    if (minIndentation > 0 && minIndentation !== Infinity) {
+        return lines.map((line) => {
+            if (line.trim() === "") {
+                // Empty lines get 4 spaces to maintain structure
+                return "    " + spaceTitle;
+            } else {
+                // Remove the common indentation
+                return line.substring(minIndentation);
+            }
+        });
+    }
+
+    return lines;
+}
+
 function processBalancedDelimiters(text, config) {
     let result = text;
     const { findPattern, openChar, closeChar, processMatch, shouldProcess = () => true } = config;
@@ -187,8 +228,6 @@ function processCodeBlocksAndTitlesAndBR(text) {
                 inCodeBlock++;
             }
 
-            console.log(inCodeBlock);
-
             if (inCodeBlock === 0) {
                 // End of code block
                 shouldContinue = true;
@@ -196,41 +235,7 @@ function processCodeBlocksAndTitlesAndBR(text) {
 
                 let spaceTitle = line.match(/^\s*/)[0];
                 // Check if all lines have common leading whitespace and remove it if they do
-                let processedCode = currentCode;
-                if (currentCode.length > 0) {
-                    // Filter out empty lines to find the minimum indentation
-                    const nonEmptyLines = currentCode.filter((line) => line.trim() !== "");
-
-                    if (nonEmptyLines.length > 0) {
-                        // Find the minimum leading whitespace (spaces or tabs)
-                        let minIndentation = 4 + spaceTitle.length;
-
-                        for (const line of nonEmptyLines) {
-                            let indentation = 0;
-                            for (let i = 0; i < line.length; i++) {
-                                if (line[i] === " ") {
-                                    indentation++;
-                                } else {
-                                    break;
-                                }
-                            }
-                            minIndentation = Math.min(minIndentation, indentation);
-                        }
-
-                        // If there's common indentation, remove it from all lines
-                        if (minIndentation > 0 && minIndentation !== Infinity) {
-                            processedCode = currentCode.map((line) => {
-                                if (line.trim() === "") {
-                                    // Keep empty lines as they are
-                                    return line;
-                                } else {
-                                    // Remove the common indentation
-                                    return line.substring(minIndentation);
-                                }
-                            });
-                        }
-                    }
-                }
+                let processedCode = removeCommonIndentation(currentCode, spaceTitle);
 
                 const placeholder = `CODE_BLOCK_${blockCount++}_BLOCK_CODE`;
                 codeBlocks.set(placeholder, {
@@ -276,52 +281,10 @@ function processCodeBlocksAndTitlesAndBR(text) {
         }
     }
 
-    console.log(codeBlocks);
-
     return [protectedContent.join("\n"), codeBlocks, sidebarContent];
 }
 
 function processMarkdownBlocks(markdownContent) {
-    // Helper function to remove common leading whitespace from an array of lines
-    function removeCommonIndentation(lines) {
-        if (lines.length === 0) return lines;
-
-        // Filter out empty lines to find the minimum indentation
-        const nonEmptyLines = lines.filter((line) => line.trim() !== "");
-
-        if (nonEmptyLines.length === 0) return lines;
-
-        // Find the minimum leading whitespace (spaces or tabs)
-        let minIndentation = 4;
-
-        for (const line of nonEmptyLines) {
-            let indentation = 0;
-            for (let i = 0; i < line.length; i++) {
-                if (line[i] === " ") {
-                    indentation++;
-                } else {
-                    break;
-                }
-            }
-            minIndentation = Math.min(minIndentation, indentation);
-        }
-
-        // If there's common indentation, remove it from all lines
-        if (minIndentation > 0 && minIndentation !== Infinity) {
-            return lines.map((line) => {
-                if (line.trim() === "") {
-                    // Empty lines get 4 spaces to maintain structure
-                    return "    ";
-                } else {
-                    // Remove the common indentation
-                    return line.substring(minIndentation);
-                }
-            });
-        }
-
-        return lines;
-    }
-
     // Process the content line by line
     const lines = markdownContent.split("\n");
     let processedLines = [];
@@ -597,7 +560,7 @@ function processMarkdownBlocks(markdownContent) {
                 spaceTitle +
                     `<details${openDefault ? " open" : ""}>
                             <summary><p>${nameSummary}</p></summary>
-                            <div class="content-wrapper-details">
+                            <div class="content-wrapper-details${openDefault ? " opening" : ""}">
                                 <div class="contentDetails">`
             );
 
@@ -688,7 +651,8 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
     // Configure the custom renderer for code blocks to prevent auto-generation
     renderer.code = (element) => {
-        return `<p>${element.raw}</p>`;
+        let lines = removeCommonIndentation(element.raw.split("\n"));
+        return marked.parse(lines.join("\n"));
     };
 
     // Configure the custom renderer for lists to allow icons in list items
@@ -963,6 +927,9 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
     const processedWithIframes = processMarkdownBlocks(processedMarkdown);
     processedMarkdown = processedWithIframes;
 
+    // Avoid errors in html elemts
+    processedMarkdown = processedMarkdown.replace(/>\n/g, ">\n\n");
+
     marked.setOptions({
         breaks: true,
         gfm: true,
@@ -1003,7 +970,6 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
     let numberLottieContainer = 1;
     for (const [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
-        console.log("Processing code block with language:", language);
         if (language.startsWith("custom-block-block-custom-svg")) { // Manages SVG custom code blocks
             let attributes = obtainAttributes(language);
             codeHtml = `<div
@@ -1977,12 +1943,12 @@ function setupCustomScrollLinks() {
 }
 
 function setupDetailsAnimation() {
-    // Remover listener anterior del documento si existe
+    // Remove previous listener from document if it exists
     if (window.detailsClickHandler) {
         document.removeEventListener("click", window.detailsClickHandler);
     }
 
-    // Crear el handler
+    // Create the handler
     window.detailsClickHandler = function (e) {
         const details = e.target.closest("details");
         if (!details) return;
@@ -2020,14 +1986,8 @@ function setupDetailsAnimation() {
         }
     };
 
-    // Agregar un solo listener al documento
+    // Add a single listener to the document
     document.addEventListener("click", window.detailsClickHandler);
-
-    // Inicializar estado de contenido ya abierto
-    document.querySelectorAll("details[open]").forEach((details) => {
-        const contentWrapper = details.querySelector(".content-wrapper-details");
-        contentWrapper.classList.add("opening");
-    });
 }
 
 function setupFloatingElements() {
@@ -2239,7 +2199,7 @@ export function executeEntryContentScripts() {
                 // Replace the old <script> with the new one (this triggers execution)
                 oldScript.parentNode.replaceChild(newScript, oldScript);
             } catch (err) {
-                console.log("Error executing script:", err, oldScript);
+                console.error("Error executing script:", err, oldScript);
             }
         });
     }
