@@ -6764,7 +6764,7 @@
                 // Click outside to close
                 document.addEventListener("click", (e) => {
                     // If clicking inside the editor but outside the config assistant hide it
-                    if (e.target.className.includes("view-line")) {
+                    if (e.target?.className?.toString?.().includes("view-line")) {
                         const assistant = document.getElementById("config-assistant");
                         if (assistant && !assistant.classList.contains("hidden")) {
                             hideConfigAssistant();

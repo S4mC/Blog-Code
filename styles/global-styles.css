@@ -1248,6 +1248,7 @@ blockquote h6 {
     height: 100%;
     position: relative;
     border-radius: 10px;
+    background-color: var(--bg-highlight);
 }
 
 .SVG-viewer svg {
