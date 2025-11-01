@@ -39,9 +39,9 @@ ${n}</${t}>
                 ${s.includes("style=")?s.replace('style="',`style="height: auto; aspect-ratio: ${a};`):s+` style="height: auto; aspect-ratio: ${a};"`}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0; z-index: 1;">
-                <svg id="zoom-in${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
-                <svg id="zoom-out${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
-                <svg id="reset_zoom${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
+                <svg id="zoom-in${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
+                <svg id="zoom-out${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
+                <svg id="reset_zoom${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
             </button>${t.replace("<svg ",`<svg id='page${o}'`)}</div>
             `,i+=`(${setupSVGZoom.toString()})(${o});`,o+=1}else if(e.startsWith("custom-block-block-custom-animation")){let s=obtainAttributes(e),o=e.split(" ");const a=t.trim();n=`<div class="animation-wrapper">
                 <div

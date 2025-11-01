@@ -267,21 +267,26 @@
                 useEffect(() => {
                     updateTabContent(window.activeTabId, markdown);
                     if (showPreview) {
-                        scrollDataRef.current.isUpdating = true;
-                        let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, !CONFIG.security.onlyMarkdown);
-                        setPreview(finalHtml);
-
-                        setTimeout(() => {
-                            initSidebar(sidebarContent);
-                            if (finalJS) eval(finalJS);
-                            if (window.Prism) window.Prism.highlightAll();
+                        if (window.previewTimeout) {
+                            clearTimeout(window.previewTimeout);
+                        }
+                        window.previewTimeout = setTimeout(() => {
+                            scrollDataRef.current.isUpdating = true;
+                            let [finalHtml, sidebarContent, finalJS] = renderMarkdown(markdown, !CONFIG.security.onlyMarkdown);
+                            setPreview(finalHtml);
 
                             setTimeout(() => {
-                                restoreScrollPosition();
-                                setupScrollListener();
-                                scrollDataRef.current.isUpdating = false;
-                            }, 50);
-                        }, 100);
+                                initSidebar(sidebarContent);
+                                if (finalJS) eval(finalJS);
+                                if (window.Prism) window.Prism.highlightAll();
+
+                                setTimeout(() => {
+                                    restoreScrollPosition();
+                                    setupScrollListener();
+                                    scrollDataRef.current.isUpdating = false;
+                                }, 50);
+                            }, 100);
+                        }, 200);
                     }
                 }, [showPreview, markdown]);
 
@@ -6275,15 +6280,15 @@
             };
 
             function checkForConfigurableBlock(position) {
-                const editor = window.currentEditor;
-                if (!editor) return;
-                
                 // Prevent multiple triggers on the same line
                 if (window.lineNumberBeingConfigured === position.lineNumber) {
                     return;
                 } else {
                     window.lineNumberBeingConfigured = position.lineNumber;
                 }
+
+                const editor = window.currentEditor;
+                if (!editor) return;
 
                 const model = editor.getModel();
                 const lineContent = model.getLineContent(position.lineNumber).trim();
