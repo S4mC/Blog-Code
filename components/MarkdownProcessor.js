@@ -978,10 +978,29 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         let codeHtml = "";
         if (language.startsWith("custom-block-block-custom-svg")) { // Manages SVG custom code blocks
             let attributes = obtainAttributes(language);
+
+            let aspectRatio = 1;
+            if (code.includes("<svg")) {
+                // Calculate aspect ratio from the SVG code
+
+                let parser = new DOMParser();
+                let svgDoc = parser.parseFromString(code, "image/svg+xml");
+                let rectElement = svgDoc.querySelector("svg>rect");
+                if (rectElement) {
+                    // Get the dimensions of the rect
+                    let rectWidth = rectElement.getAttribute("width") || rectElement.width.baseVal.value;
+                    const rectHeight = rectElement.getAttribute("height") || rectElement.height.baseVal.value;
+
+                    // Calculate the ratio (width/height)
+                    aspectRatio = rectWidth / rectHeight;
+                }
+
+            }
+
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
                 class="SVG-viewer"
-                ${attributes}
+                ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0; z-index: 1;">
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
@@ -1038,10 +1057,6 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
         // Replace the placeholder with the code block, handling possible <br> before/after
         const regex = new RegExp(`${placeholder}(\\s*<br>)?`, "g");
         finalHtml = finalHtml.replace(regex, codeHtml);
-    }
-
-    if (numberSVGcontainer > 1) {
-        finalJS += `(${centerAllSVGViewers.toString()})();`;
     }
 
     // Custom scroll code for internal links - works on all pages
@@ -1242,8 +1257,6 @@ function setupSVGZoom(numberSVGcontainer) {
                     // Apply proportional height with limit of 80vh
                     const finalHeight = Math.min(proportionalHeight, maxHeight);
                     viewer.style.height = finalHeight + "px";
-
-                    window[`zoomContainer${numberSVGcontainer}`].resize();
                 }
             }
         }
@@ -1276,6 +1289,8 @@ function setupSVGZoom(numberSVGcontainer) {
 
         proper_height();
 
+        window[`zoomContainer${numberSVGcontainer}`].resize(); // Notify the zoom container of the size change
+
         // Button listeners
         document.getElementById(`zoom-in${numberSVGcontainer}`).addEventListener("click", function (ev) {
             ev.preventDefault();
@@ -1292,9 +1307,6 @@ function setupSVGZoom(numberSVGcontainer) {
         function center_svg() {
             const zoomContainer = window[`zoomContainer${numberSVGcontainer}`];
             rectElement = viewer.querySelector("svg>g>rect");
-
-            
-            console.log("Centering SVG:", window[`zoomContainer${numberSVGcontainer}`]);
 
             if (zoomContainer && rectElement) {
                 zoomContainer.zoom(1);
@@ -1451,38 +1463,6 @@ function setupLottieAnimation(numberLottieContainer, config, animationPath) {
             });
         }
     }, 50);
-}
-
-function centerAllSVGViewers() {
-    //Center SVG inside SVG-viewer
-    document.querySelectorAll(".SVG-viewer").forEach((viewer) => {
-        const viewerId = viewer.id;
-        const containerNumber = viewerId.replace("SVGiewer", "");
-        const zoomContainer = window[`zoomContainer${containerNumber}`];
-
-        if (zoomContainer) {
-            const rectElement = viewer.querySelector("svg>g>rect");
-
-            if (rectElement) {
-                zoomContainer.zoom(1);
-                zoomContainer.pan({
-                    x:
-                        (viewer.offsetWidth -
-                            zoomContainer.getSizes().viewBox.width * zoomContainer.getSizes().realZoom) /
-                        2,
-                    y:
-                        (viewer.offsetHeight -
-                            zoomContainer.getSizes().viewBox.height *
-                                zoomContainer.getSizes().realZoom) /
-                        2,
-                });
-            } else {
-                zoomContainer.resetZoom();
-                zoomContainer.fit();
-                zoomContainer.center();
-            }
-        }
-    });
 }
 
 function setupCustomScrollLinks() {

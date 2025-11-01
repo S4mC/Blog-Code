@@ -1252,6 +1252,7 @@ blockquote h6 {
 }
 
 .SVG-viewer svg {
+    display: block;
     width: inherit;
     height: 100% !important;
 }

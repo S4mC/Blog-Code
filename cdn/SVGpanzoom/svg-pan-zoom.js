@@ -1245,8 +1245,6 @@
                  * @return {Float} zoom scale
                  */
                 SvgPanZoom.prototype.computeFromRelativeZoom = function (zoom) {
-                    console.log("Computing from relative zoom:", zoom);
-                    console.log(this.viewport.getOriginalState());
                     return zoom * this.viewport.getOriginalState().zoom;
                 };
 
