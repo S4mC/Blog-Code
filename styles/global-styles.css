@@ -1273,6 +1273,12 @@ details {
     position: relative;
 }
 
+details.compact {
+    border-radius: 6px;
+    border: none;
+    margin: 0.2rem 0;
+}
+
 details:hover {
     border-color: var(--details-hover-border);
     transform: translateY(-2px);
@@ -1301,6 +1307,14 @@ summary {
     align-items: center;
     position: relative;
     outline: none;
+}
+
+summary.compact {
+    padding: 5px 0 5px 15px;
+}
+
+details[open] summary {
+    background: var(--bg-highlight);
 }
 
 summary:hover {
@@ -1345,6 +1359,7 @@ summary::-webkit-details-marker {
     border-top: 1px solid var(--details-content-border);
     transform: translateY(-10px);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: var(--bg-light);
 }
 
 .content-wrapper-details.opening .contentDetails {

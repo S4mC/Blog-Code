@@ -14,12 +14,12 @@ function obtainAttributes(e){const s=/(\w+)="([^"]+)"/g;let t,n="";for(;(t=s.exe
 `)),r=[]),d=!0;else if(e===""&&!d)continue;else!d&&e!==""&&(d=!0),d&&r.push(n)}if(r.length>0&&l.push(r.join(`
 `)),l.length===0){const e=u.join(`
 `).split(/\n\s*\n/);l.push(...e.filter(e=>e.trim()))}l.forEach((n)=>{const i=s.includes("equal-height")?"grid-item equal-height":"grid-item";t.push(`${e}<div class="${i}">`);const a=processMarkdownBlocks(n.trim());t.push(e);for(const n of a.split(`
-`))t.push(e+n);t.push(e),t.push(e+"</div>")}),o=m,t.push(e+"</div>")}else if(i.startsWith(":::details")){let s=i.replace(":::details","").trim(),a=!1;s.startsWith("-open ")&&(s=s.replace("-open ",""),a=!0),t.push(e+`<details${a?" open":""}>
-                            <summary><p>${s}</p></summary>
+`))t.push(e+n);t.push(e),t.push(e+"</div>")}),o=m,t.push(e+"</div>")}else if(i.startsWith(":::details")){let s=i.replace(":::details","").trim(),a=!1;s.includes("-open ")&&(s=s.replace("-open ",""),a=!0);let r=!1;s.includes("-compact ")&&(s=s.replace("-compact ",""),r=!0),t.push(e+`<details${r?" class='compact'":""}${a?" open":""}>
+                            <summary${r?" class='compact'":""}><p>${s}</p></summary>
                             <div class="content-wrapper-details${a?" opening":""}">
-                                <div class="contentDetails">`);const[r,c]=n(o+1),l=processMarkdownBlocks(r.join(`
-`));t.push(e);for(const e of l.split(`
-`))t.push(e);t.push(e),o=c,t.push(e+"</div> </div> </details>"),t.push(e)}else if(i.startsWith(":::iframe")){let s=obtainAttributes(a);const[i,r]=n(o+1),c=i.join("").trim();o=r;const l=`<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <div class="contentDetails">`);const[c,l]=n(o+1),d=processMarkdownBlocks(c.join(`
+`));t.push(e);for(const e of d.split(`
+`))t.push(e);t.push(e),o=l,t.push(e+"</div> </div> </details>"),t.push(e)}else if(i.startsWith(":::iframe")){let s=obtainAttributes(a);const[i,r]=n(o+1),c=i.join("").trim();o=r;const l=`<svg width="16" height="16" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path fill="currentColor" d="M3 21v-5h2v3h3v2zm13 0v-2h3v-3h2v5zM3 8V3h5v2H5v3zm16 0V5h-3V3h5v5z"/>
                         </svg>`,d=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M3 3L13 13M3 13V7M3 13H9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

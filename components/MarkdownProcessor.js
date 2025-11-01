@@ -551,15 +551,21 @@ function processMarkdownBlocks(markdownContent) {
 
         } else if (trimmedLine.startsWith(":::details")) {
             let nameSummary = trimmedLine.replace(":::details", "").trim();
+
             let openDefault = false;
-            if (nameSummary.startsWith("-open ")) {
+            if (nameSummary.includes("-open ")) {
                 nameSummary = nameSummary.replace("-open ", "");
                 openDefault = true;
             }
+            let compactMode = false;
+            if (nameSummary.includes("-compact ")) {
+                nameSummary = nameSummary.replace("-compact ", "");
+                compactMode = true;
+            }
             processedLines.push(
                 spaceTitle +
-                    `<details${openDefault ? " open" : ""}>
-                            <summary><p>${nameSummary}</p></summary>
+                    `<details${compactMode ? " class='compact'" : ""}${openDefault ? " open" : ""}>
+                            <summary${compactMode ? " class='compact'" : ""}><p>${nameSummary}</p></summary>
                             <div class="content-wrapper-details${openDefault ? " opening" : ""}">
                                 <div class="contentDetails">`
             );
