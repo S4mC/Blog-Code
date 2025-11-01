@@ -6277,6 +6277,13 @@
             function checkForConfigurableBlock(position) {
                 const editor = window.currentEditor;
                 if (!editor) return;
+                
+                // Prevent multiple triggers on the same line
+                if (window.lineNumberBeingConfigured === position.lineNumber) {
+                    return;
+                } else {
+                    window.lineNumberBeingConfigured = position.lineNumber;
+                }
 
                 const model = editor.getModel();
                 const lineContent = model.getLineContent(position.lineNumber).trim();
@@ -6323,6 +6330,11 @@
                     blockType = "bullet list";
                 }
 
+                const assistant = document.getElementById("config-assistant");
+                if (assistant && !assistant.classList.contains("hidden")) {
+                    hideConfigAssistant();
+                }
+
                 if (blockType) {
                     currentBlockType = blockType;
                     currentLineNumber = position.lineNumber;
@@ -6332,12 +6344,6 @@
                     currentBlockType = null;
                     currentLineNumber = null;
                     hideConfigButton();
-
-                    // Also close the assistant if it's open
-                    const assistant = document.getElementById("config-assistant");
-                    if (assistant && !assistant.classList.contains("hidden")) {
-                        hideConfigAssistant();
-                    }
                 }
             }
 
@@ -6366,19 +6372,25 @@
                 content.innerHTML = generateConfigContent(config, currentLine);
 
                 assistant.classList.remove("hidden");
-                hideConfigButton(); // Ocultar el botón cuando se abre el panel
+                hideConfigButton(); // Hide the button when the panel is opened
             }
 
-            function hideConfigAssistant() {
+            function hideConfigAssistant(restoreOriginal = true) {
+
+                if (restoreOriginal) {
+                    // Restore original line if requested
+                    applyConfiguration(false, true);
+                }
+
                 const assistant = document.getElementById("config-assistant");
                 assistant.classList.add("hidden");
 
-                // Si hay un bloque configurable en la línea actual, mostrar el botón de nuevo
-                // Solo si currentBlockType existe
+                // If there is a configurable block on the current line, show the button again
+                // Only if currentBlockType exists
                 if (currentBlockType && currentLineNumber) {
                     showConfigButton(currentBlockType);
                 }
-                // Si no hay bloque configurable, limpiar estado completamente
+                // If there is no configurable block, clear state completely
                 else {
                     currentBlockType = null;
                     currentLineNumber = null;
@@ -6388,6 +6400,8 @@
 
             function generateConfigContent(config, currentLine) {
                 let html = "";
+
+                window.originalLine = currentLine;
 
                 // Parse current line to extract existing configurations
                 const parsed = parseExistingOptions(currentLine);
@@ -6746,6 +6760,17 @@
                         hideConfigAssistant();
                     }
                 });
+
+                // Click outside to close
+                document.addEventListener("click", (e) => {
+                    // If clicking inside the editor but outside the config assistant hide it
+                    if (e.target.className.includes("view-line")) {
+                        const assistant = document.getElementById("config-assistant");
+                        if (assistant && !assistant.classList.contains("hidden")) {
+                            hideConfigAssistant();
+                        }
+                    }
+                });
             }
 
             function toggleConfigOption(optionElement) {
@@ -6858,16 +6883,28 @@
                 if (preview) {
                     preview.textContent = newLine;
                 }
+
+                // Show updated markdown preview
+                applyConfiguration(true);
             }
 
-            function applyConfiguration() {
+            function applyConfiguration(onlyPreview = false, restoreOriginal = false) {
+
+                if (currentBlockType === "float" && (onlyPreview || restoreOriginal)) {
+                    // For float blocks, we not have a live preview in the editor until applied
+                    return;
+                }
+
                 if (!currentBlockType || !currentLineNumber) return;
 
                 const editor = window.currentEditor;
                 if (!editor) return;
 
                 const preview = document.getElementById("config-preview");
-                const newLine = preview.textContent;
+                let newLine = preview.textContent;
+                if (restoreOriginal) {
+                    newLine = window.originalLine;
+                }
 
                 const model = editor.getModel();
 
@@ -6917,7 +6954,7 @@
                             }
                         }
                     }
-                    hideConfigAssistant();
+                    hideConfigAssistant(false);
                     editor.focus();
                     return;
                 }
@@ -6937,14 +6974,13 @@
                     },
                 ]);
 
-                // Close assistant only, but keep button visible
-                hideConfigAssistant();
+                if (!onlyPreview && !restoreOriginal) {
+                    // Close assistant only, but keep button visible
+                    hideConfigAssistant(false);
 
-                // Keep configurable block state
-                // Don't clear currentBlockType and currentLineNumber
-
-                // Focus back to editor
-                editor.focus();
+                    // Focus back to editor
+                    editor.focus();
+                }
             }
 
             // Debounce timer and processing flag for input handling
