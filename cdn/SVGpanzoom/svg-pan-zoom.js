@@ -1441,7 +1441,7 @@
                                 y: evt.touches[1].clientY
                             };
                             
-                            // We transform screen points to SVG coordinates
+                            // transform screen points to SVG coordinates
                             var touch1Screen = SvgUtils.createSVGPoint(
                                 this.svg,
                                 evt.touches[0].clientX,
@@ -1454,11 +1454,11 @@
                                 evt.touches[1].clientY
                             );
                             
-                            // We transform screen points to SVG coordinates
+                            // transform screen points to SVG coordinates
                             this.initialCorner1 = touch1Screen.matrixTransform(this.svg.getScreenCTM().inverse());
                             this.initialCorner2 = touch2Screen.matrixTransform(this.svg.getScreenCTM().inverse());
                             
-                            // We save the initial CTM for reference
+                            // save the initial CTM for reference
                             this.initialPinchCTM = this.viewport.getCTM();
                             
                             // Save values ​​for the pan (scroll)
@@ -1469,16 +1469,25 @@
                         }
                         
                         if (this.pinchStartDistance > 0 && currentDistance > 0) {
-                            // We calculate the new scale factor based on the distance between the fingers
+                            // calculate the new scale factor based on the distance between the fingers
                             var zoomFactor = currentDistance / this.pinchStartDistance;
+
+                            // Check if zoom factor exceeds limits (using originalState zoom as reference)
+                            var originalState = this.viewport.getOriginalState();
+                            var newZoom = this.getZoom() * zoomFactor;
+                            
+                            if (newZoom < this.options.minZoom * originalState.zoom || 
+                                newZoom > this.options.maxZoom * originalState.zoom) {
+                                zoomFactor = 1; // prevent zooming beyond limits
+                            }
                             
                             var currentMidpoint = this.getTouchMidpoint(evt.touches[0], evt.touches[1]);
                             
-                            // We calculate the change in the midpoint for panning
+                            // calculate the change in the midpoint for panning
                             var deltaX = currentMidpoint.x - this.pinchMidpoint.x;
                             var deltaY = currentMidpoint.y - this.pinchMidpoint.y;
                             
-                            // We apply panning first using the viewport
+                            // apply panning first using the viewport
                             if (this.options.panEnabled) {
                                 var viewportCTM = this.viewport.getCTM();
                                 viewportCTM.e += deltaX;
@@ -1486,7 +1495,7 @@
                                 this.viewport.setCTM(viewportCTM);
                             }
                             
-                            // We transform screen points to SVG coordinates to define the updated box
+                            // transform screen points to SVG coordinates to define the updated box
                             var touch1Screen = SvgUtils.createSVGPoint(
                                 this.svg,
                                 evt.touches[0].clientX,
@@ -1499,22 +1508,22 @@
                                 evt.touches[1].clientY
                             );
                             
-                            // We transform screen points to SVG coordinates
+                            // transform screen points to SVG coordinates
                             var currentCorner1 = touch1Screen.matrixTransform(this.svg.getScreenCTM().inverse());
                             var currentCorner2 = touch2Screen.matrixTransform(this.svg.getScreenCTM().inverse());
                             
-                            // We calculate the center of the box in SVG coordinates
+                            // calculate the center of the box in SVG coordinates
                             var boxCenterX = (currentCorner1.x + currentCorner2.x) / 2;
                             var boxCenterY = (currentCorner1.y + currentCorner2.y) / 2;
                             var boxCenterPoint = SvgUtils.createSVGPoint(this.svg, boxCenterX, boxCenterY);
                             
-                            // We apply zoom centered on the midpoint of the current box
+                            // apply zoom centered on the midpoint of the current box
                             var oldCTM = this.viewport.getCTM();
                             
-                            // We convert the center point to viewport-relative coordinates
+                            // convert the center point to viewport-relative coordinates
                             var relativePoint = boxCenterPoint.matrixTransform(oldCTM.inverse());
                             
-                            // We create the modifier matrix for the zoom
+                            // create the modifier matrix for the zoom
                             var modifier = this.svg.createSVGMatrix()
                                 .translate(relativePoint.x, relativePoint.y)
                                 .scale(zoomFactor)
@@ -1523,10 +1532,10 @@
                             // Apply zoom
                             var newCTM = oldCTM.multiply(modifier);
                             
-                            // We apply the new CTM to the viewport
+                            // apply the new CTM to the viewport
                             this.viewport.setCTM(newCTM);
                             
-                            // We update for the next cycle
+                            // update for the next cycle
                             this.pinchStartDistance = currentDistance;
                             this.pinchMidpoint = currentMidpoint;
                             this.firstEventCTM = this.viewport.getCTM();
