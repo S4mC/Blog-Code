@@ -711,6 +711,73 @@ function parseBlocksFlowChart(text) {
     return output.join('\n');
 }
 
+function parseTasksKanban(text) {
+    const lines = text.split(/\r?\n/);
+    const result = [];
+    let currentSection = null;
+    let buffer = [];
+
+    const priorityMap = {
+        4: "Very High",
+        3: "High",
+        2: "Low",
+        1: "Very Low",
+    };
+
+    for (let line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+
+        // New section
+        if (!line.startsWith(" ")) {
+        if (currentSection) result.push({ section: currentSection, tasks: buffer });
+        currentSection = trimmed;
+        buffer = [];
+        }
+        // New task
+        else if (!line.startsWith("        ")) {
+        buffer.push({ title: trimmed, details: [] });
+        }
+    }
+    if (currentSection) result.push({ section: currentSection, tasks: buffer });
+
+    // Construct the final text
+    return result.map((sec) => {
+        const tasks = sec.tasks.map((t) => {
+            let title = t.title;
+            let priority = "";
+            let ticket = undefined;
+            let assigned = undefined;
+
+            // Detect priority by "!"
+            const matchExcl = title.match(/^(!+)(.*)$/);
+            if (matchExcl) {
+                const count = matchExcl[1].length;
+                title = matchExcl[2].trim();
+                priority = priorityMap[Math.min(count, 4)];
+            }
+
+            // Detect (ticket, assigned)
+            const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
+            if (matchParen) {
+                ticket = matchParen[1].trim();
+                assigned = matchParen[2].trim();
+                title = title.replace(/\([^)]+\)$/, "").trim();
+            }
+
+            // Construct data object
+            const data = [];
+            if (ticket) data.push(`ticket: '${ticket}'`);
+            if (assigned) data.push(`assigned: '${assigned}'`);
+            if (priority) data.push(`priority: '${priority}'`);
+
+            return `    ${title} @{ ${data.join(", ")} }`;
+        }).join("\n");
+
+        return `${sec.section}\n${tasks}`;
+    }).join("\n\n");
+}
+
 export function renderMarkdown(markdownContent, executeScripts = true) {
     const renderer = new marked.Renderer();
 
@@ -1060,76 +1127,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 code = `---\nconfig:\n    look: handDrawn\n---\nflowchart TD\n` + code;
                 isMermaidDiagram = true;
             } else if (language.includes("-kanban")) {
-                function parseTasks(text) {
-                    const lines = text.split(/\r?\n/);
-                    const result = [];
-                    let currentSection = null;
-                    let buffer = [];
-
-                    const priorityMap = {
-                        4: "Very High",
-                        3: "High",
-                        2: "Low",
-                        1: "Very Low",
-                    };
-
-                    for (let line of lines) {
-                        const trimmed = line.trim();
-                        if (!trimmed) continue;
-
-                        // New section
-                        if (!line.startsWith(" ")) {
-                        if (currentSection) result.push({ section: currentSection, tasks: buffer });
-                        currentSection = trimmed;
-                        buffer = [];
-                        }
-                        // New task
-                        else if (!line.startsWith("        ")) {
-                        buffer.push({ title: trimmed, details: [] });
-                        }
-                    }
-                    if (currentSection) result.push({ section: currentSection, tasks: buffer });
-
-                    // Construct the final text
-                    return result
-                        .map((sec) => {
-                        const tasks = sec.tasks
-                            .map((t) => {
-                            let title = t.title;
-                            let priority = "";
-                            let ticket = undefined;
-                            let assigned = undefined;
-
-                            // Detect priority by "!"
-                            const matchExcl = title.match(/^(!+)(.*)$/);
-                            if (matchExcl) {
-                                const count = matchExcl[1].length;
-                                title = matchExcl[2].trim();
-                                priority = priorityMap[Math.min(count, 4)];
-                            }
-
-                            // Detect (ticket, assigned)
-                            const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
-                            if (matchParen) {
-                                ticket = matchParen[1].trim();
-                                assigned = matchParen[2].trim();
-                                title = title.replace(/\([^)]+\)$/, "").trim();
-                            }
-
-                            // Construct data object
-                            const data = [];
-                            if (ticket) data.push(`ticket: '${ticket}'`);
-                            if (assigned) data.push(`assigned: '${assigned}'`);
-                            if (priority) data.push(`priority: '${priority}'`);
-
-                            return `    ${title} @{ ${data.join(", ")} }`;
-                            })
-                            .join("\n");
-
-                    return `${sec.section}\n${tasks}`;
-                    }).join("\n\n");
-                }
-                code = `kanban\n` + parseTasks(code);
+                code = `kanban\n` + parseTasksKanban(code);
                 isMermaidDiagram = true;
             } else if (language.includes("-xychart")) {
                 let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(attributes.trim(), "").trim();
@@ -1149,18 +1147,27 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(attributes.trim(), "").trim();
                 code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
                 isMermaidDiagram = true;
-            } else if (code.includes("<svg")) {
+            } else if (language.includes("-mermaid")) {
+                isMermaidDiagram = true;
+            } else if (code.startsWith("<svg")) {
                 // Calculate aspect ratio from the SVG code
                 let parser = new DOMParser();
                 let svgDoc = parser.parseFromString(code, "image/svg+xml");
-                let rectElement = svgDoc.querySelector("svg>rect");
-                if (rectElement) {
-                    // Get the dimensions of the rect
-                    let rectWidth = rectElement.getAttribute("width") || rectElement.width.baseVal.value;
-                    const rectHeight = rectElement.getAttribute("height") || rectElement.height.baseVal.value;
+                let svgElement = svgDoc.querySelector("svg");
+                if (svgElement) {
+                    // Get the dimensions of the SVG
+                    const viewBox = svgElement.getAttribute("viewBox");
+                    if (viewBox) {
+                        const [minX, minY, width, height] = viewBox.split(" ").map(Number);
 
-                    // Calculate the ratio (width/height)
-                    aspectRatio = rectWidth / rectHeight;
+                        // Calculate the ratio (width/height)
+                        aspectRatio = width / height;
+
+                        svgElement.setAttribute("width", width);
+                        svgElement.setAttribute("height", height);
+
+                        code = svgElement.outerHTML;
+                    }
                 }
             }
 
@@ -1427,7 +1434,6 @@ function setupMermaidDiagram(numberSVGcontainer) {
             const diagramCode = diagramElement.textContent;
             
             mermaid.render(`mermaid-svg-${numberSVGcontainer}`, diagramCode).then(({ svg }) => {
-                console.log(svg);
                 // Replace the div content with the rendered SVG
                 const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
                 if (viewer) {
@@ -1467,42 +1473,39 @@ function setupSVGZoom(numberSVGcontainer) {
     if (document.getElementById(`page${numberSVGcontainer}`)) {
         window[`zoomContainer${numberSVGcontainer}`] = svgPanZoom(`#page${numberSVGcontainer}`);
 
-        let viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
-        let rectElement = viewer.querySelector("svg>g>rect");
-        let lastWidth = window.innerWidth;
+        function center_svg() {
+            // // Alternative centering method (maybe better for some SVGs but for now i dont view it as necessary)
+            // let viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
+            // const zoomContainer = window[`zoomContainer${numberSVGcontainer}`];
+            // let rectElement = viewer.querySelector("svg>g>rect");
 
-        function proper_height() {
-            if (viewer.classList.contains("custom-height")) {
-                return; // Skip if custom height is set
-            }
-            rectElement = viewer.querySelector("svg>g>rect");
-            if (rectElement) {
-                // Get the dimensions of the rect
-                const rectWidth = rectElement.getAttribute("width") || rectElement.width.baseVal.value;
-                const rectHeight =
-                    rectElement.getAttribute("height") || rectElement.height.baseVal.value;
+            // if (zoomContainer && rectElement) {
+            //     zoomContainer.zoom(1);
+            //     zoomContainer.pan({
+            //         x:
+            //             (viewer.offsetWidth -
+            //                 zoomContainer.getSizes().viewBox.width * zoomContainer.getSizes().realZoom) /
+            //             2,
+            //         y:
+            //             (viewer.offsetHeight -
+            //                 zoomContainer.getSizes().viewBox.height *
+            //                     zoomContainer.getSizes().realZoom) /
+            //             2,
+            //     });
+            // } else {
+            //     window[`zoomContainer${numberSVGcontainer}`].resetZoom();
+            //     window[`zoomContainer${numberSVGcontainer}`].fit();
+            //     window[`zoomContainer${numberSVGcontainer}`].center();
+            // }
 
-                // Calculate the ratio (height/width)
-                const aspectRatio = rectHeight / rectWidth;
-
-                // Get the current width of the SVG-viewer
-                const viewerWidth = viewer.offsetWidth;
-
-                if (viewerWidth > 0) {
-                    // Calculate the proportional height
-                    const proportionalHeight = viewerWidth * aspectRatio;
-
-                    // Calculate 80vh in pixels
-                    const maxHeight = window.innerHeight * 0.8;
-
-                    // Apply proportional height with limit of 80vh
-                    const finalHeight = Math.min(proportionalHeight, maxHeight);
-                    viewer.style.height = finalHeight + "px";
-                }
-            }
+            window[`zoomContainer${numberSVGcontainer}`].resetZoom();
+            window[`zoomContainer${numberSVGcontainer}`].fit();
+            window[`zoomContainer${numberSVGcontainer}`].center();
         }
 
+        let lastWidth = window.innerWidth;
         let resizeTimeout;
+
         window.addEventListener("resize", function () {
             const currentWidth = window.innerWidth;
 
@@ -1512,25 +1515,11 @@ function setupSVGZoom(numberSVGcontainer) {
 
                 clearTimeout(resizeTimeout);
                 resizeTimeout = setTimeout(function () {
-                    viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
-                    if (window[`zoomContainer${numberSVGcontainer}`]) {
-                        window[`zoomContainer${numberSVGcontainer}`].destroy();
-                    }
-                    proper_height();
-                    viewer.querySelectorAll(".svg-pan-zoom_viewport").forEach((viewport) => {
-                        viewport.replaceWith(...viewport.childNodes);
-                    });
-                    window[`zoomContainer${numberSVGcontainer}`] = svgPanZoom(
-                        `#page${numberSVGcontainer}`
-                    );
+                    window[`zoomContainer${numberSVGcontainer}`].resize(); // Notify the zoom container of the size change
                     center_svg();
                 }, 280);
             }
         });
-
-        proper_height();
-
-        window[`zoomContainer${numberSVGcontainer}`].resize(); // Notify the zoom container of the size change
 
         // Button listeners
         document.getElementById(`zoom-in${numberSVGcontainer}`).addEventListener("click", function (ev) {
@@ -1538,43 +1527,15 @@ function setupSVGZoom(numberSVGcontainer) {
             window[`zoomContainer${numberSVGcontainer}`].zoomIn();
         });
 
-        document
-            .getElementById(`zoom-out${numberSVGcontainer}`)
-            .addEventListener("click", function (ev) {
-                ev.preventDefault();
-                window[`zoomContainer${numberSVGcontainer}`].zoomOut();
-            });
+        document.getElementById(`zoom-out${numberSVGcontainer}`).addEventListener("click", function (ev) {
+            ev.preventDefault();
+            window[`zoomContainer${numberSVGcontainer}`].zoomOut();
+        });
 
-        function center_svg() {
-            const zoomContainer = window[`zoomContainer${numberSVGcontainer}`];
-            rectElement = viewer.querySelector("svg>g>rect");
-
-            if (zoomContainer && rectElement) {
-                zoomContainer.zoom(1);
-                zoomContainer.pan({
-                    x:
-                        (viewer.offsetWidth -
-                            zoomContainer.getSizes().viewBox.width * zoomContainer.getSizes().realZoom) /
-                        2,
-                    y:
-                        (viewer.offsetHeight -
-                            zoomContainer.getSizes().viewBox.height *
-                                zoomContainer.getSizes().realZoom) /
-                        2,
-                });
-            } else {
-                window[`zoomContainer${numberSVGcontainer}`].resetZoom();
-                window[`zoomContainer${numberSVGcontainer}`].fit();
-                window[`zoomContainer${numberSVGcontainer}`].center();
-            }
-        }
-
-        document
-            .getElementById(`reset_zoom${numberSVGcontainer}`)
-            .addEventListener("click", function (ev) {
-                ev.preventDefault();
-                center_svg();
-            });
+        document.getElementById(`reset_zoom${numberSVGcontainer}`).addEventListener("click", function (ev) {
+            ev.preventDefault();
+            center_svg();
+        });
 
         center_svg();
     }

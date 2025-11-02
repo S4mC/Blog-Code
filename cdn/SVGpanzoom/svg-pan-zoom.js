@@ -367,32 +367,34 @@
                     var svgViewBox = this.options.svg.getAttribute("viewBox");
 
                     if (svgViewBox) {
-                        var viewBoxValues = svgViewBox
-                            .split(/[\s\,]/)
-                            .filter(function (v) {
-                                return v;
-                            })
-                            .map(parseFloat);
+                        // var viewBoxValues = svgViewBox
+                        //     .split(/[\s\,]/)
+                        //     .filter(function (v) {
+                        //         return v;
+                        //     })
+                        //     .map(parseFloat);
 
-                        // Cache viewbox x and y offset
-                        this.viewBox.x = viewBoxValues[0];
-                        this.viewBox.y = viewBoxValues[1];
-                        this.viewBox.width = viewBoxValues[2];
-                        this.viewBox.height = viewBoxValues[3];
+                        // // Cache viewbox x and y offset
+                        // this.viewBox.x = viewBoxValues[0];
+                        // this.viewBox.y = viewBoxValues[1];
+                        // this.viewBox.width = viewBoxValues[2];
+                        // this.viewBox.height = viewBoxValues[3];
 
-                        var zoom = Math.min(
-                            this.options.width / this.viewBox.width,
-                            this.options.height / this.viewBox.height
-                        );
+                        // var zoom = Math.min(
+                        //     this.options.width / this.viewBox.width,
+                        //     this.options.height / this.viewBox.height
+                        // );
 
-                        // Update active state
-                        this.activeState.zoom = zoom;
-                        this.activeState.x =
-                            (this.options.width - this.viewBox.width * zoom) /
-                            2;
-                        this.activeState.y =
-                            (this.options.height - this.viewBox.height * zoom) /
-                            2;
+                        // // Update active state
+                        // this.activeState.zoom = zoom;
+                        // this.activeState.x =
+                        //     (this.options.width - this.viewBox.width * zoom) /
+                        //     2;
+                        // this.activeState.y =
+                        //     (this.options.height - this.viewBox.height * zoom) /
+                        //     2;
+
+                        this.simpleViewBoxCache();
 
                         // Force updating CTM
                         this.updateCTMOnNextFrame();
@@ -794,8 +796,7 @@
                     this.pinchMidpoint = null;
 
                     // Get dimensions
-                    var boundingClientRectNormalized =
-                        SvgUtils.getBoundingClientRectNormalized(svg);
+                    var boundingClientRectNormalized = SvgUtils.getBoundingClientRectNormalized(svg);
                     this.width = boundingClientRectNormalized.width;
                     this.height = boundingClientRectNormalized.height;
 
@@ -2212,19 +2213,6 @@
                             this.xlinkNS
                         );
                         svg.setAttributeNS(this.xmlnsNS, "xmlns:ev", this.evNS);
-
-                        // Needed for Internet Explorer, otherwise the viewport overflows
-                        if (svg.parentNode !== null) {
-                            var style = svg.getAttribute("style") || "";
-                            if (
-                                style.toLowerCase().indexOf("overflow") === -1
-                            ) {
-                                svg.setAttribute(
-                                    "style",
-                                    "overflow: hidden; " + style
-                                );
-                            }
-                        }
                     },
 
                     /**
