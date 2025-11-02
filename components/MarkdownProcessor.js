@@ -642,6 +642,69 @@ function extractIconFromText(text) {
     return { icon, text: cleanText };
 }
 
+function parseBlocksFlowChart(text) {
+    const lines = text.trim().split('\n');
+    const blocks = new Map(); // Store block definitions
+    const connections = []; // Store connections between blocks
+    let currentBlock = null;
+    let contentCurrentBlock = "";
+
+    for (let line of lines) {
+        // Check if this line defines a block: (blockName) content
+        const blockMatch = line.match(/^\(([^)]+)\)\s*(.*)/);
+
+        if (currentBlock) {
+            if (line.startsWith(" ") || line.trim() === "") {
+                blocks.set(currentBlock, contentCurrentBlock);
+                
+                const destBlockMatch = line.match(/\(([^)]+)\)\s*$/);
+                if (destBlockMatch) {
+                    // Extract destination block and label (remove the (blockName) from the end)
+                    let destBlock = destBlockMatch[1];
+                    let label = line.substring(0, destBlockMatch.index).trim();
+
+                    if (label.startsWith('- ')) {
+                        label = label.substring(2);
+                    }
+
+                    connections.push({
+                        from: currentBlock,
+                        to: destBlock,
+                        label: label
+                    });
+                }
+            } else {
+                contentCurrentBlock += "\n" + line;
+            }
+        }
+
+        if (blockMatch) {
+            currentBlock = blockMatch[1];
+            contentCurrentBlock = blockMatch[2];
+        }
+    }
+
+    // Build the output
+    let output = [];
+
+    // First, define all blocks
+    for (const [blockName, content] of blocks) {
+        if (content) {
+            output.push(`${blockName}["${content}"]`);
+        }
+    }
+
+    // Then, add all connections
+    for (const conn of connections) {
+        if (conn.to) {
+            // Add invisible unicode spaces (U+2800 Braille Pattern Blank) for padding
+            output.push(`${conn.from} --> |⠀${conn.label}⠀| ${conn.to}`);
+        }
+    }
+
+    return output.join('\n');
+}
+
 export function renderMarkdown(markdownContent, executeScripts = true) {
     const renderer = new marked.Renderer();
 
@@ -974,12 +1037,14 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
     // Restore code blocks
     let numberSVGcontainer = 1;
     let numberLottieContainer = 1;
-    for (const [placeholder, { language, code }] of codeBlocks) {
+    for (let [placeholder, { language, code }] of codeBlocks) {
         let codeHtml = "";
         if (language.startsWith("custom-block-block-custom-svg")) { // Manages SVG custom code blocks
             let attributes = obtainAttributes(language);
 
             let aspectRatio = 1;
+            let isMermaidDiagram = false;
+            
             if (code.includes("<svg")) {
                 // Calculate aspect ratio from the SVG code
 
@@ -995,20 +1060,133 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                     aspectRatio = rectWidth / rectHeight;
                 }
 
+            } else {
+                if (language.includes("-flowchartLR")) {
+                    console.log(code);
+                    code = parseBlocksFlowChart(code);
+                    console.log(code);
+                    code = `---\nconfig:\n    look: handDrawn\n---\nflowchart LR\n` + code;
+                    
+                }
+                if (language.includes("-flowchartTB")) {
+                    code = parseBlocksFlowChart(code);
+                    code = `---\nconfig:\n    look: handDrawn\n---\nflowchart TD\n` + code;
+                }
+                if (language.includes("-kanban")) {
+                    function parseTasks(text) {
+                        const lines = text.split(/\r?\n/);
+                        const result = [];
+                        let currentSection = null;
+                        let buffer = [];
+
+                        const priorityMap = {
+                            4: "Very High",
+                            3: "High",
+                            2: "Low",
+                            1: "Very Low",
+                        };
+
+                        for (let line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed) continue;
+
+                            // New section
+                            if (!line.startsWith(" ")) {
+                            if (currentSection) result.push({ section: currentSection, tasks: buffer });
+                            currentSection = trimmed;
+                            buffer = [];
+                            }
+                            // New task
+                            else if (!line.startsWith("        ")) {
+                            buffer.push({ title: trimmed, details: [] });
+                            }
+                        }
+                        if (currentSection) result.push({ section: currentSection, tasks: buffer });
+
+                        // Construct the final text
+                        return result
+                            .map((sec) => {
+                            const tasks = sec.tasks
+                                .map((t) => {
+                                let title = t.title;
+                                let priority = "";
+                                let ticket = undefined;
+                                let assigned = undefined;
+
+                                // Detect priority by "!"
+                                const matchExcl = title.match(/^(!+)(.*)$/);
+                                if (matchExcl) {
+                                    const count = matchExcl[1].length;
+                                    title = matchExcl[2].trim();
+                                    priority = priorityMap[Math.min(count, 4)];
+                                }
+
+                                // Detect (ticket, assigned)
+                                const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
+                                if (matchParen) {
+                                    ticket = matchParen[1].trim();
+                                    assigned = matchParen[2].trim();
+                                    title = title.replace(/\([^)]+\)$/, "").trim();
+                                }
+
+                                // Construct data object
+                                const data = [];
+                                if (ticket) data.push(`ticket: '${ticket}'`);
+                                if (assigned) data.push(`assigned: '${assigned}'`);
+                                if (priority) data.push(`priority: '${priority}'`);
+
+                                return `    ${title} @{ ${data.join(", ")} }`;
+                                })
+                                .join("\n");
+
+                        return `${sec.section}\n${tasks}`;
+                        }).join("\n\n");
+                    }
+                    code = `kanban\n` + parseTasks(code);
+                }
+                if (language.includes("-xychart")) {
+                    let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(attributes.trim(), "").trim();
+                    code = `xychart-beta${name_chart ? ` title "${name_chart}"` : ""}\n` + code;
+                }
+                if (language.includes("-pie")) {
+                    
+                    // Convert key: value pairs into "key": value for proper Mermaid syntax
+                    code = code.split("\n").map(linea => {
+                                const partes = linea.split(":");
+                                if (partes.length > 1) {
+                                const clave = partes[0].trim();
+                                const valor = partes.slice(1).join(":").trim();
+                                return `"${clave}": ${valor}`;
+                                }
+                                return linea;
+                            }).join("\n");
+
+                    let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(attributes.trim(), "").trim();
+                    code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
+                }
+                // Use Mermaid.js to render diagram
+                code = `<div id="mermaid-diagram-${numberSVGcontainer}" class="mermaid-diagram">${code}</div>`;
+                isMermaidDiagram = true;
             }
 
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
-                class="SVG-viewer"
+                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${attributes.match(/\bheight:/i) ? " custom-height" : ""}"
                 ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0; z-index: 1;">
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
-            </button>${code.replace("<svg ", `<svg id='page${numberSVGcontainer}'`)}</div>
+            </button>${code.replace("<svg", `<svg id='page${numberSVGcontainer}'`)}</div>
             `;
-            finalJS += `(${setupSVGZoom.toString()})(${numberSVGcontainer});`;
+            
+            if (isMermaidDiagram) {
+                finalJS += `${setupSVGZoom.toString()}`; // Function definition needed for svg zoom
+                finalJS += `(${setupMermaidDiagram.toString()})(${numberSVGcontainer});`;
+            } else {
+                finalJS += `(${setupSVGZoom.toString()})(${numberSVGcontainer});`;
+            }
             numberSVGcontainer += 1;
 
         } else if (language.startsWith("custom-block-block-custom-animation")) {
@@ -1225,6 +1403,59 @@ export function manageClickFloatButton(e) {
 // -------------- Functions to return as text inside the MarkdownProcessor component
 // ---------------------------------------------------------------------------------
 
+function setupMermaidDiagram(numberSVGcontainer) {
+    // Initialize Mermaid if not already initialized
+    if (typeof mermaid !== 'undefined' && !window.mermaidInitialized) {
+        mermaid.initialize({ 
+            startOnLoad: false,
+            theme: document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                curve: 'monotoneX',
+                htmlLabels: false,
+                nodeSpacing: 30,
+                rankSpacing: 60,
+            },
+        });
+        window.mermaidInitialized = true;
+    }
+
+    // Render the Mermaid diagram
+    setTimeout(() => {
+        const diagramElement = document.getElementById(`mermaid-diagram-${numberSVGcontainer}`);
+        if (diagramElement && typeof mermaid !== 'undefined') {
+            const diagramCode = diagramElement.textContent;
+            
+            mermaid.render(`mermaid-svg-${numberSVGcontainer}`, diagramCode).then(({ svg }) => {
+                // Replace the div content with the rendered SVG
+                const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
+                if (viewer) {
+                    // Insert the SVG with the correct ID for zoom functionality
+                    viewer.innerHTML = viewer.innerHTML.replace(
+                        diagramElement.outerHTML,
+                        svg.replace('<svg', `<svg id='page${numberSVGcontainer}'`)                        
+                    );
+
+                    // Change arrow head size for better visibility
+                    const markerElement = document.getElementById('mermaid-svg-1_flowchart-v2-pointEnd');
+                    if (markerElement) {
+                        markerElement.setAttribute('markerWidth', '16');
+                        markerElement.setAttribute('markerHeight', '16');
+                        markerElement.setAttribute('refX', '8');
+                    }
+
+                    setupSVGZoom(numberSVGcontainer);
+                }
+            }).catch(error => {
+                console.error('Error rendering Mermaid diagram:', error);
+                if (diagramElement) {
+                    diagramElement.innerHTML = `<pre style="color: red;">Error rendering diagram: ${error.message}</pre>`;
+                }
+            });
+        }
+    }, 100);
+}
+
 function setupSVGZoom(numberSVGcontainer) {
     if (document.getElementById(`page${numberSVGcontainer}`)) {
         window[`zoomContainer${numberSVGcontainer}`] = svgPanZoom(`#page${numberSVGcontainer}`);
@@ -1234,6 +1465,9 @@ function setupSVGZoom(numberSVGcontainer) {
         let lastWidth = window.innerWidth;
 
         function proper_height() {
+            if (viewer.classList.contains("custom-height")) {
+                return; // Skip if custom height is set
+            }
             rectElement = viewer.querySelector("svg>g>rect");
             if (rectElement) {
                 // Get the dimensions of the rect

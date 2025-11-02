@@ -140,7 +140,7 @@
     --bg-highlight: oklch(0.9 var(--chroma) var(--hue));
     --bg-hover: oklch(0.86 0.01 var(--hue));
     --text-color: oklch(0.1 0.02 var(--hue));
-    --text-secondary: oklch(0.2 0.02 var(--hue));
+    --text-secondary: oklch(0.4 0.02 var(--hue));
     --text-muted: #94a3b8;
     --border: oklch(0.7 0.01 var(--hue));
     --border-muted: oklch(0.8 0.01 var(--hue));
@@ -2238,5 +2238,97 @@ details::after {
     .clear-filters-btn {
         width: 100%;
         text-align: center;
+    }
+}
+
+.mermaid-diagram {
+    display: none;
+}
+
+
+/* mermaid svg colors */
+.mermaid-diagram-container {
+    & svg {
+        max-width: none !important;
+    }
+    & g {
+        fill: var(--text-secondary);
+    }
+
+    & .nodeLabel p {
+        text-align: left;
+    }
+
+    & .pieTitleText {
+        fill: var(--text-color);
+    }
+
+    & .pieOuterCircle {
+        fill: var(--bg-hover);
+    }
+
+    & .slice {
+        fill: var(--text-muted);
+    }
+
+    & .items g {
+        fill: var(--bg-dark);
+    }
+
+    & .items tspan {
+        fill: var(--blockquote-border);
+    }
+
+    & .sections g {
+        fill: var(--bg-light);
+    }
+
+    & .sections tspan {
+        fill: var(--text-color);
+    }
+
+    & .rough-node p {
+        color: var(--text-color);
+    }
+    & .label-container path {
+        stroke: var(--bg-dark);
+    }
+    & .edgePaths path {
+        stroke: var(--text-color);
+    }
+    & .edgeLabel tspan {
+        fill: var(--text-secondary);
+    }
+
+    & .edgeLabel .label rect {
+        fill: var(--bg-light);
+    }
+
+    & .main > rect.background {
+        fill: var(--bg);
+    }
+
+    & .main .chart-title text {
+        fill: var(--text-color);
+    }
+
+    & .main .label text {
+        fill: var(--text-muted);
+    }
+
+    & .main .title text {
+        fill: var(--text-secondary);
+    }
+
+    & .main .axisl-line path {
+        stroke: var(--text-muted);
+    }
+
+    & .main .axis-line path {
+        stroke: var(--text-muted);
+    }
+
+    & .main .ticks path {
+        stroke: var(--text-muted);
     }
 }
