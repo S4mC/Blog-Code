@@ -673,8 +673,10 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 
 .config-custom-input {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
+    align-items: center;
 }
 
 .config-custom-input input {
@@ -700,6 +702,23 @@ body.resizing .editor-content.right:not(.preview-hidden) #resize-handle {
 
 .config-custom-input button:hover {
     background: var(--primary-color-hover);
+}
+
+.config-custom-input button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.config-custom-input button.config-custom-button {
+    background: var(--bg-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.config-custom-input button.config-custom-button:hover:not(:disabled) {
+    background: var(--hover-color);
+    border-color: var(--primary-color);
 }
 
 .config-emoji-buttons {

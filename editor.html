@@ -6076,15 +6076,15 @@
                             type: "options",
                             options: ["-NoB"],
                         },{
-                            title: "Description (for pie and xychart)",
+                            title: "Name (for pie and xychart)",
                             type: "custom",
                             inputs: [
                                 {
                                     type: "text",
-                                    id: "svg-description",
-                                    label: "Chart description",
+                                    id: "svg-name",
+                                    label: "Chart name",
                                     placeholder: "e.g., Pets adopted by volunteers",
-                                    data: "svg-description",
+                                    data: "svg-name",
                                     onChange: "handleSvgDescriptionChange",
                                     conditional: true,
                                     showWhen: ["-pie", "-xychart"],
@@ -6095,11 +6095,15 @@
                             type: "custom",
                             placeholder: "aspect-ratio:1.2/1; background:#f0f0f0;",
                             pattern: 'style="{value}"',
+                            button: {
+                                text: "Get Aspect Ratio",
+                                onClick: "getAspectRatioFromSVG",
+                            },
                         },
                         {
                             title: "Information",
                             type: "info",
-                            info: "Add custom styles to control the size and appearance of the SVG. For pie and xychart types, you can add a description that will appear in the preview.",
+                            info: "Add custom styles to control the size and appearance of the SVG. For pie and xychart types, you can add a description that will appear in the preview. Use 'Get Aspect Ratio' to automatically calculate and apply the aspect ratio from the rendered SVG.",
                         },
                     ],
                 },
@@ -6494,7 +6498,7 @@
                                             // Store the original ID for reference
                                             window.originalFloatId = existingValue;
                                         }
-                                    } else if (input.data === "svg-description" && currentBlockType === "svg") {
+                                    } else if (input.data === "svg-name" && currentBlockType === "svg") {
                                         // Extract description from the end of the line (after options)
                                         existingValue = remainingText || "";
                                     }
@@ -6562,6 +6566,12 @@
                             }
 
                             html += `<input type="text" placeholder="${section.placeholder}" data-pattern="${section.pattern}" value="${existingValue}" oninput="window.handleCustomInput(this)">`;
+                            
+                            // Add button if specified
+                            if (section.button) {
+                                html += `<button class="config-custom-button" onclick="window.${section.button.onClick}(this)">${section.button.text}</button>`;
+                            }
+                            
                             html += `</div>`;
                         }
                     } else if (section.type === "emoji-buttons") {
@@ -7276,7 +7286,7 @@
                         if (input) {
                             input.value = "";
                             // Trigger onChange to update the preview
-                            if (input.getAttribute("data-input") === "svg-description") {
+                            if (input.getAttribute("data-input") === "svg-name") {
                                 window.currentRemainingText = "";
                             }
                         }
@@ -7294,6 +7304,142 @@
                 updatePreview();
             }
 
+            // Function to get aspect ratio from rendered SVG
+            async function getAspectRatioFromSVG(buttonElement) {
+                if (currentBlockType !== "svg") {
+                    alert("⚠️ This function is only available for SVG blocks.");
+                    return;
+                }
+
+                // Disable button and show loading
+                const originalText = buttonElement.textContent;
+                buttonElement.disabled = true;
+                buttonElement.textContent = "Loading...";
+
+                try {
+                    // Add the obtainingAspectRatio attribute to the preview line
+                    const preview = document.getElementById("config-preview");
+                    let currentLine = preview.textContent;
+                    
+                    // Parse the line to insert obtainingAspectRatio="THIS" after options and before style
+                    const svgMatch = currentLine.match(/^(\s*):::svg\s*/);
+                    if (!svgMatch) {
+                        alert("⚠️ Invalid SVG block format.");
+                        return;
+                    }
+
+                    // Build the new line with obtainingAspectRatio marker
+                    let lineWithMarker = currentLine;
+                    
+                    // Find where to insert (after options, before style or at the end)
+                    const styleMatch = currentLine.match(/\s+style="[^"]*"/);
+                    
+                    if (styleMatch) {
+                        // Insert before style
+                        const styleIndex = currentLine.indexOf(styleMatch[0]);
+                        lineWithMarker = currentLine.substring(0, styleIndex) + ' obtainingAspectRatio="THIS"' + currentLine.substring(styleIndex);
+                    } else {
+                        // Insert at the end (before description if exists)
+                        const parts = currentLine.split(/\s+/);
+                        let insertIndex = parts.length;
+                        
+                        // Find where options end (look for non-option text)
+                        for (let i = 2; i < parts.length; i++) {
+                            if (!isValidOption(parts[i])) {
+                                insertIndex = i;
+                                break;
+                            }
+                        }
+                        
+                        parts.splice(insertIndex, 0, 'obtainingAspectRatio="THIS"');
+                        lineWithMarker = parts.join(" ");
+                    }
+
+                    // Update the preview
+                    preview.textContent = lineWithMarker;
+                    
+                    // Apply to editor to trigger render
+                    applyConfiguration(true);
+
+                    // Wait for the SVG to render
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    // Find the SVG element in the preview
+                    const previewContainer = document.querySelector('.markdown-preview');
+                    if (!previewContainer) {
+                        alert("⚠️ Preview container not found.");
+                        return;
+                    }
+
+                    // Find the element with obtainingAspectRatio attribute
+                    const targetElement = previewContainer.querySelector('[obtainingAspectRatio="THIS"]');
+                    
+                    if (!targetElement) {
+                        alert("⚠️ Could not find the rendered SVG block. Make sure the SVG has been rendered in the preview.");
+                        return;
+                    }
+
+                    // Find the SVG child
+                    const svgElement = targetElement.querySelector(':scope > svg');
+                    if (!svgElement) {
+                        alert("⚠️ No SVG element found inside the block. Make sure the SVG content is valid.");
+                        return;
+                    }
+
+                    // Get the width and height from the SVG element
+                    const width = svgElement.width.baseVal.value;
+                    const height = svgElement.height.baseVal.value;
+
+                    if (!width || !height || width === 0 || height === 0) {
+                        alert("⚠️ Could not get valid width/height from SVG. The SVG might not have explicit width/height attributes.");
+                        return;
+                    }
+
+                    // Calculate aspect ratio
+                    const aspectRatio = width / height;
+                    const roundedRatio = Math.round(aspectRatio * 10) / 10;
+
+                    // Format as aspect-ratio value (e.g., "1.2/1")
+                    const aspectRatioValue = `aspect-ratio:${roundedRatio}/1;`;
+
+                    // Find the style input and update it
+                    const styleInput = buttonElement.previousElementSibling;
+                    if (styleInput && styleInput.tagName === 'INPUT') {
+                        let currentStyle = styleInput.value.trim();
+                        
+                        // Remove existing aspect-ratio if present
+                        currentStyle = currentStyle.replace(/aspect-ratio:[^;]+;?\s*/gi, '');
+                        
+                        // Add new aspect-ratio at the beginning
+                        const newStyle = currentStyle ? `${aspectRatioValue} ${currentStyle}` : aspectRatioValue;
+                        
+                        styleInput.value = newStyle;
+                        
+                        // Trigger the input change
+                        handleCustomInput(styleInput);
+                    }
+
+                    // Remove the obtainingAspectRatio marker from the preview
+                    setTimeout(() => {
+                        const currentPreview = document.getElementById("config-preview");
+                        if (currentPreview) {
+                            currentPreview.textContent = currentPreview.textContent.replace(/\s*obtainingAspectRatio="THIS"\s*/g, ' ');
+                        }
+                        applyConfiguration(true);
+                    }, 100);
+
+                    alert(`✅ Aspect ratio calculated: ${roundedRatio}/1\nThe style has been updated in the Custom Style field.`);
+
+                } catch (error) {
+                    console.error("Error getting aspect ratio:", error);
+                    alert(`Error: ${error.message}`);
+                } finally {
+                    // Re-enable button
+                    buttonElement.disabled = false;
+                    buttonElement.textContent = originalText;
+                }
+            }
+
             // Make functions globally accessible
             window.applyConfiguration = applyConfiguration;
             window.addCustomOption = addCustomOption;
@@ -7305,6 +7451,7 @@
             window.handleListEmojiInput = handleListEmojiInput;
             window.updateConditionalInputs = updateConditionalInputs;
             window.handleSvgDescriptionChange = handleSvgDescriptionChange;
+            window.getAspectRatioFromSVG = getAspectRatioFromSVG;
 
             // Initialize sidebar after rendering
             // With a small timeout to ensure DOM is ready

@@ -1173,7 +1173,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             } else if (language.includes("-mermaid")) {
                 isMermaidDiagram = true;
             } else if (code.startsWith("<svg")) {
-                if (!attributes.includes('aspect-ratio:')) {
+                if (attributes.includes('obtainingAspectRatio="THIS"') || !attributes.includes('aspect-ratio:')) {
                     // Calculate aspect ratio from the SVG code
                     [code, aspectRatio] = obtainAspectRatio(code);
                 }
@@ -1446,7 +1446,7 @@ function setupMermaidDiagram(numberSVGcontainer) {
                 // Replace the div content with the rendered SVG
                 const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
                 if (viewer) {
-                    if (!viewer.classList.contains('custom-aspect-ratio')) {
+                    if (viewer.attributes.obtainingaspectratio || !viewer.classList.contains('custom-aspect-ratio')) {
                         let aspectRatio = 1;
                         [svg, aspectRatio] = obtainAspectRatio(svg);
                         viewer.style.aspectRatio = aspectRatio;
