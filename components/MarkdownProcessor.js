@@ -697,8 +697,14 @@ function parseBlocksFlowChart(text) {
     // Then, add all connections
     for (const conn of connections) {
         if (conn.to) {
-            // Add invisible unicode spaces (U+2800 Braille Pattern Blank) for padding
-            output.push(`${conn.from} --> |⠀${conn.label}⠀| ${conn.to}`);
+            if (conn.label.startsWith("<-->") || conn.label.startsWith("<->") || conn.label.startsWith("<=>")) {
+                let labelClean = conn.label.replace(/^(<-->|<->|<=>)/, "").trim();
+                // Add invisible unicode spaces (U+2800 Braille Pattern Blank) for padding
+                output.push(`${conn.from} <--> |⠀${labelClean}⠀| ${conn.to}`);
+            } else {
+                // Add invisible unicode spaces (U+2800 Braille Pattern Blank) for padding
+                output.push(`${conn.from} --> |⠀${conn.label}⠀| ${conn.to}`);
+            }
         }
     }
 
@@ -1136,7 +1142,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                             if (partes.length > 1) {
                             const clave = partes[0].trim();
                             const valor = partes.slice(1).join(":").trim();
-                            return `"${clave}": ${valor}`;
+                            return `${clave.startsWith('"') ? clave : `"${clave}"`}: ${valor}`;
                             }
                             return linea;
                         }).join("\n");
@@ -1421,6 +1427,7 @@ function setupMermaidDiagram(numberSVGcontainer) {
             const diagramCode = diagramElement.textContent;
             
             mermaid.render(`mermaid-svg-${numberSVGcontainer}`, diagramCode).then(({ svg }) => {
+                console.log(svg);
                 // Replace the div content with the rendered SVG
                 const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
                 if (viewer) {
@@ -1432,10 +1439,16 @@ function setupMermaidDiagram(numberSVGcontainer) {
 
                     // Change arrow head size for better visibility
                     const markerElement = document.getElementById('mermaid-svg-1_flowchart-v2-pointEnd');
+                    const markerElement2 = document.getElementById('mermaid-svg-1_flowchart-v2-pointStart');
                     if (markerElement) {
                         markerElement.setAttribute('markerWidth', '16');
                         markerElement.setAttribute('markerHeight', '16');
                         markerElement.setAttribute('refX', '8');
+                    }
+                    if (markerElement2) {
+                        markerElement2.setAttribute('markerWidth', '16');
+                        markerElement2.setAttribute('markerHeight', '16');
+                        markerElement2.setAttribute('refX', '8');
                     }
 
                     setupSVGZoom(numberSVGcontainer);
@@ -1443,7 +1456,7 @@ function setupMermaidDiagram(numberSVGcontainer) {
             }).catch(error => {
                 console.error('Error rendering Mermaid diagram:', error);
                 if (diagramElement) {
-                    diagramElement.innerHTML = `<pre style="color: red;">Error rendering diagram: ${error.message}</pre>`;
+                    diagramElement.outerHTML = `<pre style="color: red; white-space: break-spaces;">Error rendering diagram: ${error.message}</pre>`;
                 }
             });
         }
