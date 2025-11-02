@@ -6067,6 +6067,30 @@
                     title: "SVG Configuration",
                     sections: [
                         {
+                            title: "Type",
+                            type: "options",
+                            options: ["-flowchartLR", "-flowchartTB", "-pie", "-kanban", "-xychart", "-mermaid"],
+                        },
+                        {
+                            title: "With buttons",
+                            type: "options",
+                            options: ["-NoB"],
+                        },{
+                            title: "Description (for pie and xychart)",
+                            type: "custom",
+                            inputs: [
+                                {
+                                    type: "text",
+                                    id: "svg-description",
+                                    label: "Chart description",
+                                    placeholder: "e.g., Pets adopted by volunteers",
+                                    data: "svg-description",
+                                    onChange: "handleSvgDescriptionChange",
+                                    conditional: true,
+                                    showWhen: ["-pie", "-xychart"],
+                                },
+                            ],
+                        },{
                             title: "Custom Style",
                             type: "custom",
                             placeholder: "aspect-ratio:1.2/1; background:#f0f0f0;",
@@ -6075,7 +6099,7 @@
                         {
                             title: "Information",
                             type: "info",
-                            info: "Add custom styles to control the size and appearance of the SVG.",
+                            info: "Add custom styles to control the size and appearance of the SVG. For pie and xychart types, you can add a description that will appear in the preview.",
                         },
                     ],
                 },
@@ -6438,13 +6462,27 @@
                         });
                         html += `</div>`;
                     } else if (section.type === "custom") {
-                        // Check if we have inputs array (new format)
+                        // Check if we have inputs array
                         if (section.inputs && Array.isArray(section.inputs)) {
-                            html += `<div class="config-custom-input">`;
-
                             section.inputs.forEach((input) => {
                                 if (input.type === "text") {
                                     let existingValue = "";
+                                    
+                                    // Check if this input is conditional
+                                    const isConditional = input.conditional && input.showWhen;
+                                    let shouldShow = true;
+                                    
+                                    if (isConditional) {
+                                        // Check if any of the required options is active
+                                        shouldShow = input.showWhen.some(opt => existingOptions.includes(opt));
+                                    }
+                                    
+                                    // Create the input wrapper with conditional display
+                                    const displayStyle = shouldShow ? '' : 'display:none;';
+                                    const conditionalClass = isConditional ? 'conditional-input' : '';
+                                    const dataShowWhen = isConditional ? `data-show-when="${input.showWhen.join(',')}"` : '';
+                                    
+                                    html += `<div class="config-custom-input ${conditionalClass}" style="${displayStyle}" ${dataShowWhen}>`;
 
                                     // If we are in a float block, we try to extract the ID
                                     if (input.data === "float-id" && currentBlockType === "float") {
@@ -6456,19 +6494,20 @@
                                             // Store the original ID for reference
                                             window.originalFloatId = existingValue;
                                         }
+                                    } else if (input.data === "svg-description" && currentBlockType === "svg") {
+                                        // Extract description from the end of the line (after options)
+                                        existingValue = remainingText || "";
                                     }
 
                                     html += `<label for="${input.id}">${input.label}</label>`;
                                     html += `<input autocomplete="off" type="text" id="${input.id}" placeholder="${input.placeholder}" 
                                         data-input="${input.data}" value="${existingValue}" 
                                         oninput="window.${input.onChange}(this)">`;
+                                    
+                                    html += `</div>`;
                                 }
                             });
-
-                            html += `</div>`;
-                        }
-                        // The old format for compatibility
-                        else {
+                        } else {
                             html += `<div class="config-custom-input">`;
 
                             // Get existing value for this specific pattern type
@@ -6699,6 +6738,13 @@
                     "autoplay",
                     "-min",
                     "-folded",
+                    "-flowchartLR",
+                    "-flowchartTB",
+                    "-pie",
+                    "-kanban",
+                    "-xychart",
+                    "-mermaid",
+                    "-NoB",
                 ];
 
                 // Check if it's a valid standalone option
@@ -6803,15 +6849,33 @@
                         optionElement.classList.add("active");
                     }
                 } else {
-                    // For non-mutually exclusive options, simply toggle
-
-                    if (isCurrentlyActive) {
-                        optionElement.classList.remove("active");
+                    if (window.originalLine.includes(":::svg")) {
+                        // For SVG block type, handle mutually exclusive with other options except -NoB
+                        if (isCurrentlyActive) {
+                            optionElement.classList.remove("active");
+                        } else {
+                            if (!option.includes("-NoB")) {
+                                document.querySelectorAll(".config-option").forEach((opt) => {
+                                    if (opt.dataset.option && !opt.dataset.option.includes("-NoB")) {
+                                        opt.classList.remove("active");
+                                    }
+                                });
+                            }
+                            optionElement.classList.add("active");
+                        }
                     } else {
-                        optionElement.classList.add("active");
+                        // For non-mutually exclusive options, simply toggle
+                        if (isCurrentlyActive) {
+                            optionElement.classList.remove("active");
+                        } else {
+                            optionElement.classList.add("active");
+                        }
                     }
                 }
 
+                // Update visibility of conditional inputs
+                updateConditionalInputs();
+                
                 updatePreview();
             }
 
@@ -7191,6 +7255,45 @@
                 updatePreview();
             }
 
+            // Function to update visibility of conditional inputs based on active options
+            function updateConditionalInputs() {
+                // Get all active options
+                const activeOptions = Array.from(document.querySelectorAll(".config-option.active"))
+                    .map((el) => el.dataset.option);
+                
+                // Find all conditional inputs
+                const conditionalInputs = document.querySelectorAll(".conditional-input[data-show-when]");
+                
+                conditionalInputs.forEach((inputDiv) => {
+                    const showWhen = inputDiv.getAttribute("data-show-when").split(",");
+                    const shouldShow = showWhen.some(opt => activeOptions.includes(opt));
+                    
+                    inputDiv.style.display = shouldShow ? "" : "none";
+                    
+                    // Clear the input value when hiding
+                    if (!shouldShow) {
+                        const input = inputDiv.querySelector("input");
+                        if (input) {
+                            input.value = "";
+                            // Trigger onChange to update the preview
+                            if (input.getAttribute("data-input") === "svg-description") {
+                                window.currentRemainingText = "";
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Function to handle SVG description changes
+            function handleSvgDescriptionChange(inputElement) {
+                const value = inputElement.value.trim();
+                
+                // Update the remaining text (which is the description for SVG)
+                window.currentRemainingText = value;
+                
+                updatePreview();
+            }
+
             // Make functions globally accessible
             window.applyConfiguration = applyConfiguration;
             window.addCustomOption = addCustomOption;
@@ -7200,6 +7303,8 @@
             window.insertListEmoji = insertListEmoji;
             window.addListEscape = addListEscape;
             window.handleListEmojiInput = handleListEmojiInput;
+            window.updateConditionalInputs = updateConditionalInputs;
+            window.handleSvgDescriptionChange = handleSvgDescriptionChange;
 
             // Initialize sidebar after rendering
             // With a small timeout to ensure DOM is ready

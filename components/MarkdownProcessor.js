@@ -1153,7 +1153,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 code = `kanban\n` + parseTasksKanban(code);
                 isMermaidDiagram = true;
             } else if (language.includes("-xychart")) {
-                let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(attributes.trim(), "").trim();
+                let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace("-NoB", "").replace(attributes.trim(), "").trim();
                 code = `xychart-beta${name_chart ? ` title "${name_chart}"` : ""}\n` + code;
                 isMermaidDiagram = true;
             } else if (language.includes("-pie")) {
@@ -1167,7 +1167,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                             }
                             return linea;
                         }).join("\n");
-                let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(attributes.trim(), "").trim();
+                let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace("-NoB", "").replace(attributes.trim(), "").trim();
                 code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
                 isMermaidDiagram = true;
             } else if (language.includes("-mermaid")) {

@@ -51,10 +51,10 @@ config:
 ---
 flowchart TD
 `+e,i=!0;else if(t.includes("-kanban"))e=`kanban
-`+parseTasksKanban(e),i=!0;else if(t.includes("-xychart")){let n=t.replace("custom-block-block-custom-svg","").replace("-xychart","").replace(a.trim(),"").trim();e=`xychart-beta${n?` title "${n}"`:""}
+`+parseTasksKanban(e),i=!0;else if(t.includes("-xychart")){let n=t.replace("custom-block-block-custom-svg","").replace("-xychart","").replace("-NoB","").replace(a.trim(),"").trim();e=`xychart-beta${n?` title "${n}"`:""}
 `+e,i=!0}else if(t.includes("-pie")){e=e.split(`
 `).map(e=>{const t=e.split(":");if(t.length>1){const e=t[0].trim(),n=t.slice(1).join(":").trim();return`${e.startsWith('"')?e:`"${e}"`}: ${n}`}return e}).join(`
-`);let n=t.replace("custom-block-block-custom-svg","").replace("-pie","").replace(a.trim(),"").trim();e=`pie${n?`
+`);let n=t.replace("custom-block-block-custom-svg","").replace("-pie","").replace("-NoB","").replace(a.trim(),"").trim();e=`pie${n?`
 title ${n}`:""}
 `+e,i=!0}else t.includes("-mermaid")?i=!0:e.startsWith("<svg")&&(a.includes("aspect-ratio:")||([e,r]=obtainAspectRatio(e)));i&&(e=`<div id="mermaid-diagram-${o}" class="mermaid-diagram">${e}</div>`),n=`<div
                 id="SVGiewer${o}"
