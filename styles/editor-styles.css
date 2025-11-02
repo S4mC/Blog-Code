@@ -35,7 +35,7 @@ body {
     height: 100%;
     scrollbar-width: thin;
     max-width: calc(800px + 2*var(--spacing-md));
-    overflow-y: auto;
+    overflow-y: scroll; /* If is auto sometimes the preview scroll change position */
     padding: var(--spacing-md);
     background-color: var(--bg);
 }

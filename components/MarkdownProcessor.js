@@ -1246,7 +1246,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 <svg xmlns="http://www.w3.org/2000/svg" width="16px" height="16px" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="m6 9l6 6l6-6"/></svg>
             </button>`;
 
-            codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}${config.includes("-folded") ? foldingButton : ""}<pre class="${config.includes("-folded") ? " folded" : ""}"><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
+            codeHtml = `<div class="code-block-wrapper${config.includes("-min") ? " min" : ""}">${copyButton}${config.includes("-folded") ? foldingButton : ""}<pre class="language-${config[0]}${config.includes("-folded") ? " folded" : ""}"><code class="language-${config[0]}">${escapedCode}</code></pre></div>`;
         }
         // Replace the placeholder with the code block, handling possible <br> before/after
         const regex = new RegExp(`${placeholder}(\\s*<br>)?`, "g");
