@@ -308,51 +308,53 @@
                     };
                 }, [showPreview]);
 
-                // Efecto para manejar el redimensionamiento de la vista previa
+                // Effect for handling preview resizing
                 useEffect(() => {
+                    window.dispatchEvent(new Event("resize")); // Trigger resize for Monaco
+
                     const handleMouseMove = (e) => {
                         if (!isResizing || previewPosition !== "right") return;
 
-                        // Contenedor principal
+                        // Main container
                         const editorContainer = document.querySelector(".editor-content");
                         if (!editorContainer) return;
 
-                        // Calcular el ancho como fracción del contenedor padre
+                        // Calculate width as a fraction of the parent container
                         const containerRect = editorContainer.getBoundingClientRect();
                         const editorWidth = containerRect.width;
 
-                        // Calcular la posición relativa del mouse dentro del contenedor
+                        // Calculate the relative mouse position within the container
                         const mouseX = e.clientX - containerRect.left;
 
-                        // Asegurar límites razonables (20% a 80%)
+                        // Ensure reasonable limits (20% to 80%)
                         const limitedX = Math.min(
                             Math.max(mouseX, editorWidth * 0.2),
                             editorWidth * 0.8
                         );
 
-                        // Calcular la proporción para grid-template-columns
-                        // Usar proporciones relativas para que sea más preciso
+                        // Calculate the ratio for grid-template-columns
+                        // Use relative fractions for more accuracy
                         const ratio = limitedX / editorWidth;
                         const leftFr = ratio;
                         const rightFr = 1 - ratio;
                         const newRatio = `${leftFr}fr 0fr ${rightFr}fr`;
                         setGridRatio(newRatio);
 
-                        // Aplicar directamente para evitar retraso en la UI
+                        // Apply directly to avoid UI lag
                         if (editorContainer) {
                             editorContainer.style.gridTemplateColumns = newRatio;
                         }
 
-                        // Optimizar re-rendering evitando actualizaciones de estado frecuentes
+                        // Optimize re-rendering by avoiding frequent state updates
                         e.preventDefault();
                     };
 
                     const handleMouseUp = () => {
                         if (isResizing) {
                             setIsResizing(false);
-                            // Guardar en localStorage
+                            // Save to localStorage
                             localStorage.setItem("editorGridRatio", gridRatio);
-                            // Remover la clase de resizing del body
+                            // Remove resizing class from body
                             document.body.classList.remove("resizing");
                         }
                     };
@@ -360,19 +362,19 @@
                     if (isResizing) {
                         document.addEventListener("mousemove", handleMouseMove);
                         document.addEventListener("mouseup", handleMouseUp);
-                        // Agregar clase al body para indicar que estamos redimensionando
+                        // Add class to body to indicate we are resizing
                         document.body.classList.add("resizing");
-                        // Cambiar el cursor en todo el documento durante el redimensionamiento
+                        // Change cursor across the document during resizing
                         document.body.style.cursor = "col-resize";
                     } else {
-                        // Restaurar el cursor cuando no estamos redimensionando
+                        // Restore cursor when not resizing
                         document.body.style.cursor = "";
                     }
 
                     return () => {
                         document.removeEventListener("mousemove", handleMouseMove);
                         document.removeEventListener("mouseup", handleMouseUp);
-                        // Asegurarnos de limpiar las clases y estilos si el componente se desmonta
+                        // Make sure to clean up the classes and styles if the component is disassembled
                         document.body.classList.remove("resizing");
                         document.body.style.cursor = "";
                     };

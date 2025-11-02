@@ -1,3 +1,26 @@
+function obtainAspectRatio(svg) {
+    let parser = new DOMParser();
+    let svgDoc = parser.parseFromString(svg, "image/svg+xml");
+    let svgElement = svgDoc.querySelector("svg");
+    let aspectRatio = 1;
+    if (svgElement) {
+        // Get the dimensions of the SVG
+        const viewBox = svgElement.getAttribute("viewBox");
+        if (viewBox) {
+            const [minX, minY, width, height] = viewBox.split(" ").map(Number);
+
+            // Calculate the ratio (width/height)
+            aspectRatio = width / height;
+
+            svgElement.setAttribute("width", width);
+            svgElement.setAttribute("height", height);
+
+            svg = svgElement.outerHTML;
+        }
+    }
+    return [svg, aspectRatio];
+}
+
 function obtainAttributes(line) {
     const attributeRegex = /(\w+)="([^"]+)"/g;
     let match;
@@ -1150,24 +1173,9 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             } else if (language.includes("-mermaid")) {
                 isMermaidDiagram = true;
             } else if (code.startsWith("<svg")) {
-                // Calculate aspect ratio from the SVG code
-                let parser = new DOMParser();
-                let svgDoc = parser.parseFromString(code, "image/svg+xml");
-                let svgElement = svgDoc.querySelector("svg");
-                if (svgElement) {
-                    // Get the dimensions of the SVG
-                    const viewBox = svgElement.getAttribute("viewBox");
-                    if (viewBox) {
-                        const [minX, minY, width, height] = viewBox.split(" ").map(Number);
-
-                        // Calculate the ratio (width/height)
-                        aspectRatio = width / height;
-
-                        svgElement.setAttribute("width", width);
-                        svgElement.setAttribute("height", height);
-
-                        code = svgElement.outerHTML;
-                    }
+                if (!attributes.includes('aspect-ratio:')) {
+                    // Calculate aspect ratio from the SVG code
+                    [code, aspectRatio] = obtainAspectRatio(code);
                 }
             }
 
@@ -1178,10 +1186,10 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
-                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${attributes.match(/\bheight:/i) ? " custom-height" : ""}"
+                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${attributes.match(/\baspect-ratio:/i) ? " custom-aspect-ratio" : ""}"
                 ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}
             >
-            <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0; z-index: 1;">
+            <button class="svg-zoom-controls">
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
@@ -1189,6 +1197,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             `;
             
             if (isMermaidDiagram) {
+                finalJS += `${obtainAspectRatio.toString()}`; // Function definition needed for aspect ratio
                 finalJS += `${setupSVGZoom.toString()}`; // Function definition needed for svg zoom
                 finalJS += `(${setupMermaidDiagram.toString()})(${numberSVGcontainer});`;
             } else {
@@ -1437,6 +1446,11 @@ function setupMermaidDiagram(numberSVGcontainer) {
                 // Replace the div content with the rendered SVG
                 const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
                 if (viewer) {
+                    if (!viewer.classList.contains('custom-aspect-ratio')) {
+                        let aspectRatio = 1;
+                        [svg, aspectRatio] = obtainAspectRatio(svg);
+                        viewer.style.aspectRatio = aspectRatio;
+                    }
                     // Insert the SVG with the correct ID for zoom functionality
                     viewer.innerHTML = viewer.innerHTML.replace(
                         diagramElement.outerHTML,
@@ -1444,18 +1458,12 @@ function setupMermaidDiagram(numberSVGcontainer) {
                     );
 
                     // Change arrow head size for better visibility
-                    const markerElement = document.getElementById('mermaid-svg-1_flowchart-v2-pointEnd');
-                    const markerElement2 = document.getElementById('mermaid-svg-1_flowchart-v2-pointStart');
-                    if (markerElement) {
-                        markerElement.setAttribute('markerWidth', '16');
-                        markerElement.setAttribute('markerHeight', '16');
+                    const markerElements = viewer.querySelectorAll('.marker.flowchart-v2');
+                    markerElements.forEach(markerElement => {
+                        markerElement.setAttribute('markerWidth', '14');
+                        markerElement.setAttribute('markerHeight', '14');
                         markerElement.setAttribute('refX', '8');
-                    }
-                    if (markerElement2) {
-                        markerElement2.setAttribute('markerWidth', '16');
-                        markerElement2.setAttribute('markerHeight', '16');
-                        markerElement2.setAttribute('refX', '8');
-                    }
+                    });
 
                     setupSVGZoom(numberSVGcontainer);
                 }
@@ -1506,11 +1514,11 @@ function setupSVGZoom(numberSVGcontainer) {
         let lastWidth = window.innerWidth;
         let resizeTimeout;
 
-        window.addEventListener("resize", function () {
+        window.addEventListener("resize", function (e) {
             const currentWidth = window.innerWidth;
 
-            // Only execute if width has changed
-            if (currentWidth !== lastWidth) {
+            // Only execute if width has changed or the event is triggered by editor
+            if (currentWidth !== lastWidth || !e.isTrusted) {
                 lastWidth = currentWidth;
 
                 clearTimeout(resizeTimeout);

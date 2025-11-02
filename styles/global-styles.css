@@ -1249,6 +1249,18 @@ blockquote h6 {
     position: relative;
     border-radius: 10px;
     background-color: var(--bg-highlight);
+    overflow: hidden;
+    &.no-buttons .svg-zoom-controls {
+        display: none;
+    }
+    & .svg-zoom-controls {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: transparent;
+        border: 0;
+        z-index: 1;
+    }
 }
 
 .SVG-viewer svg {
@@ -2244,7 +2256,6 @@ details::after {
 .mermaid-diagram {
     display: none;
 }
-
 
 /* Hide mermaid alert */
 svg[aria-roledescription="error"] {

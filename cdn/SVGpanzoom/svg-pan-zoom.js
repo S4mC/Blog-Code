@@ -367,6 +367,7 @@
                     var svgViewBox = this.options.svg.getAttribute("viewBox");
 
                     if (svgViewBox) {
+                        // Don't use viewBox because it may not reflect the actual content size (don't show the whole SVG content in some cases)
                         // var viewBoxValues = svgViewBox
                         //     .split(/[\s\,]/)
                         //     .filter(function (v) {
@@ -394,7 +395,7 @@
                         //     (this.options.height - this.viewBox.height * zoom) /
                         //     2;
 
-                        this.simpleViewBoxCache();
+                        this.simpleViewBoxCache(); // Note: Use simple viewBox cache instead
 
                         // Force updating CTM
                         this.updateCTMOnNextFrame();
