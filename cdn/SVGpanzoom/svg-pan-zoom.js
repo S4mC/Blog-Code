@@ -890,6 +890,10 @@
                             prevEvt = evt;
                             return result;
                         },
+                        // Context menu (right click)
+                        contextmenu: function (evt) {
+                            return that.handleContextMenu(evt);
+                        },
                         // Mouse auxclick group
                         auxclick: function (evt) {
                             return that.handleauxclick(evt);
@@ -1568,6 +1572,56 @@
                 SvgPanZoom.prototype.handleauxclick = function (evt) {
                     // This event prevents links within the SVG from opening when the mouse wheel button is pressed
                     evt.preventDefault();
+                };
+
+                /**
+                 * Handle context menu event (right click)
+                 * Prevents the context menu from showing unless there is selected text
+                 * and the click occurs over the selected text
+                 *
+                 * @param  {Event} evt
+                 */
+                SvgPanZoom.prototype.handleContextMenu = function (evt) {
+                    // Check if there is selected text
+                    var selection = window.getSelection && window.getSelection();
+                    var hasTextSelection = selection && selection.toString().length > 0;
+                    
+                    if (!hasTextSelection) {
+                        // No text selected, prevent context menu
+                        if (evt.preventDefault) {
+                            evt.preventDefault();
+                        } else {
+                            evt.returnValue = false;
+                        }
+                        return;
+                    }
+                    
+                    // There is selected text, check if click is over the selection
+                    var clickedOnSelection = false;
+                    
+                    if (selection.rangeCount > 0) {
+                        var range = selection.getRangeAt(0);
+                        var rects = range.getClientRects();
+                        
+                        // Check if the click coordinates are within any of the selection rectangles
+                        for (var i = 0; i < rects.length; i++) {
+                            var rect = rects[i];
+                            if (evt.clientX >= rect.left && evt.clientX <= rect.right &&
+                                evt.clientY >= rect.top && evt.clientY <= rect.bottom) {
+                                clickedOnSelection = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // Only show context menu if clicked on the selection
+                    if (!clickedOnSelection) {
+                        if (evt.preventDefault) {
+                            evt.preventDefault();
+                        } else {
+                            evt.returnValue = false;
+                        }
+                    }
                 };
 
                 /**
