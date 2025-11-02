@@ -1045,9 +1045,106 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             let aspectRatio = 1;
             let isMermaidDiagram = false;
             
-            if (code.includes("<svg")) {
-                // Calculate aspect ratio from the SVG code
+            if (language.includes("-flowchartLR")) {
+                code = parseBlocksFlowChart(code);
+                code = `---\nconfig:\n    look: handDrawn\n---\nflowchart LR\n` + code;
+                isMermaidDiagram = true;
+            } else if (language.includes("-flowchartTB")) {
+                code = parseBlocksFlowChart(code);
+                code = `---\nconfig:\n    look: handDrawn\n---\nflowchart TD\n` + code;
+                isMermaidDiagram = true;
+            } else if (language.includes("-kanban")) {
+                function parseTasks(text) {
+                    const lines = text.split(/\r?\n/);
+                    const result = [];
+                    let currentSection = null;
+                    let buffer = [];
 
+                    const priorityMap = {
+                        4: "Very High",
+                        3: "High",
+                        2: "Low",
+                        1: "Very Low",
+                    };
+
+                    for (let line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed) continue;
+
+                        // New section
+                        if (!line.startsWith(" ")) {
+                        if (currentSection) result.push({ section: currentSection, tasks: buffer });
+                        currentSection = trimmed;
+                        buffer = [];
+                        }
+                        // New task
+                        else if (!line.startsWith("        ")) {
+                        buffer.push({ title: trimmed, details: [] });
+                        }
+                    }
+                    if (currentSection) result.push({ section: currentSection, tasks: buffer });
+
+                    // Construct the final text
+                    return result
+                        .map((sec) => {
+                        const tasks = sec.tasks
+                            .map((t) => {
+                            let title = t.title;
+                            let priority = "";
+                            let ticket = undefined;
+                            let assigned = undefined;
+
+                            // Detect priority by "!"
+                            const matchExcl = title.match(/^(!+)(.*)$/);
+                            if (matchExcl) {
+                                const count = matchExcl[1].length;
+                                title = matchExcl[2].trim();
+                                priority = priorityMap[Math.min(count, 4)];
+                            }
+
+                            // Detect (ticket, assigned)
+                            const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
+                            if (matchParen) {
+                                ticket = matchParen[1].trim();
+                                assigned = matchParen[2].trim();
+                                title = title.replace(/\([^)]+\)$/, "").trim();
+                            }
+
+                            // Construct data object
+                            const data = [];
+                            if (ticket) data.push(`ticket: '${ticket}'`);
+                            if (assigned) data.push(`assigned: '${assigned}'`);
+                            if (priority) data.push(`priority: '${priority}'`);
+
+                            return `    ${title} @{ ${data.join(", ")} }`;
+                            })
+                            .join("\n");
+
+                    return `${sec.section}\n${tasks}`;
+                    }).join("\n\n");
+                }
+                code = `kanban\n` + parseTasks(code);
+                isMermaidDiagram = true;
+            } else if (language.includes("-xychart")) {
+                let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(attributes.trim(), "").trim();
+                code = `xychart-beta${name_chart ? ` title "${name_chart}"` : ""}\n` + code;
+                isMermaidDiagram = true;
+            } else if (language.includes("-pie")) {
+                // Convert key: value pairs into "key": value for proper Mermaid syntax
+                code = code.split("\n").map(linea => {
+                            const partes = linea.split(":");
+                            if (partes.length > 1) {
+                            const clave = partes[0].trim();
+                            const valor = partes.slice(1).join(":").trim();
+                            return `"${clave}": ${valor}`;
+                            }
+                            return linea;
+                        }).join("\n");
+                let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(attributes.trim(), "").trim();
+                code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
+                isMermaidDiagram = true;
+            } else if (code.includes("<svg")) {
+                // Calculate aspect ratio from the SVG code
                 let parser = new DOMParser();
                 let svgDoc = parser.parseFromString(code, "image/svg+xml");
                 let rectElement = svgDoc.querySelector("svg>rect");
@@ -1059,114 +1156,11 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                     // Calculate the ratio (width/height)
                     aspectRatio = rectWidth / rectHeight;
                 }
+            }
 
-            } else {
-                if (language.includes("-flowchartLR")) {
-                    console.log(code);
-                    code = parseBlocksFlowChart(code);
-                    console.log(code);
-                    code = `---\nconfig:\n    look: handDrawn\n---\nflowchart LR\n` + code;
-                    
-                }
-                if (language.includes("-flowchartTB")) {
-                    code = parseBlocksFlowChart(code);
-                    code = `---\nconfig:\n    look: handDrawn\n---\nflowchart TD\n` + code;
-                }
-                if (language.includes("-kanban")) {
-                    function parseTasks(text) {
-                        const lines = text.split(/\r?\n/);
-                        const result = [];
-                        let currentSection = null;
-                        let buffer = [];
-
-                        const priorityMap = {
-                            4: "Very High",
-                            3: "High",
-                            2: "Low",
-                            1: "Very Low",
-                        };
-
-                        for (let line of lines) {
-                            const trimmed = line.trim();
-                            if (!trimmed) continue;
-
-                            // New section
-                            if (!line.startsWith(" ")) {
-                            if (currentSection) result.push({ section: currentSection, tasks: buffer });
-                            currentSection = trimmed;
-                            buffer = [];
-                            }
-                            // New task
-                            else if (!line.startsWith("        ")) {
-                            buffer.push({ title: trimmed, details: [] });
-                            }
-                        }
-                        if (currentSection) result.push({ section: currentSection, tasks: buffer });
-
-                        // Construct the final text
-                        return result
-                            .map((sec) => {
-                            const tasks = sec.tasks
-                                .map((t) => {
-                                let title = t.title;
-                                let priority = "";
-                                let ticket = undefined;
-                                let assigned = undefined;
-
-                                // Detect priority by "!"
-                                const matchExcl = title.match(/^(!+)(.*)$/);
-                                if (matchExcl) {
-                                    const count = matchExcl[1].length;
-                                    title = matchExcl[2].trim();
-                                    priority = priorityMap[Math.min(count, 4)];
-                                }
-
-                                // Detect (ticket, assigned)
-                                const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
-                                if (matchParen) {
-                                    ticket = matchParen[1].trim();
-                                    assigned = matchParen[2].trim();
-                                    title = title.replace(/\([^)]+\)$/, "").trim();
-                                }
-
-                                // Construct data object
-                                const data = [];
-                                if (ticket) data.push(`ticket: '${ticket}'`);
-                                if (assigned) data.push(`assigned: '${assigned}'`);
-                                if (priority) data.push(`priority: '${priority}'`);
-
-                                return `    ${title} @{ ${data.join(", ")} }`;
-                                })
-                                .join("\n");
-
-                        return `${sec.section}\n${tasks}`;
-                        }).join("\n\n");
-                    }
-                    code = `kanban\n` + parseTasks(code);
-                }
-                if (language.includes("-xychart")) {
-                    let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(attributes.trim(), "").trim();
-                    code = `xychart-beta${name_chart ? ` title "${name_chart}"` : ""}\n` + code;
-                }
-                if (language.includes("-pie")) {
-                    
-                    // Convert key: value pairs into "key": value for proper Mermaid syntax
-                    code = code.split("\n").map(linea => {
-                                const partes = linea.split(":");
-                                if (partes.length > 1) {
-                                const clave = partes[0].trim();
-                                const valor = partes.slice(1).join(":").trim();
-                                return `"${clave}": ${valor}`;
-                                }
-                                return linea;
-                            }).join("\n");
-
-                    let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(attributes.trim(), "").trim();
-                    code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
-                }
+            if (isMermaidDiagram) {
                 // Use Mermaid.js to render diagram
                 code = `<div id="mermaid-diagram-${numberSVGcontainer}" class="mermaid-diagram">${code}</div>`;
-                isMermaidDiagram = true;
             }
 
             codeHtml = `<div

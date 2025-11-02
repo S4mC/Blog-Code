@@ -2246,6 +2246,11 @@ details::after {
 }
 
 
+/* Hide mermaid alert */
+svg[aria-roledescription="error"] {
+    display: none;
+}
+
 /* mermaid svg colors */
 .mermaid-diagram-container {
     & svg {

@@ -36,37 +36,37 @@ ${n}</${t}>
 
 `),marked.setOptions({breaks:!0,gfm:!0,renderer:a,mangle:!1});let i=marked.parse(n),o="";i=i.replace(/\(\?=([a-zA-Z0-9-_]+)\)/g,(e,t)=>`<span class="float-trigger" data-float-id="${t}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 28"><g fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="5" y="5" rx="4"/><path stroke-linecap="round" d="M12 15.52v-.01m-1.998-5.533C10.157 9.019 11 8.5 12 8.5s1.686.672 1.87 1.207c.183.535.144 1.344-.363 1.809s-.773.316-1.229.8a1.8 1.8 0 0 0-.278.432"/></g></svg>
-        </span>`),i=i.replace(/START_OF_LIST_CONTINUES_TEXT_(.*?)_TEXT_CONTINUES_LIST_OF_START/g,(e,t)=>`<p style=" margin-left: -16px">··· ${t?`<span style="font-size: smaller;margin-left: 5px;">[ ${t} ]</span>`:""}</p>`);for(const[e,{language:t,code:n}]of u){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let s=1,l=1;for(let[a,{language:t,code:e}]of m){let n="";if(t.startsWith("custom-block-block-custom-svg")){let i=obtainAttributes(t),a=1,r=!1;if(e.includes("<svg")){{let n=new DOMParser,s=n.parseFromString(e,"image/svg+xml"),t=s.querySelector("svg>rect");if(t){let e=t.getAttribute("width")||t.width.baseVal.value;const n=t.getAttribute("height")||t.height.baseVal.value;a=e/n}}}else{if(t.includes("-flowchartLR")&&(console.log(e),e=parseBlocksFlowChart(e),console.log(e),e=`---
+        </span>`),i=i.replace(/START_OF_LIST_CONTINUES_TEXT_(.*?)_TEXT_CONTINUES_LIST_OF_START/g,(e,t)=>`<p style=" margin-left: -16px">··· ${t?`<span style="font-size: smaller;margin-left: 5px;">[ ${t} ]</span>`:""}</p>`);for(const[e,{language:t,code:n}]of u){const s=escapeHtml(n),o=new RegExp(e,"g");i=i.replace(o,`<code class="language-${t}">${s}</code>`)}let s=1,l=1;for(let[a,{language:t,code:e}]of m){let n="";if(t.startsWith("custom-block-block-custom-svg")){let a=obtainAttributes(t),r=1,i=!1;if(t.includes("-flowchartLR"))e=parseBlocksFlowChart(e),e=`---
 config:
     look: handDrawn
 ---
 flowchart LR
-`+e),t.includes("-flowchartTB")&&(e=parseBlocksFlowChart(e),e=`---
+`+e,i=!0;else if(t.includes("-flowchartTB"))e=parseBlocksFlowChart(e),e=`---
 config:
     look: handDrawn
 ---
 flowchart TD
-`+e),t.includes("-kanban")){function p(e){const o=e.split(/\r?\n/),s=[];let t=null,n=[];const i={4:"Very High",3:"High",2:"Low",1:"Very Low"};for(let e of o){const i=e.trim();if(!i)continue;e.startsWith(" ")?e.startsWith("        ")||n.push({title:i,details:[]}):(t&&s.push({section:t,tasks:n}),t=i,n=[])}return t&&s.push({section:t,tasks:n}),s.map(e=>{const t=e.tasks.map(e=>{let t=e.title,s="",o=0[0],a=0[0];const r=t.match(/^(!+)(.*)$/);if(r){const e=r[1].length;t=r[2].trim(),s=i[Math.min(e,4)]}const c=t.match(/\(([^,]+),\s*([^)]+)\)$/);c&&(o=c[1].trim(),a=c[2].trim(),t=t.replace(/\([^)]+\)$/,"").trim());const n=[];return o&&n.push(`ticket: '${o}'`),a&&n.push(`assigned: '${a}'`),s&&n.push(`priority: '${s}'`),`    ${t} @{ ${n.join(", ")} }`}).join(`
+`+e,i=!0;else if(t.includes("-kanban")){function p(e){const o=e.split(/\r?\n/),s=[];let t=null,n=[];const i={4:"Very High",3:"High",2:"Low",1:"Very Low"};for(let e of o){const i=e.trim();if(!i)continue;e.startsWith(" ")?e.startsWith("        ")||n.push({title:i,details:[]}):(t&&s.push({section:t,tasks:n}),t=i,n=[])}return t&&s.push({section:t,tasks:n}),s.map(e=>{const t=e.tasks.map(e=>{let t=e.title,s="",o=0[0],a=0[0];const r=t.match(/^(!+)(.*)$/);if(r){const e=r[1].length;t=r[2].trim(),s=i[Math.min(e,4)]}const c=t.match(/\(([^,]+),\s*([^)]+)\)$/);c&&(o=c[1].trim(),a=c[2].trim(),t=t.replace(/\([^)]+\)$/,"").trim());const n=[];return o&&n.push(`ticket: '${o}'`),a&&n.push(`assigned: '${a}'`),s&&n.push(`priority: '${s}'`),`    ${t} @{ ${n.join(", ")} }`}).join(`
 `);return`${e.section}
 ${t}`}).join(`
 
 `)}e=`kanban
-`+p(e)}if(t.includes("-xychart")){let n=t.replace("custom-block-block-custom-svg","").replace("-xychart","").replace(i.trim(),"").trim();e=`xychart-beta${n?` title "${n}"`:""}
-`+e}if(t.includes("-pie")){e=e.split(`
+`+p(e),i=!0}else if(t.includes("-xychart")){let n=t.replace("custom-block-block-custom-svg","").replace("-xychart","").replace(a.trim(),"").trim();e=`xychart-beta${n?` title "${n}"`:""}
+`+e,i=!0}else if(t.includes("-pie")){e=e.split(`
 `).map(e=>{const t=e.split(":");if(t.length>1){const e=t[0].trim(),n=t.slice(1).join(":").trim();return`"${e}": ${n}`}return e}).join(`
-`);let n=t.replace("custom-block-block-custom-svg","").replace("-pie","").replace(i.trim(),"").trim();e=`pie${n?`
+`);let n=t.replace("custom-block-block-custom-svg","").replace("-pie","").replace(a.trim(),"").trim();e=`pie${n?`
 title ${n}`:""}
-`+e}e=`<div id="mermaid-diagram-${s}" class="mermaid-diagram">${e}</div>`,r=!0}n=`<div
+`+e,i=!0}else if(e.includes("<svg")){let n=new DOMParser,s=n.parseFromString(e,"image/svg+xml"),t=s.querySelector("svg>rect");if(t){let e=t.getAttribute("width")||t.width.baseVal.value;const n=t.getAttribute("height")||t.height.baseVal.value;r=e/n}}i&&(e=`<div id="mermaid-diagram-${s}" class="mermaid-diagram">${e}</div>`),n=`<div
                 id="SVGiewer${s}"
-                class="SVG-viewer${r?" mermaid-diagram-container":""}${i.match(/\bheight:/i)?" custom-height":""}"
-                ${i.includes("style=")?i.replace('style="',`style="height: auto; aspect-ratio: ${a};`):i+` style="height: auto; aspect-ratio: ${a};"`}
+                class="SVG-viewer${i?" mermaid-diagram-container":""}${a.match(/\bheight:/i)?" custom-height":""}"
+                ${a.includes("style=")?a.replace('style="',`style="height: auto; aspect-ratio: ${r};`):a+` style="height: auto; aspect-ratio: ${r};"`}
             >
             <button style="position: absolute; bottom: 10px; right: 10px;background: transparent; border: 0; z-index: 1;">
                 <svg id="zoom-in${s}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${s}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${s}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
             </button>${e.replace("<svg",`<svg id='page${s}'`)}</div>
-            `,r?(o+=`${setupSVGZoom.toString()}`,o+=`(${setupMermaidDiagram.toString()})(${s});`):o+=`(${setupSVGZoom.toString()})(${s});`,s+=1}else if(t.startsWith("custom-block-block-custom-animation")){let s=obtainAttributes(t),i=t.split(" ");const a=e.trim();n=`<div class="animation-wrapper">
+            `,i?(o+=`${setupSVGZoom.toString()}`,o+=`(${setupMermaidDiagram.toString()})(${s});`):o+=`(${setupSVGZoom.toString()})(${s});`,s+=1}else if(t.startsWith("custom-block-block-custom-animation")){let s=obtainAttributes(t),i=t.split(" ");const a=e.trim();n=`<div class="animation-wrapper">
                 <div
                     id="animationContainer${l}"
                     class="animation-container"
