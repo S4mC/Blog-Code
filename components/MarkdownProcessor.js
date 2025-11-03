@@ -1187,8 +1187,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             codeHtml = `<div
                 id="SVGiewer${numberSVGcontainer}"
                 class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${attributes.match(/\baspect-ratio:/i) ? " custom-aspect-ratio" : ""}"
-                ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}
-            >
+                ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}>
             <button class="svg-zoom-controls">
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
@@ -1212,11 +1211,10 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             // Extract the animation path from the code content
             const animationPath = code.trim();
 
-            codeHtml = `<div class="animation-wrapper">
+            codeHtml = `<div class="animation-wrapper" ${attributes}>
                 <div
                     id="animationContainer${numberLottieContainer}"
                     class="animation-container"
-                    ${attributes}
                 ></div>
                 <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
                     <svg id="playPauseBtn${numberLottieContainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
@@ -1224,6 +1222,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 </button>
             </div>`;
 
+            finalJS += `${obtainAspectRatio.toString()}`; // Function definition needed for aspect ratio
             finalJS += `(${setupLottieAnimation.toString()})(${numberLottieContainer}, ${JSON.stringify(
                 config
             )}, ${JSON.stringify(animationPath)});`;
@@ -1663,13 +1662,21 @@ function setupLottieAnimation(numberLottieContainer, config, animationPath) {
             resetBtn.addEventListener("click", resetHandler);
 
             // Animation events
-            window["lottieAnimation" + numberLottieContainer].addEventListener("complete", () => {
-                const state = window.lottieStates[numberLottieContainer];
-                if (state && playPauseBtn) {
-                    playPauseBtn.querySelector("path").setAttribute("d", "M8 5v14l11-7z");
-                    state.isPlaying = false;
-                    state.isStarting = true;
+            window["lottieAnimation" + numberLottieContainer].addEventListener("DOMLoaded", () => {
+
+                if (config.includes("-autoplay")) {
+                    // If autoplay, set to playing state
+                    playPauseBtn.querySelector("path").setAttribute("d", "M6 19v-14h4v14h-4zm8-14v14h4v-14h-4z");
+                    window.lottieStates[numberLottieContainer].isPlaying = true;
+                    window.lottieStates[numberLottieContainer].isStarting = false;
                 }
+
+                // Set aspect ratio
+                let svgElement = animationContainer.querySelector("svg");
+                let aspectRatio = 1;
+                aspectRatio = obtainAspectRatio(svgElement.outerHTML)[1];
+                animationContainer.style.height = "auto";
+                animationContainer.style.aspectRatio = aspectRatio;
             });
         }
     }, 50);

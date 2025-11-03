@@ -6053,7 +6053,7 @@
                         {
                             title: "Custom Style",
                             type: "custom",
-                            placeholder: "height:15em; width:100%;",
+                            placeholder: "aspect-ratio:1; max-height:300px;",
                             pattern: 'style="{value}"',
                         },
                         {
@@ -6368,7 +6368,7 @@
 
                 const assistant = document.getElementById("config-assistant");
                 if (assistant && !assistant.classList.contains("hidden")) {
-                    hideConfigAssistant();
+                    hideConfigAssistant(false);
                 }
 
                 if (blockType) {
@@ -6828,10 +6828,11 @@
                 // Click outside to close
                 document.addEventListener("click", (e) => {
                     // If clicking inside the editor but outside the config assistant hide it
-                    if (e.target?.className?.toString?.().includes("view-line")) {
+                    let classClick = e.target?.className?.toString?.();
+                    if (classClick.includes("view-line") || classClick.includes("view-lines")) {
                         const assistant = document.getElementById("config-assistant");
                         if (assistant && !assistant.classList.contains("hidden")) {
-                            hideConfigAssistant();
+                            hideConfigAssistant(false);
                         }
                     }
                 });
