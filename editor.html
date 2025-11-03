@@ -6055,11 +6055,15 @@
                             type: "custom",
                             placeholder: "aspect-ratio:1; max-height:300px;",
                             pattern: 'style="{value}"',
+                            button: {
+                                text: "Get Aspect Ratio",
+                                onClick: "getAspectRatioFromBlock",
+                            },
                         },
                         {
                             title: "Information",
                             type: "info",
-                            info: "Use loop and autoplay options to control the animation. Use custom style to adjust size and appearance.",
+                            info: "Use loop and autoplay options to control the animation. Use custom style to adjust size and appearance. Use 'Get Aspect Ratio' to automatically calculate and apply the aspect ratio from the rendered animation.",
                         },
                     ],
                 },
@@ -6097,7 +6101,7 @@
                             pattern: 'style="{value}"',
                             button: {
                                 text: "Get Aspect Ratio",
-                                onClick: "getAspectRatioFromSVG",
+                                onClick: "getAspectRatioFromBlock",
                             },
                         },
                         {
@@ -7306,11 +7310,18 @@
             }
 
             // Function to get aspect ratio from rendered SVG
-            async function getAspectRatioFromSVG(buttonElement) {
-                if (currentBlockType !== "svg") {
-                    alert("⚠️ This function is only available for SVG blocks.");
+            // Unified function to get aspect ratio from rendered SVG or Animation blocks
+            async function getAspectRatioFromBlock(buttonElement) {
+                // Validate block type
+                if (currentBlockType !== "svg" && currentBlockType !== "animation") {
+                    alert("⚠️ This function is only available for SVG and Animation blocks.");
                     return;
                 }
+
+                const blockTypeName = currentBlockType === "svg" ? "SVG" : "Animation";
+                const blockPattern = currentBlockType === "svg" ? /^(\s*):::svg\s*/ : /^(\s*):::animation\s*/;
+                const waitTime = currentBlockType === "svg" ? 1500 : 2000; // Animation needs more time to load
+                const svgSelector = ':scope > div > svg'; // Both use the same selector now
 
                 // Disable button and show loading
                 const originalText = buttonElement.textContent;
@@ -7323,9 +7334,9 @@
                     let currentLine = preview.textContent;
                     
                     // Parse the line to insert obtainingAspectRatio="THIS" after options and before style
-                    const svgMatch = currentLine.match(/^(\s*):::svg\s*/);
-                    if (!svgMatch) {
-                        alert("⚠️ Invalid SVG block format.");
+                    const blockMatch = currentLine.match(blockPattern);
+                    if (!blockMatch) {
+                        alert(`⚠️ Invalid ${blockTypeName} block format.`);
                         return;
                     }
 
@@ -7362,10 +7373,10 @@
                     // Apply to editor to trigger render
                     applyConfiguration(true);
 
-                    // Wait for the SVG to render
-                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    // Wait for the element to render
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
 
-                    // Find the SVG element in the preview
+                    // Find the element in the preview
                     const previewContainer = document.querySelector('.markdown-preview');
                     if (!previewContainer) {
                         alert("⚠️ Preview container not found.");
@@ -7376,15 +7387,15 @@
                     const targetElement = previewContainer.querySelector('[obtainingAspectRatio="THIS"]');
                     
                     if (!targetElement) {
-                        alert("⚠️ Could not find the rendered SVG block. Make sure the SVG has been rendered in the preview.");
+                        alert(`⚠️ Could not find the rendered ${blockTypeName} block. Make sure the ${blockTypeName} has been rendered in the preview.`);
                         return;
                     }
 
                     // Find the SVG child
-                    const svgElement = targetElement.querySelector(':scope > .SVG-viewer > svg');
-                    console.log("SVG Element:", svgElement);
+                    const svgElement = targetElement.querySelector(svgSelector);
+                    
                     if (!svgElement) {
-                        alert("⚠️ No SVG element found inside the block. Make sure the SVG content is valid.");
+                        alert(`⚠️ No SVG element found inside the ${blockTypeName} block. Make sure the content is valid and has loaded.`);
                         return;
                     }
 
@@ -7393,7 +7404,7 @@
                     const height = svgElement.height.baseVal.value;
 
                     if (!width || !height || width === 0 || height === 0) {
-                        alert("⚠️ Could not get valid width/height from SVG. The SVG might not have explicit width/height attributes.");
+                        alert(`⚠️ Could not get valid width/height from ${blockTypeName}. The element might not have explicit width/height attributes.`);
                         return;
                     }
 
@@ -7434,7 +7445,7 @@
 
                 } catch (error) {
                     console.error("Error getting aspect ratio:", error);
-                    alert(`Error: ${error.message}`);
+                    alert(`❌ Error: ${error.message}`);
                 } finally {
                     // Re-enable button
                     buttonElement.disabled = false;
@@ -7453,7 +7464,7 @@
             window.handleListEmojiInput = handleListEmojiInput;
             window.updateConditionalInputs = updateConditionalInputs;
             window.handleSvgDescriptionChange = handleSvgDescriptionChange;
-            window.getAspectRatioFromSVG = getAspectRatioFromSVG;
+            window.getAspectRatioFromBlock = getAspectRatioFromBlock;
 
             // Initialize sidebar after rendering
             // With a small timeout to ensure DOM is ready

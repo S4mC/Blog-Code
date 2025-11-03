@@ -1213,10 +1213,12 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             // Extract the animation path from the code content
             const animationPath = code.trim();
 
+            let haveAspectRatio = attributes.match(/\baspect-ratio:/i);
+
             codeHtml = `<div class="animation-wrapper" ${attributes}>
                 <div
                     id="animationContainer${numberLottieContainer}"
-                    class="animation-container"
+                    class="animation-container${haveAspectRatio ? " custom-aspect-ratio" : ""}"
                 ></div>
                 <button style="position: absolute; bottom: 10px; left: 10px; background: transparent; border: 0;">
                     <svg id="playPauseBtn${numberLottieContainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;"><path fill="#fff" d="M8 5v14l11-7z"/></svg>
@@ -1674,11 +1676,13 @@ function setupLottieAnimation(numberLottieContainer, config, animationPath) {
                 }
 
                 // Set aspect ratio
-                let svgElement = animationContainer.querySelector("svg");
-                let aspectRatio = 1;
-                aspectRatio = obtainAspectRatio(svgElement.outerHTML)[1];
-                animationContainer.style.height = "auto";
-                animationContainer.style.aspectRatio = aspectRatio;
+                if (!animationContainer.classList.contains('custom-aspect-ratio')) {
+                    let svgElement = animationContainer.querySelector("svg");
+                    let aspectRatio = 1;
+                    aspectRatio = obtainAspectRatio(svgElement.outerHTML)[1];
+                    animationContainer.style.height = "auto";
+                    animationContainer.style.aspectRatio = aspectRatio;
+                }
             });
         }
     }, 50);
