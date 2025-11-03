@@ -1194,7 +1194,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 code = `<div id="mermaid-diagram-${numberSVGcontainer}" class="mermaid-diagram">${code}</div>`;
             }
 
-            let haveAspectRatio = attributes.match(/\baspect-ratio:/i);
+            let haveAspectRatio = attributes.match(/\baspect-ratio:/i) || attributes.includes("height");
 
             codeHtml = `<div class="svg-wrapper" ${attributes}>
             <div
@@ -1223,7 +1223,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             // Extract the animation path from the code content
             const animationPath = code.trim();
 
-            let haveAspectRatio = attributes.match(/\baspect-ratio:/i);
+            let haveAspectRatio = attributes.match(/\baspect-ratio:/i) || attributes.includes("height");
 
             codeHtml = `<div class="animation-wrapper" ${attributes}>
                 <div

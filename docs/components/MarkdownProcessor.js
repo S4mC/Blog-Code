@@ -56,7 +56,7 @@ flowchart TD
 `).map(e=>{const t=e.split(":");if(t.length>1){const e=t[0].trim(),n=t.slice(1).join(":").trim();return`${e.startsWith('"')?e:`"${e}"`}: ${n}`}return e}).join(`
 `);let n=t.replace("custom-block-block-custom-svg","").replace("-pie","").replace("-NoB","").replace(a.trim(),"").trim();e=`pie${n?`
 title ${n}`:""}
-`+e,i=!0}else t.includes("-mermaid")?i=!0:e.startsWith("<svg")&&(!a.includes("aspect-ratio:")||a.includes('obtainingAspectRatio="THIS"'))&&([e,r]=obtainAspectRatio(e));i&&(e=`<div id="mermaid-diagram-${o}" class="mermaid-diagram">${e}</div>`);let c=a.match(/\baspect-ratio:/i);n=`<div class="svg-wrapper" ${a}>
+`+e,i=!0}else t.includes("-mermaid")?i=!0:e.startsWith("<svg")&&(!a.includes("aspect-ratio:")||a.includes('obtainingAspectRatio="THIS"'))&&([e,r]=obtainAspectRatio(e));i&&(e=`<div id="mermaid-diagram-${o}" class="mermaid-diagram">${e}</div>`);let c=a.match(/\baspect-ratio:/i)||a.includes("height");n=`<div class="svg-wrapper" ${a}>
             <div
                 id="SVGiewer${o}"
                 class="SVG-viewer${i?" mermaid-diagram-container":""}${t.includes("-NoB")?" no-buttons":""}${c?" custom-aspect-ratio":""}" ${c?"":'style="height: auto; aspect-ratio:'+r+';"'}>
@@ -65,7 +65,7 @@ title ${n}`:""}
                 <svg id="zoom-out${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${o}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
             </button>${e.replace("<svg",`<svg id='page${o}'`)}</div></div>
-            `,i?(s+=`${obtainAspectRatio.toString()}`,s+=`${setupSVGZoom.toString()}`,s+=`(${setupMermaidDiagram.toString()})(${o});`):s+=`(${setupSVGZoom.toString()})(${o});`,o+=1}else if(t.startsWith("custom-block-block-custom-animation")){let o=obtainAttributes(t),i=t.split(" ");const a=e.trim();let r=o.match(/\baspect-ratio:/i);n=`<div class="animation-wrapper" ${o}>
+            `,i?(s+=`${obtainAspectRatio.toString()}`,s+=`${setupSVGZoom.toString()}`,s+=`(${setupMermaidDiagram.toString()})(${o});`):s+=`(${setupSVGZoom.toString()})(${o});`,o+=1}else if(t.startsWith("custom-block-block-custom-animation")){let o=obtainAttributes(t),i=t.split(" ");const a=e.trim();let r=o.match(/\baspect-ratio:/i)||o.includes("height");n=`<div class="animation-wrapper" ${o}>
                 <div
                     id="animationContainer${l}"
                     class="animation-container${r?" custom-aspect-ratio":""}"
