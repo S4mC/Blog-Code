@@ -7381,7 +7381,8 @@
                     }
 
                     // Find the SVG child
-                    const svgElement = targetElement.querySelector(':scope > svg');
+                    const svgElement = targetElement.querySelector(':scope > .SVG-viewer > svg');
+                    console.log("SVG Element:", svgElement);
                     if (!svgElement) {
                         alert("⚠️ No SVG element found inside the block. Make sure the SVG content is valid.");
                         return;

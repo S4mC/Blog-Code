@@ -1173,7 +1173,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
             } else if (language.includes("-mermaid")) {
                 isMermaidDiagram = true;
             } else if (code.startsWith("<svg")) {
-                if (attributes.includes('obtainingAspectRatio="THIS"') || !attributes.includes('aspect-ratio:')) {
+                if (!attributes.includes('aspect-ratio:') || attributes.includes('obtainingAspectRatio="THIS"')) {
                     // Calculate aspect ratio from the SVG code
                     [code, aspectRatio] = obtainAspectRatio(code);
                 }
@@ -1184,15 +1184,17 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 code = `<div id="mermaid-diagram-${numberSVGcontainer}" class="mermaid-diagram">${code}</div>`;
             }
 
-            codeHtml = `<div
+            let haveAspectRatio = attributes.match(/\baspect-ratio:/i);
+
+            codeHtml = `<div ${attributes}>
+            <div
                 id="SVGiewer${numberSVGcontainer}"
-                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${attributes.match(/\baspect-ratio:/i) ? " custom-aspect-ratio" : ""}"
-                ${attributes.includes("style=") ? attributes.replace('style="', `style="height: auto; aspect-ratio: ${aspectRatio};`) : attributes + ` style="height: auto; aspect-ratio: ${aspectRatio};"`}>
+                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${haveAspectRatio ? " custom-aspect-ratio" : ""}" ${haveAspectRatio ? "" : 'style="height: auto; aspect-ratio:' + aspectRatio + ';"'}>
             <button class="svg-zoom-controls">
                 <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
                 <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
                 <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
-            </button>${code.replace("<svg", `<svg id='page${numberSVGcontainer}'`)}</div>
+            </button>${code.replace("<svg", `<svg id='page${numberSVGcontainer}'`)}</div></div>
             `;
             
             if (isMermaidDiagram) {
@@ -1445,7 +1447,7 @@ function setupMermaidDiagram(numberSVGcontainer) {
                 // Replace the div content with the rendered SVG
                 const viewer = document.getElementById(`SVGiewer${numberSVGcontainer}`);
                 if (viewer) {
-                    if (viewer.attributes.obtainingaspectratio || !viewer.classList.contains('custom-aspect-ratio')) {
+                    if (!viewer.classList.contains('custom-aspect-ratio') || viewer.parentElement.attributes.obtainingaspectratio) {
                         let aspectRatio = 1;
                         [svg, aspectRatio] = obtainAspectRatio(svg);
                         viewer.style.aspectRatio = aspectRatio;
