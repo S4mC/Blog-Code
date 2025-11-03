@@ -1243,12 +1243,15 @@ blockquote h6 {
     display: block;
 }
 
+.svg-wrapper {
+    background-color: var(--bg-highlight);
+    border-radius: 7px;
+}
+
 .SVG-viewer {
     width: 100%;
     height: 100%;
     position: relative;
-    border-radius: 10px;
-    background-color: var(--bg-highlight);
     overflow: hidden;
     &.no-buttons .svg-zoom-controls {
         display: none;
@@ -1813,6 +1816,8 @@ details::after {
     position: relative;
     display: inline-block;
     width: 100%;
+    background-color: var(--bg-highlight);
+    border-radius: 7px;
 }
 
 .animation-container {

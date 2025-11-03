@@ -672,22 +672,32 @@ function parseBlocksFlowChart(text) {
     let currentBlock = null;
     let contentCurrentBlock = "";
 
+    function cleanSintaxMermaid(text, blockName=false) {
+        text = text.replaceAll('"', '“'); // Replace double quotes with typographic quotes to avoid issues with mermaid syntax
+        text = text.replaceAll('(', '❨').replaceAll(')', '❩'); // Replace parentheses with similar characters to avoid issues with mermaid syntax
+        if (blockName && text=="end") {
+            text = "end_block_need_to_be_replace_to_avoid_issues";
+        }
+        return text;
+    }
+
     for (let line of lines) {
         // Check if this line defines a block: (blockName) content
         const blockMatch = line.match(/^\(([^)]+)\)\s*(.*)/);
 
         if (currentBlock) {
             if (line.startsWith(" ") || line.trim() === "") {
+                contentCurrentBlock = cleanSintaxMermaid(contentCurrentBlock);
                 blocks.set(currentBlock, contentCurrentBlock);
                 
                 const destBlockMatch = line.match(/\(([^)]+)\)\s*$/);
                 if (destBlockMatch) {
                     // Extract destination block and label (remove the (blockName) from the end)
-                    let destBlock = destBlockMatch[1];
+                    let destBlock = cleanSintaxMermaid(destBlockMatch[1], true);
                     let label = line.substring(0, destBlockMatch.index).trim();
 
                     if (label.startsWith('- ')) {
-                        label = label.substring(2);
+                        label = cleanSintaxMermaid(label.substring(2).trim());
                     }
 
                     connections.push({
@@ -702,7 +712,7 @@ function parseBlocksFlowChart(text) {
         }
 
         if (blockMatch) {
-            currentBlock = blockMatch[1];
+            currentBlock = cleanSintaxMermaid(blockMatch[1], true);
             contentCurrentBlock = blockMatch[2];
         }
     }
@@ -1186,7 +1196,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
             let haveAspectRatio = attributes.match(/\baspect-ratio:/i);
 
-            codeHtml = `<div ${attributes}>
+            codeHtml = `<div class="svg-wrapper" ${attributes}>
             <div
                 id="SVGiewer${numberSVGcontainer}"
                 class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${haveAspectRatio ? " custom-aspect-ratio" : ""}" ${haveAspectRatio ? "" : 'style="height: auto; aspect-ratio:' + aspectRatio + ';"'}>
