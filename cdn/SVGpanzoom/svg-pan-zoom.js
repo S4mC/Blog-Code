@@ -761,6 +761,7 @@
                     contain: false, // enable or disable viewport contain the svg (default false)
                     center: true, // enable or disable viewport centering in SVG (default true)
                     refreshRate: "auto", // Maximum number of frames per second (altering SVG's viewport)
+                    parentOfParentZIndexChangeInClick: true, // enable or disable changing z-index of SVG's grandparent on click (default true because i need it in a project) if you don't need it o don't know what is this set to false
                     beforeZoom: null,
                     onZoom: null,
                     beforePan: null,
@@ -1330,6 +1331,60 @@
                     if (evt.button === 0) {
                         return;
                     }
+
+                    if (this.options.parentOfParentZIndexChangeInClick) {
+                        // // console.log(evt);
+                        // var parent = this.svg.parentNode;
+                        // if (parent) {
+                        //     var grandparent = parent.parentNode;
+                        //     if (grandparent) {
+                        //         console.log(grandparent);
+                        //         document.querySelectorAll(".svg-wrapper").forEach(function(el){
+                        //             el.style.zIndex = 0;
+                        //         });
+                        //         grandparent.style.position = "relative";
+                        //         grandparent.style.zIndex = 1;
+                        //     }
+                        // }
+
+                        // Reset z-index of all svg-wrapper elements
+                        document.querySelectorAll(".svg-wrapper").forEach(function(el){
+                            el.style.zIndex = 0;
+                        });
+
+                        const x = evt.clientX;
+                        const y = evt.clientY;
+
+                        // Todos los elementos bajo el cursor, del más alto al más bajo
+                        const stack = document.elementsFromPoint(x, y);
+
+                        let svg_page_id = this.svg.getAttribute("id") || "page0";
+                        let parent_click = this.svg.parentNode.parentNode;
+                        let svg_diferent = null;
+
+                        if (evt.target.getAttribute("id")?.startsWith("page")) {
+                            for (const el of stack) {
+                                // Buscar si el elemento o alguno de sus padres es un <svg> con id que empiece con "page"
+                                const svgParent = el.closest("svg[id^='page']");
+                                if (svgParent) {
+                                    let id = svgParent.getAttribute("id");
+                                    if (id !== svg_page_id) {
+                                        parent_click = svgParent.parentNode.parentNode;
+                                        svg_diferent = id.replace("page", "");
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        parent_click.style.zIndex = 1;
+                        parent_click.style.position = "relative";
+
+                        if (svg_diferent) {
+                            window[`zoomContainer${svg_diferent}`].activatePanMode(evt);
+                        }
+
+                    }
                     
                     if (this.options.preventMouseEventsDefault) {
                         if (evt.preventDefault) {
@@ -1376,11 +1431,18 @@
                         var point = SvgUtils.getEventPoint(
                                 evt,
                                 this.svg
-                            ).matrixTransform(this.firstEventCTM.inverse()),
-                            viewportCTM = this.firstEventCTM.translate(
-                                point.x - this.stateOrigin.x,
-                                point.y - this.stateOrigin.y
-                            );
+                            ).matrixTransform(this.firstEventCTM.inverse());
+                        
+                        // If stateOrigin is null, initialize it with the current point
+                        // This happens when activatePanMode() was called programmatically
+                        if (!this.stateOrigin) {
+                            this.stateOrigin = point;
+                        }
+                        
+                        var viewportCTM = this.firstEventCTM.translate(
+                            point.x - this.stateOrigin.x,
+                            point.y - this.stateOrigin.y
+                        );
 
                         this.viewport.setCTM(viewportCTM);
                     }
@@ -2071,6 +2133,34 @@
                                     realZoom: that.getZoom(),
                                     viewBox: that.viewport.getViewBox(),
                                 };
+                            },
+                            // Activate pan mode programmatically
+                            activatePanMode: function (evt) {
+                                that.state = "pan";
+                                that.firstEventCTM = that.viewport.getCTM();
+                                
+                                // If an event is provided, use its coordinates as the origin
+                                // Otherwise, use the current mouse position or center
+                                if (evt) {
+                                    that.stateOrigin = SvgUtils.getEventPoint(
+                                        evt,
+                                        that.svg
+                                    ).matrixTransform(that.firstEventCTM.inverse());
+                                } else {
+                                    // Use a neutral origin that won't cause movement
+                                    // This allows the next mouse move to set the proper origin
+                                    that.stateOrigin = null;
+                                }
+                                return that.pi;
+                            },
+                            // Deactivate pan mode
+                            deactivatePanMode: function () {
+                                that.state = "none";
+                                return that.pi;
+                            },
+                            // Get current state
+                            getState: function () {
+                                return that.state;
                             },
                             // Destroy
                             destroy: function () {
