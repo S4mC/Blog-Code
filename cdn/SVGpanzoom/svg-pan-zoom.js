@@ -964,8 +964,6 @@
                     for (var event in this.eventListeners) {
                         // Attach event to eventsListenerElement or SVG if not available
                         if (this.options.overflowVisible && (event == "mouseleave" || event == "touchleave" || event == "touchcancel" || event == "mouseup" || event == "touchend" || event == "mousemove")) {
-                            // mouseleave and mousemove events cause issues on overflow visible SVGs
-                            // BUT touchmove needs to stay on the SVG to detect which one is being touched
                             document.querySelector(".entry-content").addEventListener(event, this.eventListeners[event], !this.options.preventMouseEventsDefault
                                 ? passiveListenerOption
                                 : false);
@@ -1336,7 +1334,8 @@
                  */
                 SvgPanZoom.prototype.handleMouseDown = function (evt, prevEvt) {
 
-                    if (evt.button === 0) {
+                    // Skip if it's a left mouse button click (button 0) but allow touch events
+                    if (evt.type === 'mousedown' && evt.button === 0) {
                         return;
                     }
 
@@ -1346,8 +1345,9 @@
                             el.style.zIndex = 0;
                         });
 
-                        const x = evt.clientX;
-                        const y = evt.clientY;
+                        // Get coordinates from mouse or touch event
+                        const x = evt.touches ? evt.touches[0].clientX : evt.clientX;
+                        const y = evt.touches ? evt.touches[0].clientY : evt.clientY;
 
                         // All items under the cursor, from highest to lowest
                         const stack = document.elementsFromPoint(x, y);
