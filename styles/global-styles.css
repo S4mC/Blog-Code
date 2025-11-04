@@ -1115,6 +1115,7 @@ blockquote h6 {
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
     scrollbar-width: thin;
     overscroll-behavior: contain;
+    background-color: var(--bg);
 }
 
 .sidebar-component .section {
