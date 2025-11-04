@@ -1167,7 +1167,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                 code = `kanban\n` + parseTasksKanban(code);
                 isMermaidDiagram = true;
             } else if (language.includes("-xychart")) {
-                let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace("-NoB", "").replace(attributes.trim(), "").trim();
+                let name_chart = language.replace("custom-block-block-custom-svg", "").replace("-xychart", "").replace(/-NoB(-[ZCR])*/, "").replace(attributes.trim(), "").trim();
                 code = `xychart-beta${name_chart ? ` title "${name_chart}"` : ""}\n` + code;
                 isMermaidDiagram = true;
             } else if (language.includes("-pie")) {
@@ -1181,7 +1181,7 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
                             }
                             return linea;
                         }).join("\n");
-                let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace("-NoB", "").replace(attributes.trim(), "").trim();
+                let name_pie = language.replace("custom-block-block-custom-svg", "").replace("-pie", "").replace(/-NoB(-[ZCR])*/, "").replace(attributes.trim(), "").trim();
                 code = `pie${name_pie ? `\ntitle ${name_pie}` : ""}\n` + code;
                 isMermaidDiagram = true;
             } else if (language.includes("-mermaid")) {
@@ -1200,14 +1200,28 @@ export function renderMarkdown(markdownContent, executeScripts = true) {
 
             let haveAspectRatio = attributes.match(/\baspect-ratio:/i) || attributes.includes("height");
 
+            // Parse control flags from language string (e.g., -NoB-Z-C-R)
+            const hasNoButtons = language.includes("-NoB");
+            const hasNoZoom = language.match(/-NoB[^ ]*-Z/) || language.endsWith("-NoB-Z");
+            const hasNoCrop = language.match(/-NoB[^ ]*-C/) || language.endsWith("-NoB-C");
+            const hasNoRestore = language.match(/-NoB[^ ]*-R/) || language.endsWith("-NoB-R");
+
+            // Build class string
+            let additionalClasses = "";
+            if (hasNoButtons) additionalClasses += " no-buttons";
+            if (hasNoZoom) additionalClasses += " no-zoom";
+            if (hasNoCrop) additionalClasses += " no-crop";
+            if (hasNoRestore) additionalClasses += " no-restore";
+
             codeHtml = `<div class="svg-wrapper" ${attributes}>
             <div
                 id="SVGiewer${numberSVGcontainer}"
-                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${language.includes("-NoB") ? " no-buttons" : ""}${haveAspectRatio ? " custom-aspect-ratio" : ""}" ${haveAspectRatio ? "" : 'style="height: auto; aspect-ratio:' + aspectRatio + ';"'}>
-            <button class="svg-zoom-controls">
-                <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
-                <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
-                <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="background: black; border-radius: 50%;margin-top: 5px;"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
+                class="SVG-viewer${isMermaidDiagram ? " mermaid-diagram-container" : ""}${additionalClasses}${haveAspectRatio ? " custom-aspect-ratio" : ""} cropped" ${haveAspectRatio ? "" : 'style="height: auto; aspect-ratio:' + aspectRatio + ';"'}>
+            <button class="svg-zoom-controls" style="display: grid; grid-template-rows: 1fr 0fr; gap: 2px; width: auto; grid-auto-flow: column;">
+                <svg id="zoom-in${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M19 12.998h-6v6h-2v-6H5v-2h6v-6h2v6h6z"></path></svg>
+                <svg id="zoom-out${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="M19 12.998H5v-2h14z"/></svg>
+                <svg id="crop${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" transform="translate(2,2) scale(0.8)" d="M12 9q-.425 0-.712-.288T11 8t.288-.712T12 7t.713.288T13 8t-.288.713T12 9m-4 4q-.425 0-.712-.288T7 12t.288-.712T8 11t.713.288T9 12t-.288.713T8 13m4 0q-.425 0-.712-.288T11 12t.288-.712T12 11t.713.288T13 12t-.288.713T12 13m4 0q-.425 0-.712-.288T15 12t.288-.712T16 11t.713.288T17 12t-.288.713T16 13m-4 4q-.425 0-.712-.288T11 16t.288-.712T12 15t.713.288T13 16t-.288.713T12 17M4 5q-.425 0-.712-.288T3 4t.288-.712T4 3t.713.288T5 4t-.288.713T4 5m4 0q-.425 0-.712-.288T7 4t.288-.712T8 3t.713.288T9 4t-.288.713T8 5m4 0q-.425 0-.712-.288T11 4t.288-.712T12 3t.713.288T13 4t-.288.713T12 5m4 0q-.425 0-.712-.288T15 4t.288-.712T16 3t.713.288T17 4t-.288.713T16 5m4 0q-.425 0-.712-.288T19 4t.288-.712T20 3t.713.288T21 4t-.288.713T20 5M4 9q-.425 0-.712-.288T3 8t.288-.712T4 7t.713.288T5 8t-.288.713T4 9m16 0q-.425 0-.712-.288T19 8t.288-.712T20 7t.713.288T21 8t-.288.713T20 9M4 13q-.425 0-.712-.288T3 12t.288-.712T4 11t.713.288T5 12t-.288.713T4 13m16 0q-.425 0-.712-.288T19 12t.288-.712T20 11t.713.288T21 12t-.288.713T20 13M4 17q-.425 0-.712-.288T3 16t.288-.712T4 15t.713.288T5 16t-.288.713T4 17m16 0q-.425 0-.712-.288T19 16t.288-.712T20 15t.713.288T21 16t-.288.713T20 17M4 21q-.425 0-.712-.288T3 20t.288-.712T4 19t.713.288T5 20t-.288.713T4 21m4 0q-.425 0-.712-.288T7 20t.288-.712T8 19t.713.288T9 20t-.288.713T8 21m4 0q-.425 0-.712-.288T11 20t.288-.712T12 19t.713.288T13 20t-.288.713T12 21m4 0q-.425 0-.712-.288T15 20t.288-.712T16 19t.713.288T17 20t-.288.713T16 21m4 0q-.425 0-.712-.288T19 20t.288-.712T20 19t.713.288T21 20t-.288.713T20 21"/></svg>
+                <svg id="reset_zoom${numberSVGcontainer}" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="#fff" d="m12 10.587l4.95-4.95l1.414 1.414l-4.95 4.95l4.95 4.95l-1.415 1.414l-4.95-4.95l-4.949 4.95l-1.414-1.415l4.95-4.95l-4.95-4.95L7.05 5.638z"/></svg>
             </button>${code.replace("<svg", `<svg id='page${numberSVGcontainer}'`)}</div></div>
             `;
             
@@ -1547,6 +1561,20 @@ function setupSVGZoom(numberSVGcontainer) {
         });
 
         // Button listeners
+        document.getElementById(`crop${numberSVGcontainer}`).addEventListener("click", function (ev) {
+            ev.preventDefault();
+
+            if (document.getElementById(`SVGiewer${numberSVGcontainer}`).classList.contains("cropped")) {
+                document.getElementById(`crop${numberSVGcontainer}`).style.background = "#3b3b3b";
+                document.getElementById(`SVGiewer${numberSVGcontainer}`).classList.remove("cropped");
+            } else {
+                document.getElementById(`crop${numberSVGcontainer}`).style.background = "black";
+                document.getElementById(`SVGiewer${numberSVGcontainer}`).classList.add("cropped");
+            }
+
+            
+        });
+
         document.getElementById(`zoom-in${numberSVGcontainer}`).addEventListener("click", function (ev) {
             ev.preventDefault();
             window[`zoomContainer${numberSVGcontainer}`].zoomIn();

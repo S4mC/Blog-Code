@@ -6076,9 +6076,9 @@
                             options: ["-flowchartLR", "-flowchartTB", "-pie", "-kanban", "-xychart", "-mermaid"],
                         },
                         {
-                            title: "With buttons",
+                            title: "Button controls",
                             type: "options",
-                            options: ["-NoB"],
+                            options: ["-NoB", "-Z", "-C", "-R"],
                         },{
                             title: "Name (for pie and xychart)",
                             type: "custom",
@@ -6107,7 +6107,7 @@
                         {
                             title: "Information",
                             type: "info",
-                            info: "Add custom styles to control the size and appearance of the SVG. For pie and xychart types, you can add a description that will appear in the preview. Use 'Get Aspect Ratio' to automatically calculate and apply the aspect ratio from the rendered SVG.",
+                            info: "Button controls can be stacked: -NoB hides all buttons, -Z disables zoom, -C disables crop, -R disables restore. Select multiple options to combine them (e.g., -NoB + -Z + -C = -NoB-Z-C). For pie and xychart types, you can add a description. Use 'Get Aspect Ratio' to automatically calculate and apply the aspect ratio from the rendered SVG.",
                         },
                     ],
                 },
@@ -6736,7 +6736,21 @@
                     }
                 }
 
-                return { options, remainingText };
+                // Decompose combined button control options (e.g., "-NoB-Z-C" -> ["-NoB", "-Z", "-C"])
+                const decomposedOptions = [];
+                for (const option of options) {
+                    if (option.match(/^-NoB(-[ZCR])+$/)) {
+                        // This is a combined button control option
+                        decomposedOptions.push("-NoB");
+                        if (option.includes("-Z")) decomposedOptions.push("-Z");
+                        if (option.includes("-C")) decomposedOptions.push("-C");
+                        if (option.includes("-R")) decomposedOptions.push("-R");
+                    } else {
+                        decomposedOptions.push(option);
+                    }
+                }
+
+                return { options: decomposedOptions, remainingText };
             }
 
             function isValidOption(text) {
@@ -6759,10 +6773,18 @@
                     "-xychart",
                     "-mermaid",
                     "-NoB",
+                    "-Z",
+                    "-C",
+                    "-R",
                 ];
 
                 // Check if it's a valid standalone option
                 if (validStandalone.includes(text)) {
+                    return true;
+                }
+
+                // Check if it's a combined button control option (e.g., "-NoB-Z-C-R")
+                if (text.match(/^-NoB(-[ZCR])+$/)) {
                     return true;
                 }
 
@@ -6863,15 +6885,47 @@
 
                         optionElement.classList.add("active");
                     }
+                } else if (option === "-NoB" || option === "-Z" || option === "-C" || option === "-R") {
+                    // Handle button control options - these can stack
+                    if (option === "-NoB") {
+                        if (isCurrentlyActive) {
+                            // If deactivating -NoB, also deactivate all dependent options
+                            optionElement.classList.remove("active");
+                            document.querySelectorAll(".config-option").forEach((opt) => {
+                                const optValue = opt.dataset.option;
+                                if (optValue === "-Z" || optValue === "-C" || optValue === "-R") {
+                                    opt.classList.remove("active");
+                                }
+                            });
+                        } else {
+                            // Simply activate -NoB
+                            optionElement.classList.add("active");
+                        }
+                    } else {
+                        // For -Z, -C, -R: ensure -NoB is active first
+                        if (isCurrentlyActive) {
+                            // Simply deactivate
+                            optionElement.classList.remove("active");
+                        } else {
+                            // Activate the option and ensure -NoB is also active
+                            optionElement.classList.add("active");
+                            const noBOption = document.querySelector(".config-option[data-option='-NoB']");
+                            if (noBOption && !noBOption.classList.contains("active")) {
+                                noBOption.classList.add("active");
+                            }
+                        }
+                    }
                 } else {
                     if (window.originalLine.includes(":::svg")) {
-                        // For SVG block type, handle mutually exclusive with other options except -NoB
+                        // For SVG block type, handle mutually exclusive with other options except button controls
                         if (isCurrentlyActive) {
                             optionElement.classList.remove("active");
                         } else {
-                            if (!option.includes("-NoB")) {
+                            if (option !== "-NoB" && option !== "-Z" && option !== "-C" && option !== "-R") {
                                 document.querySelectorAll(".config-option").forEach((opt) => {
-                                    if (opt.dataset.option && !opt.dataset.option.includes("-NoB")) {
+                                    const optValue = opt.dataset.option;
+                                    // Don't deactivate button control options
+                                    if (optValue && optValue !== "-NoB" && optValue !== "-Z" && optValue !== "-C" && optValue !== "-R") {
                                         opt.classList.remove("active");
                                     }
                                 });
@@ -6951,8 +7005,32 @@
                     activeOptions.push(...window.customConfigOptions);
                 }
 
+                // Process button control options - combine them into a single option
+                const buttonControls = ["-NoB", "-Z", "-C", "-R"];
+                const activeButtonControls = activeOptions.filter(opt => buttonControls.includes(opt));
+                const otherOptions = activeOptions.filter(opt => !buttonControls.includes(opt));
+
+                // Combine button controls in the correct order: -NoB-Z-C-R
+                let combinedButtonControl = "";
+                if (activeButtonControls.length > 0) {
+                    // Always start with -NoB if any button control is present
+                    if (activeButtonControls.includes("-NoB") || activeButtonControls.length > 0) {
+                        combinedButtonControl = "-NoB";
+                        // Add other controls in order
+                        if (activeButtonControls.includes("-Z")) combinedButtonControl += "-Z";
+                        if (activeButtonControls.includes("-C")) combinedButtonControl += "-C";
+                        if (activeButtonControls.includes("-R")) combinedButtonControl += "-R";
+                    }
+                }
+
+                // Build final options array
+                const finalOptions = [...otherOptions];
+                if (combinedButtonControl) {
+                    finalOptions.push(combinedButtonControl);
+                }
+
                 // Remove duplicates and filter empty options
-                const uniqueOptions = [...new Set(activeOptions)];
+                const uniqueOptions = [...new Set(finalOptions)];
 
                 // Build new line
                 let newLine = blockStart;
