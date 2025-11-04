@@ -1346,37 +1346,46 @@
                         });
 
                         // Get coordinates from mouse or touch event
-                        const x = evt.touches ? evt.touches[0].clientX : evt.clientX;
-                        const y = evt.touches ? evt.touches[0].clientY : evt.clientY;
+                        let x, y;
+                        if (evt.touches && evt.touches.length > 0) {
+                            x = evt.touches[0].clientX;
+                            y = evt.touches[0].clientY;
+                        } else if (evt.clientX !== undefined && evt.clientY !== undefined) {
+                            x = evt.clientX;
+                            y = evt.clientY;
+                        }
 
-                        // All items under the cursor, from highest to lowest
-                        const stack = document.elementsFromPoint(x, y);
+                        // Only proceed if we have valid coordinates
+                        if (x !== undefined && y !== undefined && isFinite(x) && isFinite(y)) {
+                            // All items under the cursor, from highest to lowest
+                            const stack = document.elementsFromPoint(x, y);
 
-                        let svg_page_id = this.svg.getAttribute("id") || "page0";
-                        let parent_click = this.svg.parentNode;
-                        let svg_diferent = null;
+                            let svg_page_id = this.svg.getAttribute("id") || "page0";
+                            let parent_click = this.svg.parentNode;
+                            let svg_diferent = null;
 
-                        if (evt.target.getAttribute("id")?.startsWith("page")) {
-                            for (const el of stack) {
-                                // Check if the element or any of its parents is an <svg> with an id that starts with "page"
-                                const svgParent = el.closest("svg[id^='page']");
-                                if (svgParent) {
-                                    let id = svgParent.getAttribute("id");
-                                    if (id !== svg_page_id) {
-                                        parent_click = svgParent.parentNode;
-                                        svg_diferent = id.replace("page", "");
-                                        break;
+                            if (evt.target.getAttribute("id")?.startsWith("page")) {
+                                for (const el of stack) {
+                                    // Check if the element or any of its parents is an <svg> with an id that starts with "page"
+                                    const svgParent = el.closest("svg[id^='page']");
+                                    if (svgParent) {
+                                        let id = svgParent.getAttribute("id");
+                                        if (id !== svg_page_id) {
+                                            parent_click = svgParent.parentNode;
+                                            svg_diferent = id.replace("page", "");
+                                            break;
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        parent_click.style.zIndex = 1;
-                        parent_click.style.position = "relative";
+                            parent_click.style.zIndex = 1;
+                            parent_click.style.position = "relative";
 
-                        if (svg_diferent) {
-                            window[`zoomContainer${svg_diferent}`].activatePanMode(evt);
-                            return;
+                            if (svg_diferent) {
+                                window[`zoomContainer${svg_diferent}`].activatePanMode(evt);
+                                return;
+                            }
                         }
                     }
                     
