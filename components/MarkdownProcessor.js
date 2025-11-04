@@ -686,7 +686,7 @@ function parseBlocksFlowChart(text) {
         const blockMatch = line.match(/^\(([^)]+)\)\s*(.*)/);
 
         if (currentBlock) {
-            if (line.startsWith(" ") || line.trim() === "") {
+            if (line.startsWith("  ") || line.trim() === "") {
                 contentCurrentBlock = cleanSintaxMermaid(contentCurrentBlock);
                 blocks.set(currentBlock, contentCurrentBlock);
                 
@@ -757,19 +757,23 @@ function parseTasksKanban(text) {
         1: "Very Low",
     };
 
+    function cleanSintaxMermaid(text) {
+        text = text.replaceAll('(', '❨').replaceAll(')', '❩'); // Replace parentheses with similar characters to avoid issues with mermaid syntax
+        return text;
+    }
+
     for (let line of lines) {
         const trimmed = line.trim();
         if (!trimmed) continue;
 
         // New section
-        if (!line.startsWith(" ")) {
-        if (currentSection) result.push({ section: currentSection, tasks: buffer });
-        currentSection = trimmed;
-        buffer = [];
-        }
-        // New task
-        else if (!line.startsWith("        ")) {
-        buffer.push({ title: trimmed, details: [] });
+        if (!line.startsWith("  ")) {
+            if (currentSection) result.push({ section: currentSection, tasks: buffer });
+            currentSection = trimmed;
+            buffer = [];
+        } else {
+            // New task
+            buffer.push({ title: trimmed, details: [] });
         }
     }
     if (currentSection) result.push({ section: currentSection, tasks: buffer });
@@ -791,7 +795,7 @@ function parseTasksKanban(text) {
             }
 
             // Detect (ticket, assigned)
-            const matchParen = title.match(/\(([^,]+),\s*([^)]+)\)$/);
+            const matchParen = title.match(/\(([^,()]+),\s*([^,()]+)\)$/);
             if (matchParen) {
                 ticket = matchParen[1].trim();
                 assigned = matchParen[2].trim();
@@ -800,14 +804,14 @@ function parseTasksKanban(text) {
 
             // Construct data object
             const data = [];
-            if (ticket) data.push(`ticket: '${ticket}'`);
-            if (assigned) data.push(`assigned: '${assigned}'`);
-            if (priority) data.push(`priority: '${priority}'`);
+            if (ticket) data.push(`ticket: '${cleanSintaxMermaid(ticket)}'`);
+            if (assigned) data.push(`assigned: '${cleanSintaxMermaid(assigned)}'`);
+            if (priority) data.push(`priority: '${cleanSintaxMermaid(priority)}'`);
 
-            return `    ${title} @{ ${data.join(", ")} }`;
+            return `    ${cleanSintaxMermaid(title)} @{ ${data.join(", ")} }`;
         }).join("\n");
 
-        return `${sec.section}\n${tasks}`;
+        return `${cleanSintaxMermaid(sec.section)}\n${tasks}`;
     }).join("\n\n");
 }
 
