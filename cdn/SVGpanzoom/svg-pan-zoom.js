@@ -1609,6 +1609,7 @@
                         
                         return;
                     } else if (evt.touches && evt.touches.length === 1) {
+                        // Reset pinch zoom variables
                         this.pinchStartDistance = 0;
                         this.pinchMidpoint = null;
                         this.initialCorner1 = null;
@@ -1616,6 +1617,20 @@
                         this.initialPinchCTM = null;
                         this.initialTouch1 = null;
                         this.initialTouch2 = null;
+                        
+                        // Handle single finger pan (similar to mouse pan)
+                        if (this.state === "pan" && this.options.panEnabled) {
+                            var point = SvgUtils.getEventPoint(
+                                    evt,
+                                    this.svg
+                                ).matrixTransform(this.firstEventCTM.inverse());
+                            
+                            // If stateOrigin is null, initialize it with the current point
+                            // This happens when activatePanMode() was called programmatically
+                            if (!this.stateOrigin) {
+                                this.stateOrigin = point;
+                            }
+                        }
                     }
                 };
 
