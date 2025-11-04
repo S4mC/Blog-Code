@@ -761,7 +761,7 @@
                     contain: false, // enable or disable viewport contain the svg (default false)
                     center: true, // enable or disable viewport centering in SVG (default true)
                     refreshRate: "auto", // Maximum number of frames per second (altering SVG's viewport)
-                    parentOfParentZIndexChangeInClick: true, // enable or disable changing z-index of SVG's grandparent on click (default true because i need it in a project) if you don't need it o don't know what is this set to false
+                    overflowVisible: true, // Custom option to control the SVG overflow-visible behavior. This requires all SVG elements to be placed inside their respective and numbered wrappers: <div class="svg-wrapper"> <div id="SVGViewer1" class="SVG-viewer"> <svg id="page1">...</svg> </div> </div> and all those containers must be inside a <div class="entry-content"> element. If you don't follow this structure, it will not work properly (mark as false)
                     beforeZoom: null,
                     onZoom: null,
                     beforePan: null,
@@ -963,6 +963,13 @@
                     // Bind eventListeners
                     for (var event in this.eventListeners) {
                         // Attach event to eventsListenerElement or SVG if not available
+                        if (this.options.overflowVisible && (event == "mouseleave" || event == "touchleave" || event == "touchcancel" || event == "mouseup" || event == "touchend" || event == "mousemove" || event == "touchmove")) {
+                            // mouseleave event causes issues on overflow visible SVGs
+                            document.querySelector(".entry-content").addEventListener(event, this.eventListeners[event], !this.options.preventMouseEventsDefault
+                                ? passiveListenerOption
+                                : false);
+                            continue;
+                        }
                         (
                             this.options.eventsListenerElement || this.svg
                         ).addEventListener(
@@ -1332,44 +1339,30 @@
                         return;
                     }
 
-                    if (this.options.parentOfParentZIndexChangeInClick) {
-                        // // console.log(evt);
-                        // var parent = this.svg.parentNode;
-                        // if (parent) {
-                        //     var grandparent = parent.parentNode;
-                        //     if (grandparent) {
-                        //         console.log(grandparent);
-                        //         document.querySelectorAll(".svg-wrapper").forEach(function(el){
-                        //             el.style.zIndex = 0;
-                        //         });
-                        //         grandparent.style.position = "relative";
-                        //         grandparent.style.zIndex = 1;
-                        //     }
-                        // }
-
+                    if (this.options.overflowVisible) {
                         // Reset z-index of all svg-wrapper elements
-                        document.querySelectorAll(".svg-wrapper").forEach(function(el){
+                        document.querySelectorAll(".svg-wrapper > div").forEach(function(el){
                             el.style.zIndex = 0;
                         });
 
                         const x = evt.clientX;
                         const y = evt.clientY;
 
-                        // Todos los elementos bajo el cursor, del más alto al más bajo
+                        // All items under the cursor, from highest to lowest
                         const stack = document.elementsFromPoint(x, y);
 
                         let svg_page_id = this.svg.getAttribute("id") || "page0";
-                        let parent_click = this.svg.parentNode.parentNode;
+                        let parent_click = this.svg.parentNode;
                         let svg_diferent = null;
 
                         if (evt.target.getAttribute("id")?.startsWith("page")) {
                             for (const el of stack) {
-                                // Buscar si el elemento o alguno de sus padres es un <svg> con id que empiece con "page"
+                                // Check if the element or any of its parents is an <svg> with an id that starts with "page"
                                 const svgParent = el.closest("svg[id^='page']");
                                 if (svgParent) {
                                     let id = svgParent.getAttribute("id");
                                     if (id !== svg_page_id) {
-                                        parent_click = svgParent.parentNode.parentNode;
+                                        parent_click = svgParent.parentNode;
                                         svg_diferent = id.replace("page", "");
                                         break;
                                     }
@@ -1382,8 +1375,8 @@
 
                         if (svg_diferent) {
                             window[`zoomContainer${svg_diferent}`].activatePanMode(evt);
+                            return;
                         }
-
                     }
                     
                     if (this.options.preventMouseEventsDefault) {

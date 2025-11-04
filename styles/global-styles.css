@@ -1270,14 +1270,6 @@ blockquote h6 {
     width: inherit;
     overflow: visible; /*QUITAR*/
     height: 100% !important;
-    /* &:hover {
-        z-index: 1;
-        position: relative;
-    } */
-    & > g:hover {
-        z-index: 2;
-        position: relative;
-    }
 }
 
 
