@@ -963,8 +963,9 @@
                     // Bind eventListeners
                     for (var event in this.eventListeners) {
                         // Attach event to eventsListenerElement or SVG if not available
-                        if (this.options.overflowVisible && (event == "mouseleave" || event == "touchleave" || event == "touchcancel" || event == "mouseup" || event == "touchend" || event == "mousemove" || event == "touchmove")) {
-                            // mouseleave event causes issues on overflow visible SVGs
+                        if (this.options.overflowVisible && (event == "mouseleave" || event == "touchleave" || event == "touchcancel" || event == "mouseup" || event == "touchend" || event == "mousemove")) {
+                            // mouseleave and mousemove events cause issues on overflow visible SVGs
+                            // BUT touchmove needs to stay on the SVG to detect which one is being touched
                             document.querySelector(".entry-content").addEventListener(event, this.eventListeners[event], !this.options.preventMouseEventsDefault
                                 ? passiveListenerOption
                                 : false);
@@ -1618,8 +1619,8 @@
                         this.initialTouch1 = null;
                         this.initialTouch2 = null;
                         
-                        // Handle single finger pan (similar to mouse pan)
-                        if (this.state === "pan" && this.options.panEnabled) {
+                        // Handle single finger state.origin null
+                        if (!this.stateOrigin && this.state === "pan" && this.options.panEnabled) {
                             var point = SvgUtils.getEventPoint(
                                     evt,
                                     this.svg
@@ -1627,9 +1628,7 @@
                             
                             // If stateOrigin is null, initialize it with the current point
                             // This happens when activatePanMode() was called programmatically
-                            if (!this.stateOrigin) {
-                                this.stateOrigin = point;
-                            }
+                            this.stateOrigin = point;
                         }
                     }
                 };
