@@ -1324,7 +1324,6 @@ details.compact {
 
 details:hover {
     border-color: var(--details-hover-border);
-    transform: translateY(-2px);
     box-shadow: var(--details-hover-shadow);
 }
 
